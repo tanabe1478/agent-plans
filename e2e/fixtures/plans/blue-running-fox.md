@@ -1,0 +1,26 @@
+---
+created: "2026-01-15T10:00:00Z"
+modified: "2026-01-15T10:00:00Z"
+project_path: "/home/user/projects/web-app"
+session_id: "fixture-session-001"
+status: todo
+---
+# Web Application Authentication System
+
+## Overview
+Implement user authentication with JWT tokens for the web application.
+
+## Tasks
+
+### Phase 1: Backend Setup
+- Set up Express.js server
+- Configure JWT middleware
+- Create user model
+
+### Phase 2: Frontend Integration
+- Create login form component
+- Handle token storage
+- Implement protected routes
+
+## Notes
+This is a test fixture for E2E testing.
