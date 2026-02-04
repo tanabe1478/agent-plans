@@ -1,10 +1,24 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, FileText } from 'lucide-react';
+import { Search, FileText, Sun, Moon, Monitor } from 'lucide-react';
 import { useState } from 'react';
+import { useUiStore, type Theme } from '@/stores/uiStore';
+
+const themeIcons: Record<Theme, typeof Sun> = {
+  light: Sun,
+  dark: Moon,
+  system: Monitor,
+};
+
+const nextTheme: Record<Theme, Theme> = {
+  light: 'dark',
+  dark: 'system',
+  system: 'light',
+};
 
 export function Header() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { theme, setTheme } = useUiStore();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +57,16 @@ export function Header() {
           >
             一覧
           </Link>
+          <button
+            onClick={() => setTheme(nextTheme[theme])}
+            className="p-2 hover:bg-accent rounded-md"
+            title={`Theme: ${theme}`}
+          >
+            {(() => {
+              const Icon = themeIcons[theme];
+              return <Icon className="h-5 w-5" />;
+            })()}
+          </button>
         </nav>
       </div>
     </header>
