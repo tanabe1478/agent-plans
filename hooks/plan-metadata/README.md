@@ -1,52 +1,39 @@
-# Plan Metadata Injector Hook
+# Plan Metadata Hook
 
-A Claude Code hook that automatically injects YAML frontmatter metadata into plan files.
+A Claude Code PostToolUse hook that automatically injects YAML frontmatter metadata into plan files.
 
-## Features
+## What It Does
 
-- Automatically adds metadata when plan files are created or modified
-- Tracks creation time, modification time, project path, and session ID
-- Supports status tracking: `todo`, `in_progress`, `completed`
-- Preserves `created` timestamp and `status` on updates (overwrite strategy for other fields)
+When Claude Code writes or edits a file in `~/.claude/plans/`, this hook automatically:
 
-## Frontmatter Format
+1. Detects if the file is a Markdown plan file
+2. Parses existing frontmatter (if any)
+3. Injects or updates metadata fields
+4. Preserves the `created` timestamp and `status` field
 
-```yaml
----
-created: 2025-02-05T10:30:00Z
-modified: 2025-02-05T11:00:00Z
-project_path: /Users/you/projects/myapp
-session_id: abc123xyz
-status: todo
----
-```
+## Metadata Fields
 
-### Fields
-
-| Field | Description | Behavior on Update |
-|-------|-------------|-------------------|
-| `created` | Initial creation timestamp (UTC) | Preserved |
-| `modified` | Last modification timestamp (UTC) | Updated |
-| `project_path` | Working directory when plan was created/modified | Updated |
-| `session_id` | Claude Code session identifier | Updated |
-| `status` | Plan status: `todo`, `in_progress`, `completed` | Preserved |
+| Field | Behavior | Description |
+|-------|----------|-------------|
+| `created` | Preserved | Set only on first creation |
+| `modified` | Overwritten | Updated on every change |
+| `project_path` | Overwritten | Current working directory |
+| `session_id` | Overwritten | Claude Code session ID |
+| `status` | Preserved | `todo`, `in_progress`, or `completed` |
 
 ## Installation
 
-### 1. Copy the hook script
+### 1. Copy the script
 
 ```bash
-# Option A: Copy to ~/.claude/hooks/
 mkdir -p ~/.claude/hooks
 cp hooks/plan-metadata/inject.py ~/.claude/hooks/plan-metadata-inject.py
-
-# Option B: Use directly from this repo
-# Just reference the full path in settings
+chmod +x ~/.claude/hooks/plan-metadata-inject.py
 ```
 
 ### 2. Configure Claude Code
 
-Add the following to your `~/.claude/settings.json`:
+Add to your `~/.claude/settings.json`:
 
 ```json
 {
@@ -57,7 +44,7 @@ Add the following to your `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/plan-metadata-inject.py"
+            "command": "~/.claude/hooks/plan-metadata-inject.py"
           }
         ]
       }
@@ -66,108 +53,66 @@ Add the following to your `~/.claude/settings.json`:
 }
 ```
 
-Or if using directly from this repo:
+### 3. Restart Claude Code
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 /path/to/ccplans/hooks/plan-metadata/inject.py"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+The hook will take effect after restarting Claude Code.
 
-## How it Works
+## How It Works
 
-The hook script receives JSON data from Claude Code via stdin when a tool completes. It checks if the tool was `Write` or `Edit` and if the target file is in `~/.claude/plans/`.
-
-### Hook Input (from stdin)
+The hook receives JSON input from Claude Code via stdin:
 
 ```json
 {
   "tool_name": "Write",
   "tool_input": {
-    "file_path": "/Users/you/.claude/plans/awesome-plan.md",
-    "content": "..."
+    "file_path": "/Users/you/.claude/plans/my-plan.md"
   },
-  "cwd": "/Users/you/projects/myapp",
-  "session_id": "abc123xyz"
+  "session_id": "abc123",
+  "cwd": "/Users/you/projects/myapp"
 }
 ```
 
-### Script Logic
+The hook:
+1. Checks if `tool_name` is `Write` or `Edit`
+2. Checks if `file_path` is in `~/.claude/plans/`
+3. Checks if the file is a `.md` file
+4. If all conditions pass, injects/updates the frontmatter
 
-```python
-# 1. Read hook data from stdin
-data = json.load(sys.stdin)
+## Example
 
-# 2. Check if it's a Write/Edit to ~/.claude/plans/*.md
-file_path = data.get('tool_input', {}).get('file_path', '')
-if '/.claude/plans/' not in file_path or not file_path.endswith('.md'):
-    sys.exit(0)  # Not a plan file, skip
+Before:
+```markdown
+# My Plan
 
-# 3. Parse existing frontmatter (if any)
-content = Path(file_path).read_text()
-existing_frontmatter, body = parse_frontmatter(content)
-
-# 4. Build new frontmatter (preserve 'created' and 'status')
-metadata = {
-    'created': existing_frontmatter.get('created') or now(),
-    'modified': now(),
-    'project_path': data.get('cwd'),
-    'session_id': data.get('session_id'),
-    'status': existing_frontmatter.get('status') or 'todo',
-}
-
-# 5. Write back with new frontmatter
-new_content = build_frontmatter(metadata) + '\n' + body
-Path(file_path).write_text(new_content)
+## Overview
+This is my plan.
 ```
 
-### Key Functions
-
-| Function | Description |
-|----------|-------------|
-| `parse_frontmatter(content)` | Extracts YAML frontmatter and body from markdown |
-| `build_frontmatter(metadata)` | Creates YAML frontmatter string from dict |
-| `inject_metadata(file_path, cwd, session_id)` | Main logic to update a plan file |
-
-## Requirements
-
-- Python 3.8+
-- No external dependencies (uses only standard library)
-
-## Updating Status
-
-The hook preserves the `status` field, so you can manually update it:
-
-```yaml
+After:
+```markdown
 ---
-status: in_progress  # Changed from 'todo'
+created: "2025-02-05T10:30:00Z"
+modified: "2025-02-05T10:30:00Z"
+project_path: "/Users/you/projects/myapp"
+session_id: "abc123xyz"
+status: todo
 ---
+# My Plan
+
+## Overview
+This is my plan.
 ```
-
-Or use ccplans web UI to update the status (coming soon).
 
 ## Troubleshooting
 
 ### Hook not running
 
-1. Verify the path in `settings.json` is correct
-2. Ensure the script is executable: `chmod +x inject.py`
-3. Check Python is available: `which python3`
+1. Check Claude Code logs for errors
+2. Verify the script is executable: `chmod +x ~/.claude/hooks/plan-metadata-inject.py`
+3. Restart Claude Code after changing settings.json
 
-### Metadata not appearing
+### Frontmatter not appearing
 
-1. The hook only processes files in `~/.claude/plans/`
-2. Only `.md` files are processed
-3. Check file permissions
+1. Ensure the file is in `~/.claude/plans/`
+2. Ensure the file has `.md` extension
+3. Check stderr output from the hook script

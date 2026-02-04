@@ -9,6 +9,8 @@ A web-based tool for managing Claude Code plan files stored in `~/.claude/plans/
 - Create, edit, rename, and delete plans
 - Open plans in external apps (VS Code, Terminal)
 - Soft delete with archive support
+- Status tracking (ToDo, In Progress, Completed)
+- Filter plans by status or project
 
 ## Prerequisites
 
@@ -39,6 +41,8 @@ apps/
   web/          # React SPA (Vite + Tailwind)
 packages/
   shared/       # Shared TypeScript types
+e2e/            # Playwright E2E tests
+hooks/          # Claude Code hook scripts
 ```
 
 ## Available Scripts
@@ -48,6 +52,7 @@ packages/
 | `pnpm dev` | Start all dev servers |
 | `pnpm build` | Build all packages |
 | `pnpm test` | Run all tests |
+| `pnpm test:e2e` | Run Playwright E2E tests |
 | `pnpm lint` | Type check all packages |
 | `pnpm format` | Format code with Prettier |
 
@@ -85,6 +90,7 @@ Environment variables (optional):
 | PUT | `/api/plans/:filename` | Update a plan |
 | DELETE | `/api/plans/:filename` | Delete a plan (archive) |
 | POST | `/api/plans/:filename/rename` | Rename a plan |
+| PATCH | `/api/plans/:filename/status` | Update plan status |
 | POST | `/api/plans/:filename/open` | Open in external app |
 | GET | `/api/search?q=query` | Search plans |
 | GET | `/api/health` | Health check |
