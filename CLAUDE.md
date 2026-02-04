@@ -76,3 +76,7 @@ packages/
 1. APIがローカルの `~/.claude/plans/*.md` ファイルを直接読み書き
 2. 削除時はデフォルトで `archive/` サブディレクトリへ移動（ソフトデリート）
 3. タイトルはMarkdownの最初のH1から抽出、セクションはH2から抽出
+
+## Conventions
+
+- **Language**: Write all code comments, commit messages, and PR descriptions in English
