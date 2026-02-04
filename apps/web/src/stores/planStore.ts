@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { PlanStatus } from '@ccplans/shared';
 
 interface PlanStore {
   // Selection state
@@ -21,6 +22,10 @@ interface PlanStore {
   // Filter state
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  statusFilter: PlanStatus | 'all';
+  setStatusFilter: (status: PlanStatus | 'all') => void;
+  projectFilter: string | 'all';
+  setProjectFilter: (project: string | 'all') => void;
 }
 
 export const usePlanStore = create<PlanStore>((set, get) => ({
@@ -56,4 +61,8 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
   // Filter
   searchQuery: '',
   setSearchQuery: (query) => set({ searchQuery: query }),
+  statusFilter: 'all',
+  setStatusFilter: (status) => set({ statusFilter: status }),
+  projectFilter: 'all',
+  setProjectFilter: (project) => set({ projectFilter: project }),
 }));

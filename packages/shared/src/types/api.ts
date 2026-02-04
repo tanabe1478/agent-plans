@@ -1,4 +1,4 @@
-import type { PlanMeta, PlanDetail, SearchResult, ExportFormat, ExternalApp } from './plan.js';
+import type { PlanMeta, PlanDetail, SearchResult, ExportFormat, ExternalApp, PlanStatus } from './plan.js';
 
 /**
  * GET /api/plans response
@@ -47,6 +47,13 @@ export interface BulkDeleteRequest {
  */
 export interface OpenPlanRequest {
   app: ExternalApp;
+}
+
+/**
+ * PATCH /api/plans/:filename/status request body
+ */
+export interface UpdateStatusRequest {
+  status: PlanStatus;
 }
 
 /**

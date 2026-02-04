@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { FileText, Calendar, HardDrive } from 'lucide-react';
-import type { PlanMeta } from '@ccplans/shared';
+import type { PlanMeta, PlanStatus } from '@ccplans/shared';
 import { formatDate, formatFileSize, cn } from '@/lib/utils';
 import { usePlanStore } from '@/stores/planStore';
+import { useUpdateStatus } from '@/lib/hooks/usePlans';
+import { StatusDropdown } from './StatusDropdown';
+import { ProjectBadge } from './ProjectBadge';
 
 interface PlanCardProps {
   plan: PlanMeta;
@@ -12,6 +15,11 @@ interface PlanCardProps {
 export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
   const { isSelected, toggleSelect } = usePlanStore();
   const selected = isSelected(plan.filename);
+  const updateStatus = useUpdateStatus();
+
+  const handleStatusChange = (status: PlanStatus) => {
+    updateStatus.mutate({ filename: plan.filename, status });
+  };
 
   return (
     <div
@@ -31,13 +39,27 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
         </div>
       )}
 
+      {/* Status dropdown - outside Link to prevent navigation */}
+      {plan.frontmatter?.status && (
+        <div
+          className="absolute right-3 top-3 z-10"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <StatusDropdown
+            currentStatus={plan.frontmatter.status}
+            onStatusChange={handleStatusChange}
+            disabled={updateStatus.isPending}
+          />
+        </div>
+      )}
+
       <Link
         to={`/plan/${encodeURIComponent(plan.filename)}`}
         className="block"
       >
         <div className="flex items-start gap-3">
           <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pr-16">
             <h3 className="font-medium truncate group-hover:text-primary">
               {plan.title}
             </h3>
@@ -60,6 +82,9 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
             <HardDrive className="h-3 w-3" />
             {formatFileSize(plan.size)}
           </span>
+          {plan.frontmatter?.projectPath && (
+            <ProjectBadge projectPath={plan.frontmatter.projectPath} />
+          )}
         </div>
 
         {plan.sections.length > 0 && (

@@ -7,6 +7,7 @@ import type {
   PlanDetailResponse,
   CreatePlanRequest,
   UpdatePlanRequest,
+  UpdateStatusRequest,
   RenamePlanRequest,
   BulkDeleteRequest,
   OpenPlanRequest,
@@ -30,6 +31,9 @@ const bulkDeleteSchema = z.object({
 });
 const openPlanSchema = z.object({
   app: z.enum(['vscode', 'terminal', 'default']),
+});
+const updateStatusSchema = z.object({
+  status: z.enum(['todo', 'in_progress', 'completed']),
 });
 const exportQuerySchema = z.object({
   format: z.enum(['md', 'pdf', 'html']).default('md'),
@@ -149,6 +153,26 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
       filenameSchema.parse(filename);
       const { newFilename } = renamePlanSchema.parse(request.body);
       const plan = await planService.renamePlan(filename, newFilename);
+      return plan;
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      return reply.status(404).send({ error: 'Plan not found' });
+    }
+  });
+
+  // PATCH /api/plans/:filename/status - Update plan status
+  fastify.patch<{
+    Params: { filename: string };
+    Body: UpdateStatusRequest;
+  }>('/:filename/status', async (request, reply) => {
+    const { filename } = request.params;
+
+    try {
+      filenameSchema.parse(filename);
+      const { status } = updateStatusSchema.parse(request.body);
+      const plan = await planService.updateStatus(filename, status);
       return plan;
     } catch (err) {
       if (err instanceof z.ZodError) {

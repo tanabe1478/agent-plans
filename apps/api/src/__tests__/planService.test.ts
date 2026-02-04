@@ -198,4 +198,48 @@ Something to do.`
       expect(todoPlan?.frontmatter?.projectPath).toBe('/my/project');
     });
   });
+
+  describe('updateStatus', () => {
+    it('should update status in frontmatter', async () => {
+      await writeFile(
+        join(testDir, 'status-plan.md'),
+        `---
+status: todo
+project_path: /test/project
+---
+# Status Plan
+
+Content here.`
+      );
+
+      const plan = await service.updateStatus('status-plan.md', 'completed');
+
+      expect(plan.frontmatter?.status).toBe('completed');
+      expect(plan.frontmatter?.projectPath).toBe('/test/project');
+    });
+
+    it('should add frontmatter if not present', async () => {
+      const plan = await service.updateStatus('test-plan.md', 'in_progress');
+
+      expect(plan.frontmatter?.status).toBe('in_progress');
+      expect(plan.frontmatter?.modified).toBeDefined();
+    });
+
+    it('should update modified timestamp', async () => {
+      await writeFile(
+        join(testDir, 'timestamp-plan.md'),
+        `---
+status: todo
+modified: "2020-01-01T00:00:00Z"
+---
+# Timestamp Plan
+
+Content.`
+      );
+
+      const plan = await service.updateStatus('timestamp-plan.md', 'completed');
+
+      expect(plan.frontmatter?.modified).not.toBe('2020-01-01T00:00:00Z');
+    });
+  });
 });

@@ -15,6 +15,7 @@ export type {
   PlanDetailResponse,
   CreatePlanRequest,
   UpdatePlanRequest,
+  UpdateStatusRequest,
   RenamePlanRequest,
   BulkDeleteRequest,
   OpenPlanRequest,

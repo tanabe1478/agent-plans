@@ -9,7 +9,7 @@ interface PlanListProps {
 }
 
 export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
-  const { sortBy, sortOrder, searchQuery } = usePlanStore();
+  const { sortBy, sortOrder, searchQuery, statusFilter, projectFilter } = usePlanStore();
 
   const filteredAndSortedPlans = useMemo(() => {
     let result = [...plans];
@@ -23,6 +23,16 @@ export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
           plan.filename.toLowerCase().includes(query) ||
           plan.preview.toLowerCase().includes(query)
       );
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      result = result.filter((plan) => plan.frontmatter?.status === statusFilter);
+    }
+
+    // Filter by project
+    if (projectFilter !== 'all') {
+      result = result.filter((plan) => plan.frontmatter?.projectPath === projectFilter);
     }
 
     // Sort
@@ -43,12 +53,13 @@ export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
     });
 
     return result;
-  }, [plans, sortBy, sortOrder, searchQuery]);
+  }, [plans, sortBy, sortOrder, searchQuery, statusFilter, projectFilter]);
 
   if (filteredAndSortedPlans.length === 0) {
+    const hasFilters = searchQuery || statusFilter !== 'all' || projectFilter !== 'all';
     return (
       <div className="text-center py-12 text-muted-foreground">
-        {searchQuery ? 'プランが見つかりませんでした' : 'プランがありません'}
+        {hasFilters ? 'No plans match the current filters' : 'No plans yet'}
       </div>
     );
   }

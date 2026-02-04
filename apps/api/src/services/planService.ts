@@ -56,6 +56,19 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | und
 }
 
 /**
+ * Serialize frontmatter to YAML string
+ */
+function serializeFrontmatter(fm: PlanFrontmatter): string {
+  const lines: string[] = [];
+  if (fm.created) lines.push(`created: "${fm.created}"`);
+  if (fm.modified) lines.push(`modified: "${fm.modified}"`);
+  if (fm.projectPath) lines.push(`project_path: "${fm.projectPath}"`);
+  if (fm.sessionId) lines.push(`session_id: "${fm.sessionId}"`);
+  if (fm.status) lines.push(`status: ${fm.status}`);
+  return lines.join('\n');
+}
+
+/**
  * Extract title from markdown content (first H1)
  */
 function extractTitle(body: string): string {
@@ -243,6 +256,27 @@ export class PlanService {
 
     await rename(oldPath, newPath);
     return this.getPlanMeta(newFilename);
+  }
+
+  /**
+   * Update plan status
+   */
+  async updateStatus(filename: string, status: PlanStatus): Promise<PlanMeta> {
+    this.validateFilename(filename);
+    const filePath = join(this.plansDir, filename);
+    const content = await readFile(filePath, 'utf-8');
+
+    const { frontmatter, body } = parseFrontmatter(content);
+    const newFrontmatter: PlanFrontmatter = {
+      ...frontmatter,
+      status,
+      modified: new Date().toISOString(),
+    };
+
+    const newContent = `---\n${serializeFrontmatter(newFrontmatter)}\n---\n${body}`;
+    await writeFile(filePath, newContent, 'utf-8');
+
+    return this.getPlanMeta(filename);
   }
 
   /**

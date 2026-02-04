@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
-import type { ExternalApp, ExportFormat } from '@ccplans/shared';
+import type { ExternalApp, ExportFormat, PlanStatus } from '@ccplans/shared';
 
 export function usePlans() {
   return useQuery({
@@ -57,6 +57,19 @@ export function useOpenPlan() {
   return useMutation({
     mutationFn: ({ filename, app }: { filename: string; app: ExternalApp }) =>
       api.plans.open(filename, app),
+  });
+}
+
+export function useUpdateStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filename, status }: { filename: string; status: PlanStatus }) =>
+      api.plans.updateStatus(filename, status),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['plan', variables.filename] });
+    },
   });
 }
 

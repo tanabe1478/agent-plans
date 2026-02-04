@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { usePlanStore } from '@/stores/planStore';
 import { useUiStore } from '@/stores/uiStore';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import type { PlanStatus } from '@ccplans/shared';
 import {
   Loader2,
   AlertCircle,
@@ -28,10 +29,27 @@ export function HomePage() {
     toggleSortOrder,
     searchQuery,
     setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    projectFilter,
+    setProjectFilter,
   } = usePlanStore();
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+
+  const plans = data?.plans || [];
+
+  // Extract unique project paths for filter dropdown
+  const uniqueProjects = useMemo(() => {
+    const projects = new Set<string>();
+    plans.forEach((plan) => {
+      if (plan.frontmatter?.projectPath) {
+        projects.add(plan.frontmatter.projectPath);
+      }
+    });
+    return Array.from(projects).sort();
+  }, [plans]);
 
   if (isLoading) {
     return (
@@ -50,8 +68,6 @@ export function HomePage() {
       </div>
     );
   }
-
-  const plans = data?.plans || [];
 
   const handleBulkDelete = async () => {
     try {
@@ -95,19 +111,47 @@ export function HomePage() {
             onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size')}
             className="rounded-md border px-2 py-2 text-sm"
           >
-            <option value="date">更新日時</option>
-            <option value="name">名前</option>
-            <option value="size">サイズ</option>
+            <option value="date">Date</option>
+            <option value="name">Name</option>
+            <option value="size">Size</option>
           </select>
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSortOrder}
-            title={sortOrder === 'asc' ? '昇順' : '降順'}
+            title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
           >
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Status filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as PlanStatus | 'all')}
+          className="rounded-md border px-2 py-2 text-sm"
+        >
+          <option value="all">All Status</option>
+          <option value="todo">ToDo</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+
+        {/* Project filter */}
+        {uniqueProjects.length > 0 && (
+          <select
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+            className="rounded-md border px-2 py-2 text-sm max-w-[200px]"
+          >
+            <option value="all">All Projects</option>
+            {uniqueProjects.map((project) => (
+              <option key={project} value={project}>
+                {project.split('/').filter(Boolean).pop()}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Selection mode toggle */}
         <Button

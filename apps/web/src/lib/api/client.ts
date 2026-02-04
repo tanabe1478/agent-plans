@@ -1,6 +1,8 @@
 import type {
   PlansListResponse,
   PlanDetailResponse,
+  PlanMeta,
+  PlanStatus,
   SearchResponse,
   SuccessResponse,
   ExternalApp,
@@ -69,6 +71,12 @@ export const api = {
       fetchApi<SuccessResponse>(`/plans/${encodeURIComponent(filename)}/open`, {
         method: 'POST',
         body: JSON.stringify({ app }),
+      }),
+
+    updateStatus: (filename: string, status: PlanStatus) =>
+      fetchApi<PlanMeta>(`/plans/${encodeURIComponent(filename)}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
       }),
 
     exportUrl: (filename: string, format: ExportFormat) =>
