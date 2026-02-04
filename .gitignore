@@ -37,3 +37,10 @@ test-results/
 playwright-report/
 playwright/.cache/
 .playwright-mcp/
+
+# Claude Code local settings
+.claude/
+
+# Python
+__pycache__/
+*.pyc

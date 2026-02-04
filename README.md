@@ -89,6 +89,61 @@ Environment variables (optional):
 | GET | `/api/search?q=query` | Search plans |
 | GET | `/api/health` | Health check |
 
+## Claude Code Hook
+
+This repository includes a hook that automatically injects YAML frontmatter metadata into plan files when Claude Code creates or modifies them.
+
+### Frontmatter Format
+
+```yaml
+---
+created: "2025-02-05T10:30:00Z"
+modified: "2025-02-05T11:00:00Z"
+project_path: "/Users/you/projects/myapp"
+session_id: "abc123xyz"
+status: todo
+---
+```
+
+| Field | Description |
+|-------|-------------|
+| `created` | Initial creation timestamp (preserved on update) |
+| `modified` | Last modification timestamp |
+| `project_path` | Working directory when plan was created |
+| `session_id` | Claude Code session identifier |
+| `status` | Plan status: `todo`, `in_progress`, `completed` |
+
+### Setup
+
+1. Copy the hook script:
+
+```bash
+mkdir -p ~/.claude/hooks
+cp hooks/plan-metadata/inject.py ~/.claude/hooks/plan-metadata-inject.py
+```
+
+2. Add to your `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/plan-metadata-inject.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+For detailed documentation, see [hooks/plan-metadata/README.md](hooks/plan-metadata/README.md).
+
 ## License
 
 MIT

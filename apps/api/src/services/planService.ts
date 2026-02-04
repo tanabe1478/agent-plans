@@ -1,13 +1,65 @@
 import { readdir, readFile, writeFile, stat, unlink, rename, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanMeta, PlanDetail } from '@ccplans/shared';
+import type { PlanMeta, PlanDetail, PlanFrontmatter, PlanStatus } from '@ccplans/shared';
 import { config } from '../config.js';
+
+/**
+ * Parse YAML frontmatter from markdown content
+ */
+function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | undefined; body: string } {
+  const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+  const match = content.match(pattern);
+
+  if (!match) {
+    return { frontmatter: undefined, body: content };
+  }
+
+  const frontmatterStr = match[1];
+  const body = match[2];
+
+  const frontmatter: PlanFrontmatter = {};
+
+  for (const line of frontmatterStr.split('\n')) {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex === -1) continue;
+
+    const key = line.slice(0, colonIndex).trim();
+    let value = line.slice(colonIndex + 1).trim();
+
+    // Remove quotes if present
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+
+    switch (key) {
+      case 'created':
+        frontmatter.created = value;
+        break;
+      case 'modified':
+        frontmatter.modified = value;
+        break;
+      case 'project_path':
+        frontmatter.projectPath = value;
+        break;
+      case 'session_id':
+        frontmatter.sessionId = value;
+        break;
+      case 'status':
+        if (['todo', 'in_progress', 'completed'].includes(value)) {
+          frontmatter.status = value as PlanStatus;
+        }
+        break;
+    }
+  }
+
+  return { frontmatter: Object.keys(frontmatter).length > 0 ? frontmatter : undefined, body };
+}
 
 /**
  * Extract title from markdown content (first H1)
  */
-function extractTitle(content: string): string {
-  const match = content.match(/^#\s+(.+)$/m);
+function extractTitle(body: string): string {
+  const match = body.match(/^#\s+(.+)$/m);
   return match ? match[1].trim() : 'Untitled';
 }
 
@@ -90,15 +142,18 @@ export class PlanService {
     const filePath = join(this.plansDir, filename);
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
 
+    const { frontmatter, body } = parseFrontmatter(content);
+
     return {
       filename,
-      title: extractTitle(content),
+      title: extractTitle(body),
       createdAt: stats.birthtime.toISOString(),
       modifiedAt: stats.mtime.toISOString(),
       size: stats.size,
-      preview: extractPreview(content),
-      sections: extractSections(content),
-      relatedProject: extractRelatedProject(content),
+      preview: extractPreview(body),
+      sections: extractSections(body),
+      relatedProject: extractRelatedProject(body),
+      frontmatter,
     };
   }
 
@@ -110,15 +165,18 @@ export class PlanService {
     const filePath = join(this.plansDir, filename);
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
 
+    const { frontmatter, body } = parseFrontmatter(content);
+
     return {
       filename,
-      title: extractTitle(content),
+      title: extractTitle(body),
       createdAt: stats.birthtime.toISOString(),
       modifiedAt: stats.mtime.toISOString(),
       size: stats.size,
-      preview: extractPreview(content),
-      sections: extractSections(content),
-      relatedProject: extractRelatedProject(content),
+      preview: extractPreview(body),
+      sections: extractSections(body),
+      relatedProject: extractRelatedProject(body),
+      frontmatter,
       content,
     };
   }

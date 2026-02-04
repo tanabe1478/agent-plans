@@ -140,4 +140,62 @@ describe('PlanService', () => {
       await expect(service.getPlan('test.txt')).rejects.toThrow('Invalid filename');
     });
   });
+
+  describe('frontmatter parsing', () => {
+    it('should parse frontmatter metadata', async () => {
+      await writeFile(
+        join(testDir, 'with-frontmatter.md'),
+        `---
+created: "2025-01-15T10:00:00Z"
+modified: "2025-01-16T12:00:00Z"
+project_path: /path/to/project
+session_id: abc123
+status: in_progress
+---
+# Plan With Frontmatter
+
+## Section One
+
+Content here.`
+      );
+
+      const plan = await service.getPlan('with-frontmatter.md');
+
+      expect(plan.title).toBe('Plan With Frontmatter');
+      expect(plan.sections).toContain('Section One');
+      expect(plan.frontmatter).toBeDefined();
+      expect(plan.frontmatter?.created).toBe('2025-01-15T10:00:00Z');
+      expect(plan.frontmatter?.modified).toBe('2025-01-16T12:00:00Z');
+      expect(plan.frontmatter?.projectPath).toBe('/path/to/project');
+      expect(plan.frontmatter?.sessionId).toBe('abc123');
+      expect(plan.frontmatter?.status).toBe('in_progress');
+    });
+
+    it('should handle plans without frontmatter', async () => {
+      const plan = await service.getPlan('test-plan.md');
+
+      expect(plan.title).toBe('Test Plan');
+      expect(plan.frontmatter).toBeUndefined();
+    });
+
+    it('should include frontmatter in listPlans', async () => {
+      await writeFile(
+        join(testDir, 'todo-plan.md'),
+        `---
+status: todo
+project_path: /my/project
+---
+# Todo Plan
+
+Something to do.`
+      );
+
+      const plans = await service.listPlans();
+      const todoPlan = plans.find((p) => p.filename === 'todo-plan.md');
+
+      expect(todoPlan).toBeDefined();
+      expect(todoPlan?.frontmatter?.status).toBe('todo');
+      expect(todoPlan?.frontmatter?.projectPath).toBe('/my/project');
+    });
+  });
 });

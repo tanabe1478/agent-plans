@@ -1,5 +1,7 @@
 // Types
 export type {
+  PlanStatus,
+  PlanFrontmatter,
   PlanMeta,
   PlanDetail,
   SearchMatch,
