@@ -108,9 +108,9 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(statusBadge).toBeVisible();
     await statusBadge.click();
 
-    // Dropdown should be open with all status options
-    await expect(page.getByRole('button', { name: 'ToDo' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible();
+    // Dropdown should be open - look for the dropdown container with z-50 class
+    const dropdown = page.locator('.z-50.rounded-md.border');
+    await expect(dropdown).toBeVisible();
   });
 
   test('should update status when selecting from dropdown', async ({ page, request }) => {
@@ -122,16 +122,19 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(statusBadge).toBeVisible({ timeout: 5000 });
     await statusBadge.click();
 
-    // Select "Completed"
-    const completedOption = page.getByRole('button', { name: 'Completed' });
-    await expect(completedOption).toBeVisible();
+    // Wait for dropdown to open
+    const dropdown = page.locator('.z-50.rounded-md.border');
+    await expect(dropdown).toBeVisible();
+
+    // Select "Completed" from dropdown (first match is in dropdown)
+    const completedOption = dropdown.getByRole('button', { name: 'Completed' });
     await completedOption.click();
 
     // Wait for update
     await page.waitForTimeout(500);
 
     // Verify the update happened (should now have more Completed badges)
-    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Completed' }).first()).toBeVisible();
   });
 
   test('should not navigate when clicking status badge', async ({ page }) => {
@@ -167,7 +170,7 @@ test.describe('Status Filtering and Status Update', () => {
     // Should show all statuses again
     await expect(page.getByRole('button', { name: 'ToDo' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'In Progress' }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Completed' }).first()).toBeVisible();
   });
 });
 

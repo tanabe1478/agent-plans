@@ -55,10 +55,5 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Setup test fixtures
-        run: |
-          mkdir -p ~/.claude/plans
-          cp e2e/fixtures/plans/*.md ~/.claude/plans/
-
       - name: Run E2E tests
         run: pnpm test:e2e

@@ -1,4 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Use fixtures directory for tests
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const fixturesDir = resolve(__dirname, 'fixtures', 'plans');
 
 export default defineConfig({
   testDir: './tests',
@@ -24,6 +30,9 @@ export default defineConfig({
       url: 'http://localhost:3001/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      env: {
+        PLANS_DIR: fixturesDir,
+      },
     },
     {
       command: 'pnpm --filter @ccplans/web dev',
