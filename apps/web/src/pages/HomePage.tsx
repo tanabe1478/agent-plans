@@ -100,7 +100,7 @@ export function HomePage() {
             placeholder="フィルター..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
@@ -109,7 +109,7 @@ export function HomePage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size')}
-            className="rounded-md border px-2 py-2 text-sm"
+            className="rounded-md border bg-background px-2 py-2 text-sm text-foreground"
           >
             <option value="date">Date</option>
             <option value="name">Name</option>
@@ -129,7 +129,7 @@ export function HomePage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as PlanStatus | 'all')}
-          className="rounded-md border px-2 py-2 text-sm"
+          className="rounded-md border bg-background px-2 py-2 text-sm text-foreground"
         >
           <option value="all">All Status</option>
           <option value="todo">ToDo</option>
@@ -142,7 +142,7 @@ export function HomePage() {
           <select
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
-            className="rounded-md border px-2 py-2 text-sm max-w-[200px]"
+            className="rounded-md border bg-background px-2 py-2 text-sm text-foreground max-w-[200px]"
           >
             <option value="all">All Projects</option>
             {uniqueProjects.map((project) => (
