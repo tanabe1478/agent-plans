@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
-import type { ExternalApp, ExportFormat, PlanStatus } from '@ccplans/shared';
+import type { ExternalApp, ExportFormat, PlanStatus, PlanPriority, SubtaskActionRequest } from '@ccplans/shared';
 
 export function usePlans() {
   return useQuery({
@@ -78,4 +78,77 @@ export function useExportPlan() {
     getExportUrl: (filename: string, format: ExportFormat) =>
       api.plans.exportUrl(filename, format),
   };
+}
+
+export function useUpdateSubtask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filename, body }: { filename: string; body: SubtaskActionRequest }) =>
+      api.plans.updateSubtask(filename, body),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['plan', variables.filename] });
+    },
+  });
+}
+
+export function useBulkUpdateStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filenames, status }: { filenames: string[]; status: PlanStatus }) =>
+      api.plans.bulkUpdateStatus(filenames, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+    },
+  });
+}
+
+export function useBulkUpdateTags() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filenames, action, tags }: { filenames: string[]; action: 'add' | 'remove'; tags: string[] }) =>
+      api.plans.bulkUpdateTags(filenames, action, tags),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+    },
+  });
+}
+
+export function useBulkUpdateAssign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filenames, assignee }: { filenames: string[]; assignee: string }) =>
+      api.plans.bulkUpdateAssign(filenames, assignee),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+    },
+  });
+}
+
+export function useBulkUpdatePriority() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filenames, priority }: { filenames: string[]; priority: PlanPriority }) =>
+      api.plans.bulkUpdatePriority(filenames, priority),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+    },
+  });
+}
+
+export function useBulkArchive() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filenames }: { filenames: string[] }) =>
+      api.plans.bulkArchive(filenames),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+    },
+  });
 }

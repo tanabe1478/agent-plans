@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
-import { FileText, Calendar, HardDrive } from 'lucide-react';
+import { FileText, Calendar, HardDrive, Clock } from 'lucide-react';
 import type { PlanMeta, PlanStatus } from '@ccplans/shared';
-import { formatDate, formatFileSize, cn } from '@/lib/utils';
+import { formatDate, formatFileSize, cn, getDeadlineColor, formatRelativeDeadline } from '@/lib/utils';
 import { usePlanStore } from '@/stores/planStore';
 import { useUpdateStatus } from '@/lib/hooks/usePlans';
 import { StatusDropdown } from './StatusDropdown';
 import { ProjectBadge } from './ProjectBadge';
+import { DependencyBadge } from './DependencyBadge';
 
 interface PlanCardProps {
   plan: PlanMeta;
@@ -16,6 +17,8 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
   const { isSelected, toggleSelect } = usePlanStore();
   const selected = isSelected(plan.filename);
   const updateStatus = useUpdateStatus();
+  const dueDate = plan.frontmatter?.dueDate;
+  const deadlineColor = getDeadlineColor(dueDate);
 
   const handleStatusChange = (status: PlanStatus) => {
     updateStatus.mutate({ filename: plan.filename, status });
@@ -24,8 +27,10 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
   return (
     <div
       className={cn(
-        'group relative rounded-lg border bg-card p-4 transition-colors hover:border-primary/50',
-        selected && 'border-primary bg-primary/5'
+        'group relative rounded-lg border-2 bg-card p-4 transition-colors hover:border-primary/50',
+        selected && 'border-primary bg-primary/5',
+        !selected && deadlineColor,
+        !selected && !deadlineColor && 'border-border'
       )}
     >
       {showCheckbox && (
@@ -82,10 +87,56 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
             <HardDrive className="h-3 w-3" />
             {formatFileSize(plan.size)}
           </span>
+          {dueDate && (
+            <span
+              className={cn(
+                'flex items-center gap-1 font-medium',
+                deadlineColor.includes('red')
+                  ? 'text-red-600 dark:text-red-400'
+                  : deadlineColor.includes('orange')
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : deadlineColor.includes('yellow')
+                      ? 'text-yellow-600 dark:text-yellow-400'
+                      : ''
+              )}
+            >
+              <Clock className="h-3 w-3" />
+              {formatRelativeDeadline(dueDate)}
+            </span>
+          )}
           {plan.frontmatter?.projectPath && (
             <ProjectBadge projectPath={plan.frontmatter.projectPath} />
           )}
         </div>
+
+        {plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
+          <div className="mt-2">
+            <DependencyBadge
+              blockedByCount={plan.frontmatter.blockedBy.length}
+              blocksCount={0}
+            />
+          </div>
+        )}
+
+        {plan.frontmatter?.subtasks && plan.frontmatter.subtasks.length > 0 && (() => {
+          const subtasks = plan.frontmatter.subtasks!;
+          const done = subtasks.filter((s) => s.status === 'done').length;
+          const total = subtasks.length;
+          const pct = Math.round((done / total) * 100);
+          return (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex-1 h-1.5 rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {done}/{total}
+              </span>
+            </div>
+          );
+        })()}
 
         {plan.sections.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1">

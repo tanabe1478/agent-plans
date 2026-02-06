@@ -1,4 +1,4 @@
-import type { PlanMeta, PlanDetail, SearchResult, ExportFormat, ExternalApp, PlanStatus } from './plan.js';
+import type { PlanMeta, PlanDetail, SearchResult, ExportFormat, ExternalApp, PlanStatus, PlanPriority, Subtask, SavedView, SavedViewFilters, Notification, PlanVersion, DiffResult, ArchivedPlan, PlanTemplate, ImportResult, BackupInfo } from './plan.js';
 
 /**
  * GET /api/plans response
@@ -57,6 +57,30 @@ export interface UpdateStatusRequest {
 }
 
 /**
+ * POST /api/plans/bulk-status request body
+ */
+export interface BulkStatusRequest {
+  filenames: string[];
+  status: PlanStatus;
+}
+
+/**
+ * POST /api/plans/bulk-tags request body
+ */
+export interface BulkTagsRequest {
+  filenames: string[];
+  tags: string[];
+  action: 'add' | 'remove' | 'set';
+}
+
+/**
+ * PATCH /api/plans/:filename/frontmatter request body
+ */
+export interface UpdateFrontmatterRequest {
+  frontmatter: Partial<import('./plan.js').PlanFrontmatter>;
+}
+
+/**
  * GET /api/search query parameters
  */
 export interface SearchQuery {
@@ -79,6 +103,184 @@ export interface SearchResponse {
 export interface ExportQuery {
   format: ExportFormat;
 }
+
+/**
+ * GET /api/views response
+ */
+export interface ViewsListResponse {
+  views: SavedView[];
+}
+
+/**
+ * POST /api/views request body
+ */
+export interface CreateViewRequest {
+  name: string;
+  filters: SavedViewFilters;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * PUT /api/views/:id request body
+ */
+export interface UpdateViewRequest {
+  name?: string;
+  filters?: SavedViewFilters;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * PATCH /api/plans/:filename/subtasks request body
+ */
+export type SubtaskActionRequest =
+  | { action: 'add'; subtask: Omit<Subtask, 'id'> }
+  | { action: 'update'; subtaskId: string; subtask: Partial<Omit<Subtask, 'id'>> }
+  | { action: 'delete'; subtaskId: string }
+  | { action: 'toggle'; subtaskId: string };
+
+/**
+ * Subtask action response
+ */
+export interface SubtaskActionResponse {
+  success: boolean;
+  subtask?: Subtask;
+}
+
+/**
+ * POST /api/plans/bulk-assign request body
+ */
+export interface BulkAssignRequest {
+  filenames: string[];
+  assignee: string;
+}
+
+/**
+ * POST /api/plans/bulk-priority request body
+ */
+export interface BulkPriorityRequest {
+  filenames: string[];
+  priority: PlanPriority;
+}
+
+/**
+ * POST /api/plans/bulk-archive request body
+ */
+export interface BulkArchiveRequest {
+  filenames: string[];
+}
+
+/**
+ * Bulk operation response with partial success support
+ */
+export interface BulkOperationResponse {
+  succeeded: string[];
+  failed: { filename: string; error: string }[];
+}
+
+/**
+ * GET /api/plans/:filename/history response
+ */
+export interface HistoryListResponse {
+  versions: PlanVersion[];
+  filename: string;
+}
+
+/**
+ * GET /api/plans/:filename/diff response
+ */
+export type DiffResponse = DiffResult;
+
+/**
+ * POST /api/plans/:filename/rollback request body
+ */
+export interface RollbackRequest {
+  version: string;
+}
+
+/**
+ * GET /api/notifications response
+ */
+export interface NotificationsListResponse {
+  notifications: Notification[];
+  unreadCount: number;
+}
+
+/**
+ * GET /api/archive response
+ */
+export interface ArchiveListResponse {
+  archived: ArchivedPlan[];
+  total: number;
+}
+
+/**
+ * GET /api/templates response
+ */
+export interface TemplatesListResponse {
+  templates: PlanTemplate[];
+}
+
+/**
+ * POST /api/templates request body
+ */
+export interface CreateTemplateRequest {
+  name: string;
+  displayName: string;
+  description: string;
+  category: 'research' | 'implementation' | 'refactor' | 'incident' | 'custom';
+  content: string;
+  frontmatter?: Partial<import('./plan.js').PlanFrontmatter>;
+}
+
+/**
+ * POST /api/plans/from-template request body
+ */
+export interface CreateFromTemplateRequest {
+  templateName: string;
+  title?: string;
+  filename?: string;
+}
+
+/**
+ * GET /api/dependencies response
+ */
+export type DependencyGraphResponse = import('./plan.js').DependencyGraph;
+
+/**
+ * GET /api/plans/:filename/dependencies response
+ */
+export type PlanDependenciesResponse = import('./plan.js').PlanDependencies;
+
+/**
+ * POST /api/import/markdown request body
+ */
+export interface ImportMarkdownRequest {
+  files: { filename: string; content: string }[];
+}
+
+/**
+ * POST /api/import/markdown response
+ */
+export type ImportMarkdownResponse = ImportResult;
+
+/**
+ * GET /api/backups response
+ */
+export interface BackupsListResponse {
+  backups: BackupInfo[];
+}
+
+/**
+ * POST /api/backup response
+ */
+export type CreateBackupResponse = BackupInfo;
+
+/**
+ * POST /api/backup/:id/restore response
+ */
+export type RestoreBackupResponse = ImportResult;
 
 /**
  * Generic API error response

@@ -1,11 +1,13 @@
 import { usePlans, useBulkDelete } from '@/lib/hooks/usePlans';
 import { PlanList } from '@/components/plan/PlanList';
+import { BulkActionBar } from '@/components/plan/BulkActionBar';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { usePlanStore } from '@/stores/planStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useState, useMemo } from 'react';
 import type { PlanStatus } from '@ccplans/shared';
+import { TemplateSelectDialog } from '@/components/templates/TemplateSelectDialog';
 import {
   Loader2,
   AlertCircle,
@@ -13,6 +15,7 @@ import {
   CheckSquare,
   XSquare,
   ArrowUpDown,
+  Plus,
 } from 'lucide-react';
 
 export function HomePage() {
@@ -37,6 +40,7 @@ export function HomePage() {
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 
   const plans = data?.plans || [];
 
@@ -84,11 +88,17 @@ export function HomePage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">プラン一覧</h1>
-        <p className="text-muted-foreground">
-          {plans.length}件のプラン
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold mb-2">プラン一覧</h1>
+          <p className="text-muted-foreground">
+            {plans.length}件のプラン
+          </p>
+        </div>
+        <Button onClick={() => setShowTemplateDialog(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          New from Template
+        </Button>
       </div>
 
       {/* Toolbar */}
@@ -134,6 +144,7 @@ export function HomePage() {
           <option value="all">All Status</option>
           <option value="todo">ToDo</option>
           <option value="in_progress">In Progress</option>
+          <option value="review">Review</option>
           <option value="completed">Completed</option>
         </select>
 
@@ -199,6 +210,11 @@ export function HomePage() {
       {/* Plan list */}
       <PlanList plans={plans} showCheckbox={selectionMode} />
 
+      {/* Bulk action bar */}
+      {selectionMode && selectedPlans.size > 0 && (
+        <BulkActionBar totalCount={plans.length} />
+      )}
+
       {/* Bulk delete dialog */}
       <Dialog
         open={showBulkDeleteDialog}
@@ -228,6 +244,12 @@ export function HomePage() {
           </Button>
         </div>
       </Dialog>
+
+      {/* Template select dialog */}
+      <TemplateSelectDialog
+        open={showTemplateDialog}
+        onClose={() => setShowTemplateDialog(false)}
+      />
     </div>
   );
 }

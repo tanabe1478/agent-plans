@@ -45,6 +45,16 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      animation: {
+        'bounce-subtle': 'bounce-subtle 1s ease-in-out infinite',
+      },
+      keyframes: {
+        'bounce-subtle': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '25%': { transform: 'translateY(-2px)' },
+          '75%': { transform: 'translateY(1px)' },
+        },
+      },
     },
   },
   plugins: [],
