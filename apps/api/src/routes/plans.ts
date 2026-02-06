@@ -2,6 +2,20 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { planService } from '../services/planService.js';
 import { openerService } from '../services/openerService.js';
+import { isValidTransition } from '../services/statusTransitionService.js';
+import {
+  listVersions,
+  getVersion,
+  rollback as rollbackVersion,
+  computeDiff,
+} from '../services/historyService.js';
+import { createPlanFromTemplate } from '../services/templateService.js';
+import {
+  addSubtask,
+  updateSubtask,
+  deleteSubtask,
+  toggleSubtask,
+} from '../services/subtaskService.js';
 import type {
   PlansListResponse,
   PlanDetailResponse,
@@ -33,10 +47,68 @@ const openPlanSchema = z.object({
   app: z.enum(['vscode', 'terminal', 'default']),
 });
 const updateStatusSchema = z.object({
-  status: z.enum(['todo', 'in_progress', 'completed']),
+  status: z.enum(['todo', 'in_progress', 'review', 'completed']),
 });
 const exportQuerySchema = z.object({
   format: z.enum(['md', 'pdf', 'html']).default('md'),
+});
+const rollbackSchema = z.object({
+  version: z.string().min(1),
+});
+
+// Subtask schemas
+const subtaskActionSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('add'),
+    subtask: z.object({
+      title: z.string().min(1),
+      status: z.enum(['todo', 'done']).default('todo'),
+      assignee: z.string().optional(),
+      dueDate: z.string().optional(),
+    }),
+  }),
+  z.object({
+    action: z.literal('update'),
+    subtaskId: z.string().min(1),
+    subtask: z.object({
+      title: z.string().min(1).optional(),
+      status: z.enum(['todo', 'done']).optional(),
+      assignee: z.string().optional(),
+      dueDate: z.string().optional(),
+    }),
+  }),
+  z.object({
+    action: z.literal('delete'),
+    subtaskId: z.string().min(1),
+  }),
+  z.object({
+    action: z.literal('toggle'),
+    subtaskId: z.string().min(1),
+  }),
+]);
+
+// Bulk operation schemas
+const bulkFilenamesSchema = z.array(z.string().regex(/^[a-zA-Z0-9_-]+\.md$/)).min(1);
+
+const bulkStatusSchema = z.object({
+  filenames: bulkFilenamesSchema,
+  status: z.enum(['todo', 'in_progress', 'review', 'completed']),
+});
+const bulkTagsSchema = z.object({
+  filenames: bulkFilenamesSchema,
+  action: z.enum(['add', 'remove']),
+  tags: z.array(z.string().min(1)).min(1),
+});
+const bulkAssignSchema = z.object({
+  filenames: bulkFilenamesSchema,
+  assignee: z.string(),
+});
+const bulkPrioritySchema = z.object({
+  filenames: bulkFilenamesSchema,
+  priority: z.enum(['low', 'medium', 'high', 'critical']),
+});
+const bulkArchiveSchema = z.object({
+  filenames: bulkFilenamesSchema,
 });
 
 export const plansRoutes: FastifyPluginAsync = async (fastify) => {
@@ -83,6 +155,31 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+  // POST /api/plans/from-template - Create plan from template
+  fastify.post<{
+    Body: { templateName: string; title?: string; filename?: string };
+  }>('/from-template', async (request, reply) => {
+    const fromTemplateSchema = z.object({
+      templateName: z.string().min(1),
+      title: z.string().optional(),
+      filename: z.string().regex(/^[a-zA-Z0-9_-]+\.md$/).optional(),
+    });
+
+    try {
+      const { templateName, title, filename } = fromTemplateSchema.parse(request.body);
+      const plan = await createPlanFromTemplate(templateName, title, filename);
+      return reply.status(201).send(plan);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      if (err instanceof Error && err.message.includes('Template not found')) {
+        return reply.status(404).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
   // PUT /api/plans/:filename - Update plan
   fastify.put<{
     Params: { filename: string };
@@ -98,6 +195,17 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     } catch (err) {
       if (err instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      // Handle conflict errors from planService
+      const conflict = (err as { conflict?: boolean; statusCode?: number; lastKnown?: number; current?: number }).conflict;
+      if (conflict) {
+        const conflictErr = err as { lastKnown?: number; current?: number };
+        return reply.status(409).send({
+          error: 'File was modified externally',
+          conflict: true,
+          lastKnown: conflictErr.lastKnown,
+          current: conflictErr.current,
+        });
       }
       return reply.status(404).send({ error: 'Plan not found' });
     }
@@ -172,6 +280,16 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       filenameSchema.parse(filename);
       const { status } = updateStatusSchema.parse(request.body);
+
+      // Validate status transition
+      const currentPlan = await planService.getPlanMeta(filename);
+      const currentStatus = currentPlan.frontmatter?.status ?? 'todo';
+      if (!isValidTransition(currentStatus, status)) {
+        return reply.status(400).send({
+          error: `Invalid status transition from '${currentStatus}' to '${status}'`,
+        });
+      }
+
       const plan = await planService.updateStatus(filename, status);
       return plan;
     } catch (err) {
@@ -179,6 +297,202 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: 'Invalid request', details: err.errors });
       }
       return reply.status(404).send({ error: 'Plan not found' });
+    }
+  });
+
+  // PATCH /api/plans/:filename/subtasks - Subtask operations
+  fastify.patch<{
+    Params: { filename: string };
+    Body: z.infer<typeof subtaskActionSchema>;
+  }>('/:filename/subtasks', async (request, reply) => {
+    const { filename } = request.params;
+
+    try {
+      filenameSchema.parse(filename);
+      const body = subtaskActionSchema.parse(request.body);
+
+      switch (body.action) {
+        case 'add': {
+          const subtask = await addSubtask(filename, body.subtask);
+          return { success: true, subtask };
+        }
+        case 'update': {
+          const subtask = await updateSubtask(filename, body.subtaskId, body.subtask);
+          return { success: true, subtask };
+        }
+        case 'delete': {
+          await deleteSubtask(filename, body.subtaskId);
+          return { success: true };
+        }
+        case 'toggle': {
+          const subtask = await toggleSubtask(filename, body.subtaskId);
+          return { success: true, subtask };
+        }
+      }
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      if (message.includes('Subtask not found')) {
+        return reply.status(404).send({ error: message });
+      }
+      if (message.includes('ENOENT')) {
+        return reply.status(404).send({ error: 'Plan not found' });
+      }
+      throw err;
+    }
+  });
+
+  // POST /api/plans/bulk-status - Bulk status change
+  fastify.post<{
+    Body: z.infer<typeof bulkStatusSchema>;
+  }>('/bulk-status', async (request, reply) => {
+    try {
+      const { filenames, status } = bulkStatusSchema.parse(request.body);
+      const succeeded: string[] = [];
+      const failed: { filename: string; error: string }[] = [];
+
+      for (const filename of filenames) {
+        try {
+          const currentPlan = await planService.getPlanMeta(filename);
+          const currentStatus = currentPlan.frontmatter?.status ?? 'todo';
+          if (!isValidTransition(currentStatus, status)) {
+            failed.push({ filename, error: `Invalid transition from '${currentStatus}' to '${status}'` });
+            continue;
+          }
+          await planService.updateStatus(filename, status);
+          succeeded.push(filename);
+        } catch (err) {
+          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
+        }
+      }
+
+      return { succeeded, failed };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      throw err;
+    }
+  });
+
+  // POST /api/plans/bulk-tags - Bulk tag add/remove
+  fastify.post<{
+    Body: z.infer<typeof bulkTagsSchema>;
+  }>('/bulk-tags', async (request, reply) => {
+    try {
+      const { filenames, action, tags } = bulkTagsSchema.parse(request.body);
+      const succeeded: string[] = [];
+      const failed: { filename: string; error: string }[] = [];
+
+      for (const filename of filenames) {
+        try {
+          const plan = await planService.getPlan(filename);
+          const currentTags = plan.frontmatter?.tags || [];
+          let newTags: string[];
+
+          if (action === 'add') {
+            const tagSet = new Set([...currentTags, ...tags]);
+            newTags = Array.from(tagSet);
+          } else {
+            newTags = currentTags.filter((t) => !tags.includes(t));
+          }
+
+          await planService.updateFrontmatterField(filename, 'tags', newTags);
+          succeeded.push(filename);
+        } catch (err) {
+          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
+        }
+      }
+
+      return { succeeded, failed };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      throw err;
+    }
+  });
+
+  // POST /api/plans/bulk-assign - Bulk assignee change
+  fastify.post<{
+    Body: z.infer<typeof bulkAssignSchema>;
+  }>('/bulk-assign', async (request, reply) => {
+    try {
+      const { filenames, assignee } = bulkAssignSchema.parse(request.body);
+      const succeeded: string[] = [];
+      const failed: { filename: string; error: string }[] = [];
+
+      for (const filename of filenames) {
+        try {
+          await planService.updateFrontmatterField(filename, 'assignee', assignee);
+          succeeded.push(filename);
+        } catch (err) {
+          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
+        }
+      }
+
+      return { succeeded, failed };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      throw err;
+    }
+  });
+
+  // POST /api/plans/bulk-priority - Bulk priority change
+  fastify.post<{
+    Body: z.infer<typeof bulkPrioritySchema>;
+  }>('/bulk-priority', async (request, reply) => {
+    try {
+      const { filenames, priority } = bulkPrioritySchema.parse(request.body);
+      const succeeded: string[] = [];
+      const failed: { filename: string; error: string }[] = [];
+
+      for (const filename of filenames) {
+        try {
+          await planService.updateFrontmatterField(filename, 'priority', priority);
+          succeeded.push(filename);
+        } catch (err) {
+          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
+        }
+      }
+
+      return { succeeded, failed };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      throw err;
+    }
+  });
+
+  // POST /api/plans/bulk-archive - Bulk archive
+  fastify.post<{
+    Body: z.infer<typeof bulkArchiveSchema>;
+  }>('/bulk-archive', async (request, reply) => {
+    try {
+      const { filenames } = bulkArchiveSchema.parse(request.body);
+      const succeeded: string[] = [];
+      const failed: { filename: string; error: string }[] = [];
+
+      for (const filename of filenames) {
+        try {
+          await planService.deletePlan(filename, true);
+          succeeded.push(filename);
+        } catch (err) {
+          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
+        }
+      }
+
+      return { succeeded, failed };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      throw err;
     }
   });
 
@@ -200,6 +514,101 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: 'Invalid request', details: err.errors });
       }
       return reply.status(500).send({ error: 'Failed to open file' });
+    }
+  });
+
+  // GET /api/plans/:filename/history - List version history
+  fastify.get<{
+    Params: { filename: string };
+  }>('/:filename/history', async (request, reply) => {
+    const { filename } = request.params;
+
+    try {
+      filenameSchema.parse(filename);
+      const versions = await listVersions(filename);
+      return { versions, filename };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid filename' });
+      }
+      return reply.status(404).send({ error: 'Plan not found' });
+    }
+  });
+
+  // GET /api/plans/:filename/history/:version - Get specific version content
+  fastify.get<{
+    Params: { filename: string; version: string };
+  }>('/:filename/history/:version', async (request, reply) => {
+    const { filename, version } = request.params;
+
+    try {
+      filenameSchema.parse(filename);
+      const content = await getVersion(filename, version);
+      return { content, version, filename };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request' });
+      }
+      return reply.status(404).send({ error: 'Version not found' });
+    }
+  });
+
+  // POST /api/plans/:filename/rollback - Rollback to a specific version
+  fastify.post<{
+    Params: { filename: string };
+    Body: { version: string };
+  }>('/:filename/rollback', async (request, reply) => {
+    const { filename } = request.params;
+
+    try {
+      filenameSchema.parse(filename);
+      const { version } = rollbackSchema.parse(request.body);
+      await rollbackVersion(filename, version);
+      return { success: true, message: `Rolled back to version ${version}` };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
+      }
+      return reply.status(404).send({ error: 'Version not found' });
+    }
+  });
+
+  // GET /api/plans/:filename/diff - Compute diff between versions
+  fastify.get<{
+    Params: { filename: string };
+    Querystring: { from: string; to?: string };
+  }>('/:filename/diff', async (request, reply) => {
+    const { filename } = request.params;
+    const { from, to } = request.query;
+
+    try {
+      filenameSchema.parse(filename);
+
+      if (!from) {
+        return reply.status(400).send({ error: 'Missing "from" query parameter' });
+      }
+
+      const oldContent = await getVersion(filename, from);
+
+      let newContent: string;
+      let newVersion: string;
+      if (to) {
+        newContent = await getVersion(filename, to);
+        newVersion = to;
+      } else {
+        // Compare with current version
+        const plan = await planService.getPlan(filename);
+        newContent = plan.content;
+        newVersion = 'current';
+      }
+
+      const diff = computeDiff(oldContent, newContent, from, newVersion);
+      return diff;
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return reply.status(400).send({ error: 'Invalid request' });
+      }
+      return reply.status(404).send({ error: 'Version not found' });
     }
   });
 

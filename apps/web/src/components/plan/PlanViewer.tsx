@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import type { PlanDetail } from '@ccplans/shared';
+import { SubtaskList } from './SubtaskList';
 
 interface PlanViewerProps {
   plan: PlanDetail;
@@ -8,10 +9,16 @@ interface PlanViewerProps {
 
 export function PlanViewer({ plan }: PlanViewerProps) {
   return (
-    <article className="markdown-content">
-      <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
-        {plan.content}
-      </ReactMarkdown>
-    </article>
+    <div>
+      <SubtaskList
+        filename={plan.filename}
+        subtasks={plan.frontmatter?.subtasks || []}
+      />
+      <article className="markdown-content mt-6">
+        <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
+          {plan.content}
+        </ReactMarkdown>
+      </article>
+    </div>
   );
 }

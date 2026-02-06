@@ -10,16 +10,18 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { DeleteConfirmDialog } from '@/components/plan/DeleteConfirmDialog';
 import { useDeletePlan, useRenamePlan, useOpenPlan, useExportPlan } from '@/lib/hooks/usePlans';
 import { useUiStore } from '@/stores/uiStore';
 import type { ExternalApp, ExportFormat } from '@ccplans/shared';
 
 interface PlanActionsProps {
   filename: string;
+  title?: string;
   onDeleted?: () => void;
 }
 
-export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
+export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
@@ -42,14 +44,25 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
     setShowMenu(false);
   };
 
-  const handleDelete = async () => {
+  const handleArchive = async () => {
     try {
-      await deletePlan.mutateAsync({ filename, permanent: true });
-      addToast('プランを削除しました', 'success');
+      await deletePlan.mutateAsync({ filename, permanent: false });
+      addToast('Plan archived', 'success');
       setShowDeleteDialog(false);
       onDeleted?.();
     } catch (err) {
-      addToast(`削除に失敗しました: ${err}`, 'error');
+      addToast(`Archive failed: ${err}`, 'error');
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    try {
+      await deletePlan.mutateAsync({ filename, permanent: true });
+      addToast('Plan permanently deleted', 'success');
+      setShowDeleteDialog(false);
+      onDeleted?.();
+    } catch (err) {
+      addToast(`Delete failed: ${err}`, 'error');
     }
   };
 
@@ -63,10 +76,10 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
 
     try {
       await renamePlan.mutateAsync({ filename, newFilename: finalName });
-      addToast('名前を変更しました', 'success');
+      addToast('Renamed successfully', 'success');
       setShowRenameDialog(false);
     } catch (err) {
-      addToast(`名前の変更に失敗しました: ${err}`, 'error');
+      addToast(`Rename failed: ${err}`, 'error');
     }
   };
 
@@ -85,7 +98,7 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
           variant="outline"
           size="sm"
           onClick={() => handleOpen('vscode')}
-          title="VSCodeで開く"
+          title="Open in VSCode"
         >
           <Code className="h-4 w-4 mr-1" />
           VSCode
@@ -95,7 +108,7 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
           variant="outline"
           size="sm"
           onClick={() => handleOpen('terminal')}
-          title="ターミナルで開く"
+          title="Open in Terminal"
         >
           <Terminal className="h-4 w-4 mr-1" />
           Terminal
@@ -105,7 +118,7 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
           variant="outline"
           size="sm"
           onClick={() => handleOpen('default')}
-          title="デフォルトアプリで開く"
+          title="Open in default app"
         >
           <ExternalLink className="h-4 w-4" />
         </Button>
@@ -131,7 +144,7 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
                   }}
                 >
                   <Edit3 className="h-4 w-4" />
-                  名前を変更
+                  Rename
                 </button>
 
                 <div className="relative">
@@ -140,7 +153,7 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
                     onClick={() => setShowExportMenu(!showExportMenu)}
                   >
                     <Download className="h-4 w-4" />
-                    エクスポート
+                    Export
                   </button>
 
                   {showExportMenu && (
@@ -162,7 +175,7 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
                         onClick={() => handleExport('pdf')}
                         disabled
                       >
-                        PDF (準備中)
+                        PDF (coming soon)
                       </button>
                     </div>
                   )}
@@ -178,7 +191,7 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
-                  削除
+                  Delete
                 </button>
               </div>
             </div>
@@ -198,39 +211,25 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
       )}
 
       {/* Delete confirmation dialog */}
-      <Dialog
+      <DeleteConfirmDialog
         open={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
-        title="プランを削除"
-      >
-        <p className="text-sm text-muted-foreground mb-4">
-          このプランを完全に削除しますか？この操作は取り消せません。
-        </p>
-        <p className="text-sm font-mono bg-muted p-2 rounded mb-4">
-          {filename}
-        </p>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-            キャンセル
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={deletePlan.isPending}
-          >
-            {deletePlan.isPending ? '削除中...' : '削除'}
-          </Button>
-        </div>
-      </Dialog>
+        filename={filename}
+        title={title ?? filename}
+        onArchive={handleArchive}
+        onPermanentDelete={handlePermanentDelete}
+        isArchiving={deletePlan.isPending}
+        isDeleting={deletePlan.isPending}
+      />
 
       {/* Rename dialog */}
       <Dialog
         open={showRenameDialog}
         onClose={() => setShowRenameDialog(false)}
-        title="名前を変更"
+        title="Rename"
       >
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">新しいファイル名</label>
+          <label className="block text-sm font-medium mb-1">New filename</label>
           <input
             type="text"
             value={newFilename}
@@ -241,13 +240,13 @@ export function PlanActions({ filename, onDeleted }: PlanActionsProps) {
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
-            キャンセル
+            Cancel
           </Button>
           <Button
             onClick={handleRename}
             disabled={renamePlan.isPending}
           >
-            {renamePlan.isPending ? '変更中...' : '変更'}
+            {renamePlan.isPending ? 'Renaming...' : 'Rename'}
           </Button>
         </div>
       </Dialog>

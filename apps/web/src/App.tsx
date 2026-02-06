@@ -4,6 +4,12 @@ import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { ViewPage } from './pages/ViewPage';
 import { SearchPage } from './pages/SearchPage';
+import { KanbanPage } from './pages/KanbanPage';
+import { CalendarPage } from './pages/CalendarPage';
+import { ArchivePage } from './pages/ArchivePage';
+import { DependencyPage } from './pages/DependencyPage';
+import { TemplatesPage } from './pages/TemplatesPage';
+import { BackupPage } from './pages/BackupPage';
 import { useUiStore } from './stores/uiStore';
 
 function App() {
@@ -38,6 +44,12 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="plan/:filename" element={<ViewPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="kanban" element={<KanbanPage />} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="archive" element={<ArchivePage />} />
+        <Route path="dependencies" element={<DependencyPage />} />
+        <Route path="templates" element={<TemplatesPage />} />
+        <Route path="backups" element={<BackupPage />} />
       </Route>
     </Routes>
   );

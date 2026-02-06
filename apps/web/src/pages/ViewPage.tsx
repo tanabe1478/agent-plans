@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePlan } from '@/lib/hooks/usePlans';
 import { PlanViewer } from '@/components/plan/PlanViewer';
 import { PlanActions } from '@/components/plan/PlanActions';
+import { HistoryPanel } from '@/components/plan/HistoryPanel';
 import { formatDate, formatFileSize } from '@/lib/utils';
 import {
   Loader2,
@@ -12,10 +14,13 @@ import {
   FileText,
 } from 'lucide-react';
 
+type Tab = 'content' | 'history';
+
 export function ViewPage() {
   const { filename } = useParams<{ filename: string }>();
   const navigate = useNavigate();
   const { data: plan, isLoading, error } = usePlan(filename || '');
+  const [activeTab, setActiveTab] = useState<Tab>('content');
 
   if (isLoading) {
     return (
@@ -72,6 +77,7 @@ export function ViewPage() {
 
         <PlanActions
           filename={plan.filename}
+          title={plan.title}
           onDeleted={() => navigate('/')}
         />
       </div>
@@ -90,9 +96,37 @@ export function ViewPage() {
         </div>
       )}
 
-      {/* Content */}
+      {/* Tabs */}
+      <div className="mb-4 flex border-b">
+        <button
+          onClick={() => setActiveTab('content')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'content'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          内容
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'history'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          履歴
+        </button>
+      </div>
+
+      {/* Tab content */}
       <div className="rounded-lg border bg-card p-6">
-        <PlanViewer plan={plan} />
+        {activeTab === 'content' ? (
+          <PlanViewer plan={plan} />
+        ) : (
+          <HistoryPanel filename={plan.filename} />
+        )}
       </div>
     </div>
   );
