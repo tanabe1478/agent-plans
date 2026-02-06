@@ -51,7 +51,9 @@ export function parseQuery(query: string): ParsedQuery {
     if (filter) {
       filters.push(filter);
     } else {
-      textParts.push(token);
+      // Strip surrounding quotes from text tokens (e.g. "Performance Optimization" -> Performance Optimization)
+      const stripped = token.replace(/^["']|["']$/g, '');
+      textParts.push(stripped);
     }
   }
 

@@ -102,10 +102,8 @@ test.describe('History & Rollback (Feature 10)', () => {
     );
     const historyData = await historyResponse.json();
 
-    if (historyData.versions.length === 0) {
-      // Skip if no versions
-      return;
-    }
+    // After updating, there must be at least one version
+    expect(historyData.versions.length).toBeGreaterThan(0);
 
     const version = historyData.versions[0].version;
 
@@ -135,10 +133,8 @@ test.describe('History & Rollback (Feature 10)', () => {
     );
     const historyData = await historyResponse.json();
 
-    if (historyData.versions.length === 0) {
-      // Skip if no versions
-      return;
-    }
+    // After updating, there must be at least one version
+    expect(historyData.versions.length).toBeGreaterThan(0);
 
     const version = historyData.versions[0].version;
 
@@ -170,10 +166,8 @@ test.describe('History & Rollback (Feature 10)', () => {
     );
     const historyData = await historyResponse.json();
 
-    if (historyData.versions.length === 0) {
-      // Skip if no versions
-      return;
-    }
+    // After updating, there must be at least one version
+    expect(historyData.versions.length).toBeGreaterThan(0);
 
     const version = historyData.versions[0].version;
 
@@ -220,15 +214,17 @@ test.describe('History & Rollback (Feature 10)', () => {
     // Click history tab
     await page.getByRole('button', { name: '履歴' }).click();
 
-    // Wait for history panel to load
-    await page.waitForTimeout(1000);
+    // Wait for history panel content: either rollback icons or "no history" message
+    const rollbackIcon = page.locator('svg.lucide-rotate-ccw').first();
+    const noHistoryMessage = page.getByText('履歴がありません');
 
-    // Verify history panel is displayed
-    const noHistoryMessage = await page.getByText('履歴がありません').isVisible();
-    const hasVersions = (await page.locator('svg.lucide-rotate-ccw').count()) > 0;
+    // Wait for either to appear
+    await expect(rollbackIcon.or(noHistoryMessage)).toBeVisible({ timeout: 5000 });
 
-    // Should either have versions or "no history" message
-    expect(hasVersions || noHistoryMessage).toBe(true);
+    // Verify at least one is present
+    const hasVersions = (await rollbackIcon.count()) > 0;
+    const hasNoHistory = await noHistoryMessage.isVisible();
+    expect(hasVersions || hasNoHistory).toBe(true);
   });
 
   test('should display version items in history panel', async ({ page }) => {
@@ -246,12 +242,11 @@ test.describe('History & Rollback (Feature 10)', () => {
     // Click history tab
     await page.getByRole('button', { name: '履歴' }).click();
 
-    await page.waitForTimeout(1000);
-
-    // Check for rollback buttons (indicates version items are present)
+    // Wait for rollback buttons to appear (indicates version items loaded)
     const rollbackButtons = page.locator('button').filter({ has: page.locator('svg.lucide-rotate-ccw') });
-    const count = await rollbackButtons.count();
+    await expect(rollbackButtons.first()).toBeVisible({ timeout: 5000 });
 
+    const count = await rollbackButtons.count();
     expect(count).toBeGreaterThan(0);
   });
 
@@ -266,7 +261,8 @@ test.describe('History & Rollback (Feature 10)', () => {
     // Click history tab
     await page.getByRole('button', { name: '履歴' }).click();
 
-    await page.waitForTimeout(1000);
+    // Wait for rollback buttons to load
+    await expect(page.locator('svg.lucide-rotate-ccw').first()).toBeVisible({ timeout: 5000 });
 
     // Click first rollback button
     const rollbackButton = page
@@ -275,9 +271,211 @@ test.describe('History & Rollback (Feature 10)', () => {
       .first();
     await rollbackButton.click();
 
-    // Verify confirmation dialog appears
-    await expect(page.getByText('このバージョンにロールバックしますか')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ロールバック' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'キャンセル' })).toBeVisible();
+    // Verify confirmation dialog appears (the dialog is an orange-bordered div)
+    const confirmDialog = page.locator('.border-orange-300, .border-orange-700');
+    await expect(confirmDialog).toBeVisible({ timeout: 5000 });
+    await expect(confirmDialog.getByText('このバージョンにロールバックしますか')).toBeVisible();
+
+    // The dialog has "ロールバック" and "キャンセル" buttons
+    await expect(confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first()).toBeVisible();
+    await expect(confirmDialog.locator('button').filter({ hasText: 'キャンセル' })).toBeVisible();
+  });
+
+  test('API: should auto-save history on status change', async ({ request }) => {
+    // First do a GET to populate the conflict cache
+    await request.get(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`);
+
+    // Record time before status change
+    const beforeChange = Date.now();
+
+    // Change status (todo -> in_progress)
+    const statusResponse = await request.patch(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/status`, {
+      data: { status: 'in_progress' },
+    });
+    expect(statusResponse.ok()).toBeTruthy();
+
+    // Wait briefly for file operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Check that the latest history version was created after our status change
+    const afterHistoryResponse = await request.get(
+      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/history`
+    );
+    const afterData = await afterHistoryResponse.json();
+
+    expect(afterData.versions.length).toBeGreaterThan(0);
+
+    // The latest version should have been created recently (after our status change)
+    const latestVersion = afterData.versions[0];
+    const latestCreatedAt = new Date(latestVersion.createdAt).getTime();
+    expect(latestCreatedAt).toBeGreaterThanOrEqual(beforeChange - 1000);
+
+    // The latest version should have a summary
+    expect(latestVersion.summary).toBeDefined();
+    expect(typeof latestVersion.summary).toBe('string');
+  });
+
+  test('API: rollback should create "Before rollback" version', async ({ request }) => {
+    // Update the plan to create a version
+    await request.put(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`, {
+      data: { content: UPDATED_CONTENT },
+    });
+
+    // Get history
+    const historyResponse = await request.get(
+      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/history`
+    );
+    const historyData = await historyResponse.json();
+
+    expect(historyData.versions.length).toBeGreaterThan(0);
+
+    const version = historyData.versions[0].version;
+
+    // Record time before rollback
+    const beforeRollback = Date.now();
+
+    // Rollback
+    await request.post(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/rollback`, {
+      data: { version },
+    });
+
+    // Check history for a version created after our rollback (the "Before rollback" save)
+    const afterRollbackHistory = await request.get(
+      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/history`
+    );
+    const afterData = await afterRollbackHistory.json();
+
+    // The latest version should have been created recently (after our rollback)
+    const latestVersion = afterData.versions[0];
+    const latestCreatedAt = new Date(latestVersion.createdAt).getTime();
+    expect(latestCreatedAt).toBeGreaterThanOrEqual(beforeRollback - 1000);
+  });
+
+  test('should execute rollback via UI and verify content', async ({ page }) => {
+    // GET the plan first to refresh the conflict detection cache
+    await page.request.get(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`);
+
+    // Update plan to create a version
+    const updateResponse = await page.request.put(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`, {
+      data: { content: UPDATED_CONTENT },
+    });
+    expect(updateResponse.ok()).toBeTruthy();
+
+    await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
+
+    // Verify updated content is shown (the plan page renders markdown including "updated version")
+    await expect(page.getByText('updated version').first()).toBeVisible({ timeout: 5000 });
+
+    // Click history tab
+    await page.getByRole('button', { name: '履歴' }).click();
+
+    // Wait for rollback buttons to load
+    const rollbackButton = page
+      .locator('button')
+      .filter({ has: page.locator('svg.lucide-rotate-ccw') })
+      .first();
+    await expect(rollbackButton).toBeVisible({ timeout: 5000 });
+
+    await rollbackButton.click();
+
+    // Confirm rollback in the dialog (scoped to the orange confirmation dialog)
+    const confirmDialog = page.locator('.border-orange-300, .border-orange-700');
+    await expect(confirmDialog.getByText('このバージョンにロールバックしますか')).toBeVisible();
+
+    // Click the rollback confirm button (inside the dialog, not the icon button)
+    const confirmButton = confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first();
+    await Promise.all([
+      page.waitForResponse((resp) => resp.url().includes('/rollback') && resp.request().method() === 'POST'),
+      confirmButton.click(),
+    ]);
+
+    // Switch back to content tab to see the rolled-back content
+    await page.getByRole('button', { name: '内容' }).click();
+
+    // Verify the content has been rolled back to the initial version
+    await expect(page.getByText('initial version').first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test('API: should show diff with correct line types', async ({ request }) => {
+    // Update the plan to create a version
+    await request.put(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`, {
+      data: { content: UPDATED_CONTENT },
+    });
+
+    // Get history
+    const historyResponse = await request.get(
+      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/history`
+    );
+    const historyData = await historyResponse.json();
+
+    expect(historyData.versions.length).toBeGreaterThan(0);
+
+    const version = historyData.versions[0].version;
+
+    // Get diff between version and current
+    const diffResponse = await request.get(
+      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
+    );
+
+    expect(diffResponse.ok()).toBeTruthy();
+    const diffData = await diffResponse.json();
+
+    expect(diffData.lines).toBeDefined();
+    expect(Array.isArray(diffData.lines)).toBe(true);
+
+    // Each line should have a type property of 'added', 'removed', or 'unchanged'
+    for (const line of diffData.lines) {
+      expect(line.type).toBeDefined();
+      expect(['added', 'removed', 'unchanged']).toContain(line.type);
+      expect(line.content).toBeDefined();
+      expect(typeof line.content).toBe('string');
+      expect(line.lineNumber).toBeDefined();
+      expect(typeof line.lineNumber).toBe('number');
+    }
+  });
+
+  test('API: diff should include stats (added/removed/unchanged counts)', async ({ request }) => {
+    // Update the plan to create a version
+    await request.put(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`, {
+      data: { content: UPDATED_CONTENT },
+    });
+
+    // Get history
+    const historyResponse = await request.get(
+      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/history`
+    );
+    const historyData = await historyResponse.json();
+
+    expect(historyData.versions.length).toBeGreaterThan(0);
+
+    const version = historyData.versions[0].version;
+
+    // Get diff
+    const diffResponse = await request.get(
+      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
+    );
+
+    expect(diffResponse.ok()).toBeTruthy();
+    const diffData = await diffResponse.json();
+
+    // Verify stats object exists and has required fields
+    expect(diffData.stats).toBeDefined();
+    expect(typeof diffData.stats.added).toBe('number');
+    expect(typeof diffData.stats.removed).toBe('number');
+    expect(typeof diffData.stats.unchanged).toBe('number');
+
+    // Stats should be non-negative
+    expect(diffData.stats.added).toBeGreaterThanOrEqual(0);
+    expect(diffData.stats.removed).toBeGreaterThanOrEqual(0);
+    expect(diffData.stats.unchanged).toBeGreaterThanOrEqual(0);
+
+    // Verify stats match actual line counts
+    const addedCount = diffData.lines.filter((l: any) => l.type === 'added').length;
+    const removedCount = diffData.lines.filter((l: any) => l.type === 'removed').length;
+    const unchangedCount = diffData.lines.filter((l: any) => l.type === 'unchanged').length;
+
+    expect(diffData.stats.added).toBe(addedCount);
+    expect(diffData.stats.removed).toBe(removedCount);
+    expect(diffData.stats.unchanged).toBe(unchangedCount);
   });
 });

@@ -50,15 +50,10 @@ This plan tests extended frontmatter fields.
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(page.getByRole('heading', { name: 'Test Plan with Extended Frontmatter' }).first()).toBeVisible();
 
-    // Wait for content to load
-    await page.waitForTimeout(500);
-
-    // Priority, tags, assignee, and due date should be visible somewhere on the page
-    // Note: Actual UI implementation will determine exact locations
+    // Verify extended frontmatter fields are rendered on the detail page
     const pageContent = await page.textContent('body');
-
-    // These fields should appear somewhere in the page
-    expect(pageContent).toBeTruthy();
+    expect(pageContent).toContain('high');
+    expect(pageContent).toContain('alice');
   });
 
   test('should include new frontmatter fields in API response', async ({ request }) => {
@@ -114,6 +109,171 @@ Content here.
     } finally {
       // Clean up
       await request.delete(`${API_BASE_URL}/api/plans/${newFilename}`).catch(() => {});
+    }
+  });
+
+  test('should display due date on plan card in list view', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
+
+    // Find the test plan card which has dueDate set (PlanCard uses border-2 class)
+    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: TEST_PLAN_FILENAME });
+    await expect(planCard).toBeVisible();
+
+    // Due date should be displayed somewhere on the card (formatted as relative Japanese text)
+    // dueDate is 2026-02-10, so it should show something like "4日後" or "日超過" etc.
+    const dueDateText = planCard.getByText(/日後|日超過|今日|明日|週間後|ヶ月後/);
+    await expect(dueDateText).toBeVisible();
+  });
+
+  test('should update frontmatter fields via API (tags, priority, assignee)', async ({ request }) => {
+    const updateFilename = 'test-update-frontmatter-fields.md';
+
+    try {
+      // Create plan with initial fields
+      await request.post(`${API_BASE_URL}/api/plans`, {
+        data: {
+          filename: updateFilename,
+          content: `---
+status: todo
+priority: low
+tags:
+  - "old-tag"
+assignee: "alice"
+---
+# Update Fields Test
+
+Content.
+`,
+        },
+      });
+
+      // GET the plan first to populate conflict detection cache
+      await request.get(`${API_BASE_URL}/api/plans/${updateFilename}`);
+
+      // Update content with new frontmatter
+      const updateResponse = await request.put(`${API_BASE_URL}/api/plans/${updateFilename}`, {
+        data: {
+          content: `---
+status: todo
+priority: high
+tags:
+  - "new-tag"
+  - "another-tag"
+assignee: "bob"
+---
+# Update Fields Test
+
+Updated content.
+`,
+        },
+      });
+      expect(updateResponse.ok()).toBeTruthy();
+
+      // Verify fields were updated
+      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${updateFilename}`);
+      const plan = await getResponse.json();
+      expect(plan.frontmatter.priority).toBe('high');
+      expect(plan.frontmatter.tags).toContain('new-tag');
+      expect(plan.frontmatter.tags).toContain('another-tag');
+      expect(plan.frontmatter.assignee).toBe('bob');
+    } finally {
+      await request.delete(`${API_BASE_URL}/api/plans/${updateFilename}`).catch(() => {});
+    }
+  });
+
+  test('should include blockedBy field in API response', async ({ request }) => {
+    const blockedFilename = 'test-blocked-plan.md';
+
+    try {
+      // Create plan with blockedBy field
+      await request.post(`${API_BASE_URL}/api/plans`, {
+        data: {
+          filename: blockedFilename,
+          content: `---
+status: todo
+blockedBy:
+  - "blue-running-fox.md"
+  - "some-other-plan.md"
+---
+# Blocked Plan
+
+This plan is blocked.
+`,
+        },
+      });
+
+      // GET the plan and verify blockedBy
+      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${blockedFilename}`);
+      expect(getResponse.ok()).toBeTruthy();
+
+      const plan = await getResponse.json();
+      expect(plan.frontmatter.blockedBy).toBeDefined();
+      expect(plan.frontmatter.blockedBy).toEqual(['blue-running-fox.md', 'some-other-plan.md']);
+    } finally {
+      await request.delete(`${API_BASE_URL}/api/plans/${blockedFilename}`).catch(() => {});
+    }
+  });
+
+  test('should preserve existing frontmatter when updating content', async ({ request }) => {
+    const preserveFilename = 'test-preserve-frontmatter.md';
+
+    try {
+      // Create plan with rich frontmatter
+      await request.post(`${API_BASE_URL}/api/plans`, {
+        data: {
+          filename: preserveFilename,
+          content: `---
+status: in_progress
+priority: high
+tags:
+  - "important"
+assignee: "charlie"
+estimate: "2d"
+---
+# Preserve Frontmatter Test
+
+Original content.
+`,
+        },
+      });
+
+      // Verify initial frontmatter
+      const initialResponse = await request.get(`${API_BASE_URL}/api/plans/${preserveFilename}`);
+      const initialPlan = await initialResponse.json();
+      expect(initialPlan.frontmatter.priority).toBe('high');
+      expect(initialPlan.frontmatter.assignee).toBe('charlie');
+
+      // Update content while keeping the same frontmatter
+      await request.put(`${API_BASE_URL}/api/plans/${preserveFilename}`, {
+        data: {
+          content: `---
+status: in_progress
+priority: high
+tags:
+  - "important"
+assignee: "charlie"
+estimate: "2d"
+---
+# Preserve Frontmatter Test
+
+Updated content here.
+`,
+        },
+      });
+
+      // Verify frontmatter is preserved
+      const updatedResponse = await request.get(`${API_BASE_URL}/api/plans/${preserveFilename}`);
+      const updatedPlan = await updatedResponse.json();
+      expect(updatedPlan.frontmatter.status).toBe('in_progress');
+      expect(updatedPlan.frontmatter.priority).toBe('high');
+      expect(updatedPlan.frontmatter.tags).toEqual(['important']);
+      expect(updatedPlan.frontmatter.assignee).toBe('charlie');
+      expect(updatedPlan.frontmatter.estimate).toBe('2d');
+      // Content should be updated
+      expect(updatedPlan.content).toContain('Updated content here.');
+    } finally {
+      await request.delete(`${API_BASE_URL}/api/plans/${preserveFilename}`).catch(() => {});
     }
   });
 });

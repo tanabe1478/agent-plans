@@ -25,11 +25,11 @@ test.describe('Kanban & Calendar Views (Feature 8)', () => {
     // Wait for page to load
     await expect(page.getByRole('heading', { name: 'Kanban Board' })).toBeVisible();
 
-    // Verify all status columns are displayed
-    await expect(page.getByRole('button', { name: 'ToDo' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'In Progress' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Review' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible();
+    // Verify all status columns are displayed (StatusBadge renders as <span> in kanban columns)
+    await expect(page.getByText('ToDo', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('In Progress', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Review', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Completed', { exact: true }).first()).toBeVisible();
   });
 
   test('should display plan cards in kanban columns', async ({ page }) => {
@@ -37,14 +37,13 @@ test.describe('Kanban & Calendar Views (Feature 8)', () => {
 
     await expect(page.getByRole('heading', { name: 'Kanban Board' })).toBeVisible();
 
-    // Wait for plans to load
-    await page.waitForTimeout(1000);
+    // Wait for plan cards to load by checking for plan links
+    const planLink = page.locator('a[href*="/plan/"]').first();
+    await expect(planLink).toBeVisible({ timeout: 5000 });
 
     // Check that at least one plan card is visible
-    // Fixture plans should be distributed across columns
-    const planCards = page.locator('div.rounded-lg.border-2.bg-card');
+    const planCards = page.locator('a[href*="/plan/"]');
     const count = await planCards.count();
-
     expect(count).toBeGreaterThan(0);
   });
 
@@ -68,14 +67,14 @@ test.describe('Kanban & Calendar Views (Feature 8)', () => {
 
     await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();
 
-    // Verify day labels are displayed
-    await expect(page.getByText('Mon')).toBeVisible();
-    await expect(page.getByText('Tue')).toBeVisible();
-    await expect(page.getByText('Wed')).toBeVisible();
-    await expect(page.getByText('Thu')).toBeVisible();
-    await expect(page.getByText('Fri')).toBeVisible();
-    await expect(page.getByText('Sat')).toBeVisible();
-    await expect(page.getByText('Sun')).toBeVisible();
+    // Verify day labels are displayed (use exact match to avoid "Month" matching "Mon")
+    await expect(page.getByText('Mon', { exact: true })).toBeVisible();
+    await expect(page.getByText('Tue', { exact: true })).toBeVisible();
+    await expect(page.getByText('Wed', { exact: true })).toBeVisible();
+    await expect(page.getByText('Thu', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fri', { exact: true })).toBeVisible();
+    await expect(page.getByText('Sat', { exact: true })).toBeVisible();
+    await expect(page.getByText('Sun', { exact: true })).toBeVisible();
   });
 
   test('should display calendar navigation controls', async ({ page }) => {
@@ -138,16 +137,106 @@ test.describe('Kanban & Calendar Views (Feature 8)', () => {
 
     await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();
 
-    // Wait for calendar to load
-    await page.waitForTimeout(1000);
+    // Wait for calendar grid to render (day cells should be present)
+    await expect(page.getByText('Mon', { exact: true })).toBeVisible();
 
-    // Check that at least one plan is displayed
-    // Fixture plans have various due dates
-    const planLinks = page.locator('a').filter({ hasText: /Authentication|Performance|Security|Database|CLI/i });
-    const count = await planLinks.count();
+    // Verify the calendar SVG or grid structure rendered
+    const calendarGrid = page.locator('[class*="grid"], table, svg').first();
+    await expect(calendarGrid).toBeVisible();
+  });
 
-    // If no plans are visible, it might be because the calendar is not showing the right month
-    // Just verify the structure exists
-    expect(count >= 0).toBe(true);
+  test('should click plan card on kanban to navigate to detail', async ({ page }) => {
+    await page.goto('/kanban');
+
+    await expect(page.getByRole('heading', { name: 'Kanban Board' })).toBeVisible();
+
+    // Wait for plan cards to load
+    const planLink = page.locator('a[href*="/plan/"]').first();
+    await expect(planLink).toBeVisible({ timeout: 5000 });
+
+    await planLink.click();
+
+    // Verify navigation to plan detail page
+    await expect(page).toHaveURL(new RegExp('/plan/'));
+  });
+
+  test('should show plan count per column on kanban', async ({ page }) => {
+    await page.goto('/kanban');
+
+    await expect(page.getByRole('heading', { name: 'Kanban Board' })).toBeVisible();
+
+    // Wait for plan cards to appear
+    await expect(page.locator('a[href*="/plan/"]').first()).toBeVisible({ timeout: 5000 });
+
+    // Verify all status columns are present (StatusBadge renders as <span> in kanban columns)
+    await expect(page.getByText('ToDo', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('In Progress', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Review', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Completed', { exact: true }).first()).toBeVisible();
+  });
+
+  test('should navigate calendar months with prev/next buttons', async ({ page }) => {
+    await page.goto('/calendar');
+
+    await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();
+
+    // Get the current month/year text
+    const monthText = page.locator('h2, [class*="month"], [class*="title"]').filter({ hasText: /\d{4}/ });
+    const initialMonthText = await monthText.first().textContent();
+
+    // Click prev button (chevron-left icon)
+    const prevButton = page.locator('button').filter({ has: page.locator('svg.lucide-chevron-left') });
+    await expect(prevButton).toBeVisible();
+    await prevButton.click();
+
+    // Wait for calendar to update by checking the month text changed
+    await expect(async () => {
+      const newMonthText = await monthText.first().textContent();
+      expect(newMonthText).not.toBe(initialMonthText);
+    }).toPass({ timeout: 3000 });
+
+    // Click next button to go back
+    const nextButton = page.locator('button').filter({ has: page.locator('svg.lucide-chevron-right') });
+    await nextButton.click();
+
+    // Verify we're back to the original month
+    await expect(async () => {
+      const restoredMonthText = await monthText.first().textContent();
+      expect(restoredMonthText).toBe(initialMonthText);
+    }).toPass({ timeout: 3000 });
+  });
+
+  test('should click plan on calendar to navigate to detail', async ({ page }) => {
+    await page.goto('/calendar');
+
+    await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();
+
+    // Fixture plans have due dates in Feb 2026 (current month), so plan links must exist
+    const planLink = page.locator('a[href*="/plan/"]').first();
+    await expect(planLink).toBeVisible({ timeout: 5000 });
+
+    await planLink.click();
+
+    // Verify navigation to plan detail page
+    await expect(page).toHaveURL(new RegExp('/plan/'));
+  });
+
+  test('should show priority indicator on kanban cards', async ({ page }) => {
+    await page.goto('/kanban');
+
+    await expect(page.getByRole('heading', { name: 'Kanban Board' })).toBeVisible();
+
+    // Wait for plan cards to load
+    await expect(page.locator('a[href*="/plan/"]').first()).toBeVisible({ timeout: 5000 });
+
+    // Look for priority badges/indicators on kanban cards
+    const priorityIndicators = page.locator(
+      '[class*="priority"], [data-priority], .badge, span'
+    ).filter({ hasText: /high|critical|medium|low/i });
+
+    const indicatorCount = await priorityIndicators.count();
+
+    // Fixture plans have priorities, so cards should show priority indicators
+    expect(indicatorCount).toBeGreaterThan(0);
   });
 });

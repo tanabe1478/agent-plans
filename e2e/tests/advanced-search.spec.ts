@@ -27,12 +27,12 @@ test.describe('Advanced Search (Feature 6)', () => {
 
     expect(data.results).toBeDefined();
     expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBeGreaterThan(0);
 
-    // All results should have status=todo
-    const allTodo = data.results.every((r: any) =>
-      r.filename === 'blue-running-fox.md' || r.filename === 'yellow-jumping-dog.md'
-    );
-    expect(allTodo || data.results.length === 0).toBe(true);
+    // Known fixture files with status=todo should be in the results
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
+    expect(filenames).toContain('yellow-jumping-dog.md');
   });
 
   test('API: tag:api filter search should work', async ({ request }) => {
@@ -45,10 +45,11 @@ test.describe('Advanced Search (Feature 6)', () => {
 
     expect(data.results).toBeDefined();
     expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBeGreaterThan(0);
 
     // red-sleeping-bear.md has tags: [api, security]
-    const hasApiTag = data.results.some((r: any) => r.filename === 'red-sleeping-bear.md');
-    expect(hasApiTag || data.results.length === 0).toBe(true);
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('red-sleeping-bear.md');
   });
 
   test('API: priority:high filter search should work', async ({ request }) => {
@@ -61,10 +62,11 @@ test.describe('Advanced Search (Feature 6)', () => {
 
     expect(data.results).toBeDefined();
     expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBeGreaterThan(0);
 
     // blue-running-fox.md has priority=high
-    const hasHighPriority = data.results.some((r: any) => r.filename === 'blue-running-fox.md');
-    expect(hasHighPriority || data.results.length === 0).toBe(true);
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
   });
 
   test('API: assignee:alice filter search should work', async ({ request }) => {
@@ -77,12 +79,12 @@ test.describe('Advanced Search (Feature 6)', () => {
 
     expect(data.results).toBeDefined();
     expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBeGreaterThan(0);
 
     // blue-running-fox.md and red-sleeping-bear.md have assignee=alice
-    const hasAlice = data.results.every(
-      (r: any) => r.filename === 'blue-running-fox.md' || r.filename === 'red-sleeping-bear.md'
-    );
-    expect(hasAlice || data.results.length === 0).toBe(true);
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
+    expect(filenames).toContain('red-sleeping-bear.md');
   });
 
   test('API: combined query (text + filter) should work', async ({ request }) => {
@@ -95,33 +97,177 @@ test.describe('Advanced Search (Feature 6)', () => {
 
     expect(data.results).toBeDefined();
     expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBeGreaterThan(0);
 
     // Should find blue-running-fox.md (has "auth" in content and status=todo)
-    const hasMatch =
-      data.results.length === 0 || data.results.some((r: any) => r.filename === 'blue-running-fox.md');
-    expect(hasMatch).toBe(true);
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
   });
 
   test('should display filter chips for parsed filters', async ({ page }) => {
     await page.goto('/search');
 
-    // Type a filter query
-    const searchInput = page.getByPlaceholder(/Search plans/i);
+    // Type a filter query - use the SearchBar component's text input (not the header search)
+    const searchInput = page.getByRole('textbox', { name: /Search plans/i });
     await searchInput.fill('status:todo tag:api priority:high');
 
-    // Check that filter chips are rendered
-    await expect(page.getByText('status')).toBeVisible();
-    await expect(page.getByText('tag')).toBeVisible();
-    await expect(page.getByText('priority')).toBeVisible();
+    // Check that filter chips are rendered (use exact match to avoid sidebar conflicts)
+    await expect(page.getByText('status', { exact: true })).toBeVisible();
+    await expect(page.getByText('tag', { exact: true })).toBeVisible();
+    await expect(page.getByText('priority', { exact: true })).toBeVisible();
   });
 
   test('should show autocomplete hints when typing filter prefixes', async ({ page }) => {
     await page.goto('/search');
 
-    const searchInput = page.getByPlaceholder(/Search plans/i);
+    const searchInput = page.getByRole('textbox', { name: /Search plans/i });
     await searchInput.fill('stat');
 
     // Should show hint for status:
     await expect(page.getByText(/Filter by status/i)).toBeVisible();
+  });
+
+  test('API: due date less than filter should work', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: 'due<2026-02-07' },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+
+    // yellow-jumping-dog (due 2026-02-03) and green-dancing-cat (due 2026-02-06) should match
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('yellow-jumping-dog.md');
+    expect(filenames).toContain('green-dancing-cat.md');
+  });
+
+  test('API: due date greater than filter should work', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: 'due>2026-02-07' },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+
+    // blue-running-fox (due 2026-02-08) should match
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
+  });
+
+  test('API: estimate filter should work', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: 'estimate:3d' },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+
+    // blue-running-fox has estimate=3d
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
+  });
+
+  test('API: project filter should work', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: 'project:/home/user/projects/web-app' },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+
+    // blue-running-fox and yellow-jumping-dog have projectPath=/home/user/projects/web-app
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
+    expect(filenames).toContain('yellow-jumping-dog.md');
+  });
+
+  test('API: blockedBy filter should work', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: 'blockedBy:blue-running-fox.md' },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+
+    // green-dancing-cat has blockedBy: [blue-running-fox.md]
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('green-dancing-cat.md');
+  });
+
+  test('API: quoted phrase search should work', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: '"Performance Optimization"' },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+
+    // green-dancing-cat has "Mobile App Performance Optimization" in title
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('green-dancing-cat.md');
+  });
+
+  test('API: multiple combined filters should work', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: 'status:todo priority:high tag:backend' },
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+
+    // blue-running-fox matches all three filters
+    const filenames = data.results.map((r: any) => r.filename);
+    expect(filenames).toContain('blue-running-fox.md');
+
+    // Other plans should not match all three filters combined
+    expect(filenames).not.toContain('yellow-jumping-dog.md');
+  });
+
+  test('API: empty query should return validation error', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/search', {
+      params: { q: '' },
+    });
+
+    // The API validates q with z.string().min(1), so empty query returns 400
+    expect(response.status()).toBe(400);
+  });
+
+  test('should navigate to search page and display results', async ({ page }) => {
+    await page.goto('/search');
+
+    // Verify search page is loaded - use the SearchBar component's text input (not the header search)
+    const searchInput = page.getByRole('textbox', { name: /Search plans/i });
+    await expect(searchInput).toBeVisible();
+
+    // Type a query and submit with Enter key
+    await searchInput.fill('Authentication');
+    await searchInput.press('Enter');
+
+    // Wait for results to appear
+    await expect(page.getByText(/results/i)).toBeVisible({ timeout: 5000 });
+
+    // Verify at least one result is displayed
+    await expect(page.getByRole('heading', { name: /Authentication/i, level: 3 })).toBeVisible();
   });
 });

@@ -113,7 +113,7 @@ function matchesFilter(filter: QueryFilter, fm: PlanFrontmatter | undefined): bo
       return estimate === lowerValue;
     }
     case 'project': {
-      const project = (fm.projectPath ?? '').toLowerCase();
+      const project = (fm.projectPath ?? (fm as Record<string, unknown>)['project_path'] as string ?? '').toLowerCase();
       if (operator === ':') return project.includes(lowerValue);
       return project === lowerValue;
     }

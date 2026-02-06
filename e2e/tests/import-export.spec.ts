@@ -133,9 +133,6 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     const moreButton = page.locator('button').filter({ has: page.locator('svg.lucide-more-vertical') });
     await moreButton.click();
 
-    // Wait for menu to appear
-    await page.waitForTimeout(300);
-
     // Check Export and Import options are visible
     await expect(page.getByRole('button', { name: 'Export Plans' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Import Plans' })).toBeVisible();
@@ -154,5 +151,145 @@ test.describe('Import/Export functionality (Feature 14)', () => {
         expect(plan.frontmatter.status).toBe('todo');
       }
     }
+  });
+
+  test('should skip duplicate files on import', async ({ request }) => {
+    // First import
+    const firstResponse = await request.post('http://localhost:3001/api/import/markdown', {
+      data: {
+        files: [
+          {
+            filename: TEST_IMPORT_FILENAME,
+            content: TEST_IMPORT_CONTENT,
+          },
+        ],
+      },
+    });
+    expect(firstResponse.ok()).toBeTruthy();
+    const firstResult = await firstResponse.json();
+    expect(firstResult.imported).toBeGreaterThan(0);
+
+    // Second import of the same file should be skipped
+    const secondResponse = await request.post('http://localhost:3001/api/import/markdown', {
+      data: {
+        files: [
+          {
+            filename: TEST_IMPORT_FILENAME,
+            content: TEST_IMPORT_CONTENT,
+          },
+        ],
+      },
+    });
+    expect(secondResponse.ok()).toBeTruthy();
+    const secondResult = await secondResponse.json();
+    expect(secondResult.skipped).toBeGreaterThan(0);
+  });
+
+  test('should export individual plan as markdown via API', async ({ request }) => {
+    const response = await request.get(
+      'http://localhost:3001/api/plans/blue-running-fox.md/export?format=md'
+    );
+    expect(response.ok()).toBeTruthy();
+
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('text/markdown');
+
+    const contentDisposition = response.headers()['content-disposition'];
+    expect(contentDisposition).toContain('blue-running-fox');
+
+    const content = await response.text();
+    expect(content).toContain('Web Application Authentication System');
+  });
+
+  test('should export individual plan as HTML via API', async ({ request }) => {
+    const response = await request.get(
+      'http://localhost:3001/api/plans/blue-running-fox.md/export?format=html'
+    );
+    expect(response.ok()).toBeTruthy();
+
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('text/html');
+
+    const html = await response.text();
+    expect(html).toContain('<!DOCTYPE html>');
+    expect(html).toContain('Web Application Authentication System');
+  });
+
+  test('should return 501 for PDF export', async ({ request }) => {
+    const response = await request.get(
+      'http://localhost:3001/api/plans/blue-running-fox.md/export?format=pdf'
+    );
+    expect(response.status()).toBe(501);
+
+    const data = await response.json();
+    expect(data.error).toContain('PDF');
+  });
+
+  test('should restore from backup via API', async ({ request }) => {
+    // Create a backup first
+    const backupResponse = await request.post('http://localhost:3001/api/backup');
+    expect(backupResponse.status()).toBe(201);
+    const backup = await backupResponse.json();
+    expect(backup.id).toBeDefined();
+
+    // Restore from the backup
+    const restoreResponse = await request.post(
+      `http://localhost:3001/api/backup/${backup.id}/restore`
+    );
+    expect(restoreResponse.ok()).toBeTruthy();
+
+    const result = await restoreResponse.json();
+    expect(result.imported).toBeDefined();
+    expect(result.skipped).toBeDefined();
+    expect(result.errors).toBeDefined();
+  });
+
+  test('should filter export by tags', async ({ request }) => {
+    const response = await request.get(
+      'http://localhost:3001/api/export?format=json&filterTags=backend'
+    );
+    expect(response.ok()).toBeTruthy();
+
+    const json = await response.json();
+    expect(json.plans).toBeDefined();
+    // All exported plans should have the 'backend' tag
+    for (const plan of json.plans) {
+      if (plan.frontmatter?.tags) {
+        expect(plan.frontmatter.tags).toContain('backend');
+      }
+    }
+  });
+
+  test('should display backup page with backup list', async ({ page, request }) => {
+    // Ensure at least one backup exists
+    await request.post('http://localhost:3001/api/backup');
+
+    // Navigate to backups page
+    await page.goto('/backups');
+    await expect(page.getByRole('heading', { name: 'Backups' })).toBeVisible();
+
+    // Wait for backup entries to load (each entry has a "Restore" button)
+    const restoreButton = page.getByRole('button', { name: /Restore/ });
+    await expect(restoreButton.first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should create backup from UI', async ({ page }) => {
+    // Navigate to backups page
+    await page.goto('/backups');
+    await expect(page.getByRole('heading', { name: 'Backups' })).toBeVisible();
+
+    // Click Create Backup button
+    const createButton = page.getByRole('button', { name: /Create Backup/ });
+    await expect(createButton).toBeVisible();
+
+    // Click and wait for the backup API response
+    await Promise.all([
+      page.waitForResponse((resp) => resp.url().includes('/api/backup') && resp.request().method() === 'POST'),
+      createButton.click(),
+    ]);
+
+    // Verify a backup entry appeared (each entry has a Restore button)
+    const restoreButton = page.getByRole('button', { name: /Restore/ });
+    await expect(restoreButton.first()).toBeVisible({ timeout: 5000 });
   });
 });
