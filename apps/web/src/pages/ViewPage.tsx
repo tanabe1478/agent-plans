@@ -6,6 +6,7 @@ import { PlanActions } from '@/components/plan/PlanActions';
 import { StatusDropdown } from '@/components/plan/StatusDropdown';
 import { ProjectBadge } from '@/components/plan/ProjectBadge';
 import { HistoryPanel } from '@/components/plan/HistoryPanel';
+import { SectionNav } from '@/components/plan/SectionNav';
 import { formatDate, formatFileSize } from '@/lib/utils';
 import type { PlanStatus } from '@ccplans/shared';
 import {
@@ -100,20 +101,6 @@ export function ViewPage() {
         />
       </div>
 
-      {/* Sections */}
-      {plan.sections.length > 0 && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          {plan.sections.map((section) => (
-            <span
-              key={section}
-              className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-sm"
-            >
-              {section}
-            </span>
-          ))}
-        </div>
-      )}
-
       {/* Tabs */}
       <div className="mb-4 flex border-b">
         <button
@@ -139,13 +126,33 @@ export function ViewPage() {
       </div>
 
       {/* Tab content */}
-      <div className="rounded-lg border bg-card p-6">
-        {activeTab === 'content' ? (
-          <PlanViewer plan={plan} />
-        ) : (
+      {activeTab === 'content' ? (
+        <div className="flex gap-6">
+          {/* Main content */}
+          <div className="min-w-0 flex-1 rounded-lg border bg-card p-6">
+            <PlanViewer plan={plan} />
+          </div>
+          {/* Section navigation sidebar */}
+          {plan.sections.length > 0 && (
+            <aside className="hidden lg:block w-56 shrink-0">
+              <div className="sticky top-4">
+                <SectionNav content={plan.content} />
+              </div>
+            </aside>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-card p-6">
           <HistoryPanel filename={plan.filename} />
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Mobile section nav (below content on small screens) */}
+      {activeTab === 'content' && plan.sections.length > 0 && (
+        <div className="mt-4 rounded-lg border bg-card p-4 lg:hidden">
+          <SectionNav content={plan.content} />
+        </div>
+      )}
     </div>
   );
 }

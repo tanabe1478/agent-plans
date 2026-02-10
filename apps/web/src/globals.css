@@ -121,6 +121,82 @@
   @apply text-primary underline;
 }
 
+/* Line numbers for block elements */
+.markdown-content.with-line-numbers > :first-child > [data-line] {
+  position: relative;
+  padding-left: 3.5rem;
+}
+
+.markdown-content.with-line-numbers [data-line] {
+  position: relative;
+  padding-left: 3.5rem;
+}
+
+.line-number-gutter {
+  position: absolute;
+  left: 0;
+  width: 2.5rem;
+  text-align: right;
+  font-size: 0.75rem;
+  line-height: inherit;
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+  user-select: none;
+  pointer-events: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding-top: 0.125em;
+}
+
+/* Adjust line number position for headings */
+.markdown-content.with-line-numbers h1 .line-number-gutter,
+.markdown-content.with-line-numbers h2 .line-number-gutter,
+.markdown-content.with-line-numbers h3 .line-number-gutter {
+  padding-top: 0.2em;
+}
+
+/* Adjust for pre/code blocks */
+.markdown-content.with-line-numbers pre[data-line] {
+  padding-left: 3.5rem;
+}
+
+.markdown-content.with-line-numbers pre .line-number-gutter {
+  top: 1rem;
+}
+
+/* Adjust for blockquote */
+.markdown-content.with-line-numbers blockquote[data-line] {
+  padding-left: 3.5rem;
+  border-left-width: 4px;
+}
+
+.markdown-content.with-line-numbers blockquote .line-number-gutter {
+  left: 0;
+}
+
+/* Adjust for lists */
+.markdown-content.with-line-numbers ul[data-line],
+.markdown-content.with-line-numbers ol[data-line] {
+  padding-left: 3.5rem;
+}
+
+/* Section navigation styles */
+.section-nav {
+  @apply rounded-lg border bg-card p-4;
+}
+
+.section-nav-item {
+  @apply block py-1 px-2 rounded transition-colors;
+}
+
+.section-nav-item:hover {
+  @apply bg-muted;
+}
+
+/* Scroll margin for heading anchors */
+.markdown-content [id] {
+  scroll-margin-top: 1rem;
+}
+
 /* Override highlight.js background to use our existing bg-muted */
 .markdown-content .hljs {
   background: transparent;
