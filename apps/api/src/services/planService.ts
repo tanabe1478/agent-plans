@@ -190,7 +190,7 @@ export class PlanService {
       sections: extractSections(body),
       relatedProject: extractRelatedProject(body),
       frontmatter,
-      content,
+      content: body,
     };
   }
 
