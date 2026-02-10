@@ -10,6 +10,7 @@ import { ArchivePage } from './pages/ArchivePage';
 import { DependencyPage } from './pages/DependencyPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { BackupPage } from './pages/BackupPage';
+import { ReviewPage } from './pages/ReviewPage';
 import { useUiStore } from './stores/uiStore';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="plan/:filename" element={<ViewPage />} />
+        <Route path="plan/:filename/review" element={<ReviewPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="kanban" element={<KanbanPage />} />
         <Route path="calendar" element={<CalendarPage />} />

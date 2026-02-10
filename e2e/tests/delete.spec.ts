@@ -52,6 +52,8 @@ test.describe('Delete functionality (from detail page)', () => {
   test.afterEach(async ({ request }) => {
     // Clean up: try to delete the test plan if it still exists
     await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+    // Also try to delete from archive
+    await request.delete(`http://localhost:3001/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should show delete confirmation dialog on detail page', async ({ page }) => {

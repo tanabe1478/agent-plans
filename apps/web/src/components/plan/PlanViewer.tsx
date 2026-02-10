@@ -8,6 +8,7 @@ import { SubtaskList } from './SubtaskList';
 
 interface PlanViewerProps {
   plan: PlanDetail;
+  showLineNumbers?: boolean;
 }
 
 interface NodeWithPosition {
@@ -37,7 +38,7 @@ function lineNumberComponent(tag: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const components: Record<string, any> = {};
+const lineNumberComponents: Record<string, any> = {};
 const blockTags = [
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'p', 'blockquote', 'pre', 'table', 'hr',
@@ -45,21 +46,21 @@ const blockTags = [
 ];
 
 for (const tag of blockTags) {
-  components[tag] = lineNumberComponent(tag);
+  lineNumberComponents[tag] = lineNumberComponent(tag);
 }
 
-export function PlanViewer({ plan }: PlanViewerProps) {
+export function PlanViewer({ plan, showLineNumbers = false }: PlanViewerProps) {
   return (
     <div>
       <SubtaskList
         filename={plan.filename}
         subtasks={plan.frontmatter?.subtasks || []}
       />
-      <article className="markdown-content with-line-numbers mt-6">
+      <article className={`markdown-content mt-6${showLineNumbers ? ' with-line-numbers' : ''}`}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight, rehypeSlug]}
-          components={components}
+          components={showLineNumbers ? lineNumberComponents : undefined}
         >
           {plan.content}
         </ReactMarkdown>

@@ -1,0 +1,78 @@
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+
+interface CommentFormProps {
+  line: number | [number, number];
+  initialBody?: string;
+  onSubmit: (body: string) => void;
+  onCancel: () => void;
+}
+
+function formatLineBadge(line: number | [number, number]): string {
+  if (Array.isArray(line)) {
+    return `L${line[0]}-L${line[1]}`;
+  }
+  return `L${line}`;
+}
+
+export function CommentForm({ line, initialBody = '', onSubmit, onCancel }: CommentFormProps) {
+  const [body, setBody] = useState(initialBody);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onCancel();
+    }
+  };
+
+  const handleSubmit = () => {
+    const trimmed = body.trim();
+    if (trimmed) {
+      onSubmit(trimmed);
+    }
+  };
+
+  return (
+    <div className="inline-comment-form my-2 ml-14 rounded border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30">
+      <div className="flex items-center gap-2 px-3 pt-2">
+        <span className="rounded bg-amber-200 px-1.5 py-0.5 text-xs font-mono text-amber-800 dark:bg-amber-800 dark:text-amber-200">
+          {formatLineBadge(line)}
+        </span>
+      </div>
+      <div className="p-3 pt-2">
+        <textarea
+          ref={textareaRef}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Add a comment... (Cmd+Enter to submit, Escape to cancel)"
+          className="w-full rounded border border-amber-300 bg-white p-2 text-sm dark:border-amber-700 dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          rows={3}
+        />
+        <div className="mt-2 flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="rounded px-3 py-1 text-xs text-muted-foreground hover:bg-muted"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!body.trim()}
+            className="rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+          >
+            Comment
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

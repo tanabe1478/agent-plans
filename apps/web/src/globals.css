@@ -179,6 +179,37 @@
   padding-left: 3.5rem;
 }
 
+/* Review mode: interactive gutters */
+.review-mode .line-number-gutter.review-gutter {
+  pointer-events: auto;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+  border-radius: 2px;
+}
+
+.review-mode .line-number-gutter.review-gutter:hover {
+  opacity: 1;
+  color: hsl(38 92% 50%);
+  background-color: hsl(38 92% 50% / 0.15);
+}
+
+.review-mode [data-line].has-comment {
+  background-color: hsl(38 92% 50% / 0.08);
+}
+
+.review-mode [data-line].selecting {
+  background-color: hsl(38 92% 50% / 0.15);
+}
+
+/* Dark mode review mode */
+.dark .review-mode [data-line].has-comment {
+  background-color: hsl(38 92% 50% / 0.06);
+}
+
+.dark .review-mode [data-line].selecting {
+  background-color: hsl(38 92% 50% / 0.12);
+}
+
 /* Section navigation styles */
 .section-nav {
   @apply rounded-lg border bg-card p-4;

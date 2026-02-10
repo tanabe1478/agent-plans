@@ -133,14 +133,10 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | und
         frontmatter.sessionId = value;
         break;
       case 'status':
-        if (['todo', 'in_progress', 'review', 'completed'].includes(value)) {
-          frontmatter.status = value as PlanStatus;
-        }
+        frontmatter.status = value as PlanStatus;
         break;
       case 'priority':
-        if (['low', 'medium', 'high', 'critical'].includes(value)) {
-          frontmatter.priority = value as PlanPriority;
-        }
+        frontmatter.priority = value as PlanPriority;
         break;
       case 'dueDate':
         frontmatter.dueDate = value;

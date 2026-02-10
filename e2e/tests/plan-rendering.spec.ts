@@ -114,29 +114,27 @@ test.describe('Plan detail rendering', () => {
     expect(color).not.toBe(codeColor);
   });
 
-  test('should display line numbers on block elements', async ({ page }) => {
+  test('should NOT display line numbers on detail page (view mode)', async ({ page }) => {
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(page.getByRole('heading', { name: 'Rendering Test Plan' }).first()).toBeVisible();
 
-    // Line number gutters should be rendered for block elements
+    // Line number gutters should NOT be rendered on detail page
     const lineGutters = page.locator('.markdown-content .line-number-gutter');
-    const count = await lineGutters.count();
-    expect(count).toBeGreaterThan(0);
+    await expect(lineGutters).toHaveCount(0);
 
-    // First gutter should have a numeric line number
-    const firstGutter = lineGutters.first();
-    const text = await firstGutter.textContent();
-    expect(Number(text)).toBeGreaterThan(0);
+    // with-line-numbers class should NOT be applied
+    const article = page.locator('.markdown-content');
+    await expect(article).not.toHaveClass(/with-line-numbers/);
   });
 
-  test('should display data-line attributes on block elements', async ({ page }) => {
+  test('should display Review link on detail page', async ({ page }) => {
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(page.getByRole('heading', { name: 'Rendering Test Plan' }).first()).toBeVisible();
 
-    // Block elements should have data-line attributes
-    const elementsWithLine = page.locator('.markdown-content [data-line]');
-    const count = await elementsWithLine.count();
-    expect(count).toBeGreaterThan(0);
+    // Review link should be visible
+    const reviewLink = page.getByRole('link', { name: 'Review' });
+    await expect(reviewLink).toBeVisible();
+    await expect(reviewLink).toHaveAttribute('href', `/plan/${TEST_PLAN_FILENAME}/review`);
   });
 
   test('should display section navigation sidebar on desktop', async ({ page }) => {

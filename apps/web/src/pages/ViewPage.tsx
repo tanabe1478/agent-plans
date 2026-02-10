@@ -16,6 +16,11 @@ import {
   Calendar,
   HardDrive,
   FileText,
+  MessageSquareText,
+  Signal,
+  User,
+  Tag,
+  GitBranch,
 } from 'lucide-react';
 
 type Tab = 'content' | 'history';
@@ -91,14 +96,63 @@ export function ViewPage() {
             {plan.frontmatter?.projectPath && (
               <ProjectBadge projectPath={plan.frontmatter.projectPath} />
             )}
+            {plan.frontmatter?.priority && (
+              <span className="flex items-center gap-1">
+                <Signal className="h-4 w-4" />
+                {plan.frontmatter.priority}
+              </span>
+            )}
+            {plan.frontmatter?.assignee && (
+              <span className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                {plan.frontmatter.assignee}
+              </span>
+            )}
           </div>
+          {plan.frontmatter?.tags && plan.frontmatter.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              {plan.frontmatter.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+          {plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+              <GitBranch className="h-4 w-4" />
+              <span>Blocked by:</span>
+              {plan.frontmatter.blockedBy.map((dep) => (
+                <Link
+                  key={dep}
+                  to={`/plan/${encodeURIComponent(dep)}`}
+                  className="underline hover:text-orange-800 dark:hover:text-orange-300"
+                >
+                  {dep}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        <PlanActions
-          filename={plan.filename}
-          title={plan.title}
-          onDeleted={() => navigate('/')}
-        />
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/plan/${plan.filename}/review`}
+            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            <MessageSquareText className="h-4 w-4" />
+            Review
+          </Link>
+          <PlanActions
+            filename={plan.filename}
+            title={plan.title}
+            onDeleted={() => navigate('/')}
+          />
+        </div>
       </div>
 
       {/* Tabs */}
