@@ -91,6 +91,10 @@ hooks/     - Claude Code用hookスクリプト
 5. PostToolUseフック（`hooks/plan-metadata/inject.py`）でプラン作成時にfrontmatterを自動挿入
 6. レビューコメントはlocalStorageに保存（プランごとのキー）
 
+## Worktree Development
+
+This repo supports `git worktree`. See skill `worktree-setup` for setup instructions.
+
 ## Conventions
 
 - **Language**: Write all code comments, commit messages, and PR descriptions in English
