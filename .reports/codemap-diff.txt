@@ -1,0 +1,19 @@
+Codemap Update Report
+=====================
+Date: 2026-02-11T01:15:00Z
+Commit: 10183ca (main)
+Previous: N/A (initial creation)
+
+Files Created:
+  codemaps/architecture.md  - Overall architecture, stack, data flow
+  codemaps/backend.md       - 10 routes, 17 services, status transitions
+  codemaps/frontend.md      - 10 pages, component tree, hooks, stores
+  codemaps/data.md          - Types, schemas, file storage layout
+
+Diff: N/A (first generation)
+
+Key additions since last codemap:
+  - Review mode (ReviewViewer, InlineComment, CommentForm, useReviewComments)
+  - SectionNav component for plan detail
+  - Line numbers in PlanViewer
+  - GitHub-style diff CSS (.review-file, .review-diff-*)

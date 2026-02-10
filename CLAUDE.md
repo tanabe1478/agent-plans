@@ -34,6 +34,13 @@ pnpm --filter @ccplans/web lint
 
 ## アーキテクチャ
 
+詳細は `codemaps/` ディレクトリを参照:
+
+- `codemaps/architecture.md` - 全体構成、パッケージ依存、データフロー
+- `codemaps/backend.md` - APIルート(10)、サービス(17)、ステータス遷移
+- `codemaps/frontend.md` - ページ(10)、コンポーネントツリー、hooks、stores
+- `codemaps/data.md` - 型定義、スキーマ、ファイルストレージ構成
+
 ### パッケージ構成
 
 ```
@@ -49,44 +56,31 @@ hooks/     - Claude Code用hookスクリプト
 ### API (apps/api)
 
 - **エントリポイント**: `src/index.ts` - Fastifyサーバー設定
-- **ルート**: `/api/plans/*`, `/api/search`
-- **サービス層**:
+- **ルート**: `/api/plans/*`, `/api/search`, `/api/views`, `/api/notifications`, `/api/archive`, `/api/dependencies`, `/api/templates`, `/api/export`, `/api/import`, `/api/admin`
+- **サービス層**: 17モジュール（詳細は `codemaps/backend.md`）
   - `PlanService`: プランファイルのCRUD操作（`~/.claude/plans/`を操作）
-    - `updateStatus()`: ステータス更新（frontmatterを書き換え）
-    - `parseFrontmatter()`: YAMLフロントマター解析
-  - `SearchService`: 全文検索
-  - `openerService`: 外部アプリ（VSCode, Terminal）での開く機能
-  - `nameGenerator`: `adjective-verb-noun.md`形式のファイル名生成
-- **ステータス更新API**: `PATCH /api/plans/:filename/status` でステータス変更
-
+  - `SearchService` / `queryParser`: 全文検索 + 高度なクエリ構文
+  - `statusTransitionService`: ステータス遷移の検証
+  - `historyService`: バージョン履歴・差分・ロールバック
+  - `auditService`: 操作監査ログ
+  - `dependencyService`: 依存関係グラフ・循環検出
 - **設定**: `src/config.ts` で環境変数設定（PLANS_DIR, PORT等）
 - **セキュリティ**: ファイル名バリデーションでパストラバーサル対策済み
 
 ### Web (apps/web)
 
 - **状態管理**: Zustand（`stores/planStore.ts`, `stores/uiStore.ts`）
-  - `statusFilter`: ステータスでフィルター（todo, in_progress, completed, all）
-  - `projectFilter`: プロジェクトパスでフィルター
-- **データ取得**: TanStack Query（`lib/hooks/usePlans.ts`, `lib/hooks/useSearch.ts`）
-  - `useUpdateStatus()`: ステータス更新用mutation
-- **ルーティング**: React Router
-  - `/` - プラン一覧（フィルター・ソート機能付き）
-  - `/plan/:filename` - プラン詳細表示
-  - `/search` - 検索
+- **データ取得**: TanStack Query（10 hooks、詳細は `codemaps/frontend.md`）
+- **ルーティング**: React Router（10ページ）
+  - `/` - プラン一覧、`/plan/:filename` - 詳細、`/plan/:filename/review` - レビューモード
+  - `/search`, `/kanban`, `/calendar`, `/archive`, `/dependencies`, `/templates`, `/backups`
 - **UI**: Tailwind CSS + lucide-react アイコン
-- **ステータス関連コンポーネント**:
-  - `StatusBadge`: ステータス表示バッジ（色分け）
-  - `StatusDropdown`: ステータス変更ドロップダウン
-  - `ProjectBadge`: プロジェクトパス表示
+- **レビューモード**: GitHub diff風プレーンテキスト表示、インラインコメント、Shift+Click範囲選択
 
 ### 共有パッケージ (packages/shared)
 
 `@ccplans/shared` として api/web 両方から参照。型定義のみで実装コードなし。
-- `PlanMeta`: ファイルメタデータ（filename, title, sections, preview, frontmatter等）
-- `PlanDetail`: メタデータ + content
-- `PlanFrontmatter`: YAMLフロントマターの型（created, modified, projectPath, sessionId, status）
-- `PlanStatus`: ステータス型（`'todo' | 'in_progress' | 'completed'`）
-- API リクエスト/レスポンス型
+詳細は `codemaps/data.md` を参照。
 
 ## データフロー
 
@@ -95,6 +89,7 @@ hooks/     - Claude Code用hookスクリプト
 3. タイトルはMarkdownの最初のH1から抽出、セクションはH2から抽出
 4. YAMLフロントマターからメタデータ（status, projectPath等）を解析
 5. PostToolUseフック（`hooks/plan-metadata/inject.py`）でプラン作成時にfrontmatterを自動挿入
+6. レビューコメントはlocalStorageに保存（プランごとのキー）
 
 ## Conventions
 
