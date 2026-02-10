@@ -39,7 +39,8 @@ playwright/.cache/
 .playwright-mcp/
 
 # Claude Code local settings
-.claude/
+.claude/*
+!.claude/skills/
 .mcp.json
 
 # Python

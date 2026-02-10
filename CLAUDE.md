@@ -96,6 +96,10 @@ hooks/     - Claude Code用hookスクリプト
 4. YAMLフロントマターからメタデータ（status, projectPath等）を解析
 5. PostToolUseフック（`hooks/plan-metadata/inject.py`）でプラン作成時にfrontmatterを自動挿入
 
+## Worktree Development
+
+This repo supports `git worktree`. See skill `worktree-setup` for setup instructions.
+
 ## Conventions
 
 - **Language**: Write all code comments, commit messages, and PR descriptions in English

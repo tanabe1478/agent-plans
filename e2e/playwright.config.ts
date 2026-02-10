@@ -28,7 +28,7 @@ export default defineConfig({
       command: 'pnpm --filter @ccplans/api dev',
       cwd: '..',
       url: 'http://localhost:3001/api/health',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120 * 1000,
       env: {
         PLANS_DIR: fixturesDir,
@@ -38,7 +38,7 @@ export default defineConfig({
       command: 'pnpm --filter @ccplans/web dev',
       cwd: '..',
       url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120 * 1000,
     },
   ],
