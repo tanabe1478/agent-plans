@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Notifications (Feature 9)', () => {
   test('API: should retrieve notifications list', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/notifications');
+    const response = await request.get(`${API_BASE_URL}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -17,7 +18,7 @@ test.describe('Notifications (Feature 9)', () => {
   });
 
   test('API: should generate overdue notification for past due date', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/notifications');
+    const response = await request.get(`${API_BASE_URL}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -33,7 +34,7 @@ test.describe('Notifications (Feature 9)', () => {
   });
 
   test('API: should generate due soon notification for upcoming deadlines', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/notifications');
+    const response = await request.get(`${API_BASE_URL}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -51,7 +52,7 @@ test.describe('Notifications (Feature 9)', () => {
 
   test('API: should mark notification as read', async ({ request }) => {
     // Get notifications - fixture data has overdue plans so notifications must exist
-    const listResponse = await request.get('http://localhost:3001/api/notifications');
+    const listResponse = await request.get(`${API_BASE_URL}/api/notifications`);
     const listData = await listResponse.json();
 
     expect(listData.notifications.length).toBeGreaterThan(0);
@@ -60,7 +61,7 @@ test.describe('Notifications (Feature 9)', () => {
 
     // Mark as read
     const readResponse = await request.patch(
-      `http://localhost:3001/api/notifications/${notificationId}/read`
+      `${API_BASE_URL}/api/notifications/${notificationId}/read`
     );
 
     expect(readResponse.ok()).toBeTruthy();
@@ -68,7 +69,7 @@ test.describe('Notifications (Feature 9)', () => {
     expect(readData.success).toBe(true);
 
     // Verify notification is marked as read
-    const verifyResponse = await request.get('http://localhost:3001/api/notifications');
+    const verifyResponse = await request.get(`${API_BASE_URL}/api/notifications`);
     const verifyData = await verifyResponse.json();
 
     const notification = verifyData.notifications.find((n: any) => n.id === notificationId);
@@ -77,14 +78,14 @@ test.describe('Notifications (Feature 9)', () => {
 
   test('API: should mark all notifications as read', async ({ request }) => {
     // Mark all as read
-    const response = await request.post('http://localhost:3001/api/notifications/mark-all-read');
+    const response = await request.post(`${API_BASE_URL}/api/notifications/mark-all-read`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data.success).toBe(true);
 
     // Verify all are read
-    const verifyResponse = await request.get('http://localhost:3001/api/notifications');
+    const verifyResponse = await request.get(`${API_BASE_URL}/api/notifications`);
     const verifyData = await verifyResponse.json();
 
     const allRead = verifyData.notifications.every((n: any) => n.read === true);
@@ -166,7 +167,7 @@ test.describe('Notifications (Feature 9)', () => {
   });
 
   test('API: should sort notifications by severity (critical first)', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/notifications');
+    const response = await request.get(`${API_BASE_URL}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -204,7 +205,7 @@ test.describe('Notifications (Feature 9)', () => {
 
   test('should mark notification as read via UI', async ({ page }) => {
     // First, reset notifications so there are unread ones
-    await page.request.post('http://localhost:3001/api/notifications/mark-all-read').catch(() => {});
+    await page.request.post(`${API_BASE_URL}/api/notifications/mark-all-read`).catch(() => {});
 
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
@@ -224,7 +225,7 @@ test.describe('Notifications (Feature 9)', () => {
   });
 
   test('API: should not generate notification for completed plans', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/notifications');
+    const response = await request.get(`${API_BASE_URL}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -240,7 +241,7 @@ test.describe('Notifications (Feature 9)', () => {
   // Skip: green-dancing-cat's modified date gets updated by other tests (status changes),
   // so it may not be stale (3+ days old) when this test runs.
   test.skip('API: blocked_stale notification for stale blocked plans', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/notifications');
+    const response = await request.get(`${API_BASE_URL}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();

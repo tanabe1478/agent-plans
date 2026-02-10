@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -8,7 +9,7 @@ const CUSTOM_TEMPLATE_NAME = 'test-custom-template';
 test.describe('Templates functionality (Feature 12)', () => {
   test.afterEach(async ({ request }) => {
     // Clean up: try to delete custom template if created
-    await request.delete(`http://localhost:3001/api/templates/${CUSTOM_TEMPLATE_NAME}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/templates/${CUSTOM_TEMPLATE_NAME}`).catch(() => {});
   });
 
   test('should navigate to /templates page', async ({ page }) => {
@@ -17,7 +18,7 @@ test.describe('Templates functionality (Feature 12)', () => {
   });
 
   test('should include built-in templates in API response', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/templates');
+    const response = await request.get(`${API_BASE_URL}/api/templates`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -37,7 +38,7 @@ test.describe('Templates functionality (Feature 12)', () => {
   });
 
   test('should retrieve template content via API', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/templates/research');
+    const response = await request.get(`${API_BASE_URL}/api/templates/research`);
     expect(response.ok()).toBeTruthy();
 
     const template = await response.json();
@@ -49,7 +50,7 @@ test.describe('Templates functionality (Feature 12)', () => {
   });
 
   test('should create plan from template via API', async ({ request }) => {
-    const response = await request.post('http://localhost:3001/api/templates/from-template', {
+    const response = await request.post(`${API_BASE_URL}/api/templates/from-template`, {
       data: {
         templateName: 'implementation',
         title: 'Test Implementation Plan',
@@ -62,17 +63,17 @@ test.describe('Templates functionality (Feature 12)', () => {
     expect(plan.title).toContain('Test Implementation Plan');
 
     // Verify content via plan detail API
-    const detailResponse = await request.get(`http://localhost:3001/api/plans/${plan.filename}`);
+    const detailResponse = await request.get(`${API_BASE_URL}/api/plans/${plan.filename}`);
     expect(detailResponse.ok()).toBeTruthy();
     const detail = await detailResponse.json();
     expect(detail.content).toContain('Test Implementation Plan');
 
     // Clean up created plan
-    await request.delete(`http://localhost:3001/api/plans/${plan.filename}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/plans/${plan.filename}`).catch(() => {});
   });
 
   test('should create custom template via API', async ({ request }) => {
-    const response = await request.post('http://localhost:3001/api/templates', {
+    const response = await request.post(`${API_BASE_URL}/api/templates`, {
       data: {
         name: CUSTOM_TEMPLATE_NAME,
         displayName: 'Test Custom Template',
@@ -92,13 +93,13 @@ test.describe('Templates functionality (Feature 12)', () => {
     expect(template.isBuiltIn).toBe(false);
 
     // Verify template was created
-    const getResponse = await request.get(`http://localhost:3001/api/templates/${CUSTOM_TEMPLATE_NAME}`);
+    const getResponse = await request.get(`${API_BASE_URL}/api/templates/${CUSTOM_TEMPLATE_NAME}`);
     expect(getResponse.ok()).toBeTruthy();
   });
 
   test('should delete custom template via API', async ({ request }) => {
     // Create custom template first
-    await request.post('http://localhost:3001/api/templates', {
+    await request.post(`${API_BASE_URL}/api/templates`, {
       data: {
         name: CUSTOM_TEMPLATE_NAME,
         displayName: 'Test Custom Template',
@@ -110,17 +111,17 @@ test.describe('Templates functionality (Feature 12)', () => {
 
     // Delete the template
     const deleteResponse = await request.delete(
-      `http://localhost:3001/api/templates/${CUSTOM_TEMPLATE_NAME}`
+      `${API_BASE_URL}/api/templates/${CUSTOM_TEMPLATE_NAME}`
     );
     expect(deleteResponse.ok()).toBeTruthy();
 
     // Verify template is gone
-    const getResponse = await request.get(`http://localhost:3001/api/templates/${CUSTOM_TEMPLATE_NAME}`);
+    const getResponse = await request.get(`${API_BASE_URL}/api/templates/${CUSTOM_TEMPLATE_NAME}`);
     expect(getResponse.status()).toBe(404);
   });
 
   test('should not delete built-in template', async ({ request }) => {
-    const response = await request.delete('http://localhost:3001/api/templates/research');
+    const response = await request.delete(`${API_BASE_URL}/api/templates/research`);
     expect(response.status()).toBe(403);
 
     const error = await response.json();
@@ -161,7 +162,7 @@ test.describe('Templates functionality (Feature 12)', () => {
     // The templates page shows cards - check if there's a "Use Template" or similar action
     // Since the current TemplatesPage may not have a "Use Template" button,
     // we'll verify the API-based template creation works correctly
-    const response = await request.post('http://localhost:3001/api/templates/from-template', {
+    const response = await request.post(`${API_BASE_URL}/api/templates/from-template`, {
       data: {
         templateName: 'research',
         title: 'UI Created Research Plan',
@@ -174,12 +175,12 @@ test.describe('Templates functionality (Feature 12)', () => {
     expect(plan.title).toContain('UI Created Research Plan');
 
     // Clean up
-    await request.delete(`http://localhost:3001/api/plans/${plan.filename}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/plans/${plan.filename}`).catch(() => {});
   });
 
   test('should apply template frontmatter defaults to created plan', async ({ request }) => {
     // Create plan from incident template which should have status=in_progress, priority=critical
-    const response = await request.post('http://localhost:3001/api/templates/from-template', {
+    const response = await request.post(`${API_BASE_URL}/api/templates/from-template`, {
       data: {
         templateName: 'incident',
         title: 'Test Incident Response',
@@ -191,7 +192,7 @@ test.describe('Templates functionality (Feature 12)', () => {
     expect(plan.filename).toBeDefined();
 
     // Get the created plan to check frontmatter
-    const planResponse = await request.get(`http://localhost:3001/api/plans/${plan.filename}`);
+    const planResponse = await request.get(`${API_BASE_URL}/api/plans/${plan.filename}`);
     expect(planResponse.ok()).toBeTruthy();
     const planDetail = await planResponse.json();
 
@@ -201,12 +202,12 @@ test.describe('Templates functionality (Feature 12)', () => {
     expect(planDetail.frontmatter.priority).toBeDefined();
 
     // Clean up
-    await request.delete(`http://localhost:3001/api/plans/${plan.filename}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/plans/${plan.filename}`).catch(() => {});
   });
 
   test('should substitute {{title}} placeholder in template content', async ({ request }) => {
     const title = 'My Custom Research Title';
-    const response = await request.post('http://localhost:3001/api/templates/from-template', {
+    const response = await request.post(`${API_BASE_URL}/api/templates/from-template`, {
       data: {
         templateName: 'research',
         title,
@@ -218,7 +219,7 @@ test.describe('Templates functionality (Feature 12)', () => {
     expect(plan.filename).toBeDefined();
 
     // Get plan detail to check content
-    const detailResponse = await request.get(`http://localhost:3001/api/plans/${plan.filename}`);
+    const detailResponse = await request.get(`${API_BASE_URL}/api/plans/${plan.filename}`);
     expect(detailResponse.ok()).toBeTruthy();
     const detail = await detailResponse.json();
 
@@ -228,11 +229,11 @@ test.describe('Templates functionality (Feature 12)', () => {
     expect(detail.content).not.toContain('{{title}}');
 
     // Clean up
-    await request.delete(`http://localhost:3001/api/plans/${plan.filename}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/plans/${plan.filename}`).catch(() => {});
   });
 
   test('should show template category in API response', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/templates');
+    const response = await request.get(`${API_BASE_URL}/api/templates`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -256,7 +257,7 @@ test.describe('Templates functionality (Feature 12)', () => {
 
     try {
       // Create custom template with frontmatter defaults
-      const createResponse = await request.post('http://localhost:3001/api/templates', {
+      const createResponse = await request.post(`${API_BASE_URL}/api/templates`, {
         data: {
           name: customName,
           displayName: 'Test Frontmatter Template',
@@ -273,7 +274,7 @@ test.describe('Templates functionality (Feature 12)', () => {
       expect(createResponse.status()).toBe(201);
 
       // Create a plan from this template
-      const planResponse = await request.post('http://localhost:3001/api/templates/from-template', {
+      const planResponse = await request.post(`${API_BASE_URL}/api/templates/from-template`, {
         data: {
           templateName: customName,
           title: 'Plan From Custom Template',
@@ -284,17 +285,17 @@ test.describe('Templates functionality (Feature 12)', () => {
       const plan = await planResponse.json();
 
       // Get full plan details to verify frontmatter
-      const detailResponse = await request.get(`http://localhost:3001/api/plans/${plan.filename}`);
+      const detailResponse = await request.get(`${API_BASE_URL}/api/plans/${plan.filename}`);
       expect(detailResponse.ok()).toBeTruthy();
       const detail = await detailResponse.json();
 
       expect(detail.frontmatter).toBeDefined();
 
       // Clean up created plan
-      await request.delete(`http://localhost:3001/api/plans/${plan.filename}`).catch(() => {});
+      await request.delete(`${API_BASE_URL}/api/plans/${plan.filename}`).catch(() => {});
     } finally {
       // Clean up template
-      await request.delete(`http://localhost:3001/api/templates/${customName}`).catch(() => {});
+      await request.delete(`${API_BASE_URL}/api/templates/${customName}`).catch(() => {});
     }
   });
 });

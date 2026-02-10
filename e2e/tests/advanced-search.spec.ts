@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -18,7 +19,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: status:todo filter search should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'status:todo' },
     });
 
@@ -36,7 +37,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: tag:api filter search should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'tag:api' },
     });
 
@@ -53,7 +54,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: priority:high filter search should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'priority:high' },
     });
 
@@ -70,7 +71,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: assignee:alice filter search should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'assignee:alice' },
     });
 
@@ -88,7 +89,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: combined query (text + filter) should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'auth status:todo' },
     });
 
@@ -128,7 +129,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: due date less than filter should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'due<2026-02-07' },
     });
 
@@ -145,7 +146,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: due date greater than filter should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'due>2026-02-07' },
     });
 
@@ -161,7 +162,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: estimate filter should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'estimate:3d' },
     });
 
@@ -177,7 +178,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: project filter should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'project:/home/user/projects/web-app' },
     });
 
@@ -194,7 +195,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: blockedBy filter should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'blockedBy:blue-running-fox.md' },
     });
 
@@ -210,7 +211,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: quoted phrase search should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: '"Performance Optimization"' },
     });
 
@@ -226,7 +227,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: multiple combined filters should work', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: 'status:todo priority:high tag:backend' },
     });
 
@@ -245,7 +246,7 @@ test.describe('Advanced Search (Feature 6)', () => {
   });
 
   test('API: empty query should return validation error', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/search', {
+    const response = await request.get(`${API_BASE_URL}/api/search`, {
       params: { q: '' },
     });
 

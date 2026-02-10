@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -15,7 +16,7 @@ Testing archive, restore, and permanent delete.
 test.describe('Archive functionality (Feature 11)', () => {
   test.beforeEach(async ({ request }) => {
     // Create a test plan via API
-    await request.post('http://localhost:3001/api/plans', {
+    await request.post(`${API_BASE_URL}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: TEST_PLAN_CONTENT,
@@ -25,9 +26,9 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test.afterEach(async ({ request }) => {
     // Clean up: try to delete the test plan if it still exists
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
     // Also try to delete from archive
-    await request.delete(`http://localhost:3001/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should navigate to /archive page', async ({ page }) => {
@@ -38,18 +39,18 @@ test.describe('Archive functionality (Feature 11)', () => {
   test('should archive plan when deleted with archive=true', async ({ request }) => {
     // Delete plan with archive query parameter
     const deleteResponse = await request.delete(
-      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`
+      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`
     );
     expect(deleteResponse.ok()).toBeTruthy();
 
     // Verify plan is no longer in active list
-    const plansResponse = await request.get('http://localhost:3001/api/plans');
+    const plansResponse = await request.get(`${API_BASE_URL}/api/plans`);
     expect(plansResponse.ok()).toBeTruthy();
     const { plans } = await plansResponse.json();
     expect(plans.find((p: any) => p.filename === TEST_PLAN_FILENAME)).toBeUndefined();
 
     // Verify plan is in archive
-    const archiveResponse = await request.get('http://localhost:3001/api/archive');
+    const archiveResponse = await request.get(`${API_BASE_URL}/api/archive`);
     expect(archiveResponse.ok()).toBeTruthy();
     const { archived } = await archiveResponse.json();
     const archivedPlan = archived.find((p: any) => p.filename === TEST_PLAN_FILENAME);
@@ -59,10 +60,10 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('should retrieve archive list via API', async ({ request }) => {
     // Archive the plan first
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Get archive list
-    const response = await request.get('http://localhost:3001/api/archive');
+    const response = await request.get(`${API_BASE_URL}/api/archive`);
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data.archived).toBeDefined();
@@ -72,16 +73,16 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('should restore plan from archive via API', async ({ request }) => {
     // Archive the plan
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Restore from archive
     const restoreResponse = await request.post(
-      `http://localhost:3001/api/archive/${TEST_PLAN_FILENAME}/restore`
+      `${API_BASE_URL}/api/archive/${TEST_PLAN_FILENAME}/restore`
     );
     expect(restoreResponse.ok()).toBeTruthy();
 
     // Verify plan is back in active list
-    const planResponse = await request.get(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`);
+    const planResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(planResponse.ok()).toBeTruthy();
     const plan = await planResponse.json();
     expect(plan.filename).toBe(TEST_PLAN_FILENAME);
@@ -89,16 +90,16 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('should permanently delete from archive via API', async ({ request }) => {
     // Archive the plan
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Permanently delete from archive
     const deleteResponse = await request.delete(
-      `http://localhost:3001/api/archive/${TEST_PLAN_FILENAME}`
+      `${API_BASE_URL}/api/archive/${TEST_PLAN_FILENAME}`
     );
     expect(deleteResponse.ok()).toBeTruthy();
 
     // Verify plan is gone from archive
-    const archiveResponse = await request.get('http://localhost:3001/api/archive');
+    const archiveResponse = await request.get(`${API_BASE_URL}/api/archive`);
     expect(archiveResponse.ok()).toBeTruthy();
     const { archived } = await archiveResponse.json();
     expect(archived.find((p: any) => p.filename === TEST_PLAN_FILENAME)).toBeUndefined();
@@ -120,7 +121,7 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('should display archived plans on /archive page', async ({ page, request }) => {
     // Archive the plan first
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Navigate to archive page
     await page.goto('/archive');
@@ -133,7 +134,7 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('should show restore button on archive page', async ({ page, request }) => {
     // Archive the plan first
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Navigate to archive page
     await page.goto('/archive');
@@ -147,7 +148,7 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('should restore plan from archive page UI', async ({ page, request }) => {
     // Archive the plan first
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Navigate to archive page
     await page.goto('/archive');
@@ -163,13 +164,13 @@ test.describe('Archive functionality (Feature 11)', () => {
     await expect(page.getByText(TEST_PLAN_FILENAME)).not.toBeVisible({ timeout: 5000 });
 
     // Verify plan is back in active list via API
-    const planResponse = await request.get(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`);
+    const planResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(planResponse.ok()).toBeTruthy();
   });
 
   test('should permanently delete from archive page UI', async ({ page, request }) => {
     // Archive the plan first
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Navigate to archive page
     await page.goto('/archive');
@@ -194,13 +195,13 @@ test.describe('Archive functionality (Feature 11)', () => {
     await expect(planCardAfterDelete).not.toBeVisible({ timeout: 5000 });
 
     // Verify plan is gone from archive via API
-    const archiveResponse = await request.get('http://localhost:3001/api/archive');
+    const archiveResponse = await request.get(`${API_BASE_URL}/api/archive`);
     const { archived } = await archiveResponse.json();
     expect(archived.find((p: any) => p.filename === TEST_PLAN_FILENAME)).toBeUndefined();
   });
 
   test('should cleanup expired archives via API', async ({ request }) => {
-    const response = await request.post('http://localhost:3001/api/archive/cleanup');
+    const response = await request.post(`${API_BASE_URL}/api/archive/cleanup`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -211,10 +212,10 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('should include metadata in archive (archivedAt, expiresAt, title, preview)', async ({ request }) => {
     // Archive the plan
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
     // Get archive list
-    const response = await request.get('http://localhost:3001/api/archive');
+    const response = await request.get(`${API_BASE_URL}/api/archive`);
     expect(response.ok()).toBeTruthy();
     const { archived } = await response.json();
 
@@ -230,17 +231,17 @@ test.describe('Archive functionality (Feature 11)', () => {
   test('default delete should archive (soft delete)', async ({ request }) => {
     // Delete without permanent flag (default behavior should archive)
     const deleteResponse = await request.delete(
-      `http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`
+      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`
     );
     expect(deleteResponse.ok()).toBeTruthy();
 
     // Verify plan is no longer in active list
-    const plansResponse = await request.get('http://localhost:3001/api/plans');
+    const plansResponse = await request.get(`${API_BASE_URL}/api/plans`);
     const { plans } = await plansResponse.json();
     expect(plans.find((p: any) => p.filename === TEST_PLAN_FILENAME)).toBeUndefined();
 
     // Verify plan is in archive
-    const archiveResponse = await request.get('http://localhost:3001/api/archive');
+    const archiveResponse = await request.get(`${API_BASE_URL}/api/archive`);
     const { archived } = await archiveResponse.json();
     const archivedPlan = archived.find((p: any) => p.filename === TEST_PLAN_FILENAME);
     expect(archivedPlan).toBeDefined();

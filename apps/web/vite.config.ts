@@ -14,10 +14,11 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: parseInt(process.env.WEB_PORT || '5173', 10),
+    strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: `http://localhost:${process.env.API_PORT || '3001'}`,
         changeOrigin: true,
       },
     },

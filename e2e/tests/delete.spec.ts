@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -41,7 +42,7 @@ async function clickDeleteMenuItem(page: import('@playwright/test').Page) {
 test.describe('Delete functionality (from detail page)', () => {
   test.beforeEach(async ({ request }) => {
     // Create a test plan via API before each test
-    await request.post('http://localhost:3001/api/plans', {
+    await request.post(`${API_BASE_URL}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: TEST_PLAN_CONTENT,
@@ -51,9 +52,9 @@ test.describe('Delete functionality (from detail page)', () => {
 
   test.afterEach(async ({ request }) => {
     // Clean up: try to delete the test plan if it still exists
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
     // Also try to delete from archive
-    await request.delete(`http://localhost:3001/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should show delete confirmation dialog on detail page', async ({ page }) => {
@@ -107,7 +108,7 @@ test.describe('Delete functionality (from detail page)', () => {
     await expect(page).toHaveURL('/', { timeout: 10000 });
 
     // Verify via API that plan no longer exists (should return 404)
-    const response = await request.get(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`);
+    const response = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(response.status()).toBe(404);
   });
 
@@ -129,7 +130,7 @@ test.describe('Delete functionality (from detail page)', () => {
     await expect(page).toHaveURL(`/plan/${TEST_PLAN_FILENAME}`);
 
     // Verify via API that plan still exists
-    const response = await request.get(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`);
+    const response = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(response.ok()).toBeTruthy();
   });
 });
@@ -140,7 +141,7 @@ test.describe('Bulk delete functionality', () => {
   test.beforeEach(async ({ request }) => {
     // Create test plans
     for (const filename of BULK_TEST_FILES) {
-      await request.post('http://localhost:3001/api/plans', {
+      await request.post(`${API_BASE_URL}/api/plans`, {
         data: {
           filename,
           content: `# ${filename}\n\nTest content for bulk delete.`,
@@ -152,7 +153,7 @@ test.describe('Bulk delete functionality', () => {
   test.afterEach(async ({ request }) => {
     // Clean up
     for (const filename of BULK_TEST_FILES) {
-      await request.delete(`http://localhost:3001/api/plans/${filename}`).catch(() => {});
+      await request.delete(`${API_BASE_URL}/api/plans/${filename}`).catch(() => {});
     }
   });
 
@@ -198,7 +199,7 @@ test.describe('Bulk delete functionality', () => {
 
     // Verify via API that plans no longer exist
     for (const filename of BULK_TEST_FILES) {
-      const response = await request.get(`http://localhost:3001/api/plans/${filename}`);
+      const response = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
       expect(response.status()).toBe(404);
     }
   });

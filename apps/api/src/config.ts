@@ -15,7 +15,7 @@ export const config = {
   archiveDir: process.env.ARCHIVE_DIR || join(homedir(), '.claude', 'plans', 'archive'),
 
   /** Allowed CORS origins */
-  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173').split(','),
+  corsOrigins: (process.env.CORS_ORIGINS || `http://localhost:${process.env.WEB_PORT || '5173'}`).split(','),
 
   /** Maximum file size for plans (10MB) */
   maxFileSize: 10 * 1024 * 1024,

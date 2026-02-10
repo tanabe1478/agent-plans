@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
-
-const API_BASE_URL = 'http://localhost:3001';
 const TEST_PLAN_FILENAME = 'test-frontmatter-plan.md';
 
 test.describe('Front Matter Extended Fields (Feature 1)', () => {

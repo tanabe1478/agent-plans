@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
-
-const API_BASE_URL = 'http://localhost:3001';
 const FIXTURE_WITH_SUBTASKS = 'green-dancing-cat.md'; // Has 3 subtasks: 1 done, 2 todo
 
 test.describe('Subtasks (Feature 4)', () => {

@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
-
-const API_BASE_URL = 'http://localhost:3001';
 const FIXTURE_FILE = 'blue-running-fox.md'; // Fixture with status=todo
 
 test.describe('Status Transitions (Feature 3)', () => {

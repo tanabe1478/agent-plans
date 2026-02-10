@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
-
-const API_BASE_URL = 'http://localhost:3001';
 const BULK_TEST_FILES = ['bulk-test-1.md', 'bulk-test-2.md', 'bulk-test-3.md'];
 
 test.describe('Bulk Operations (Feature 5)', () => {

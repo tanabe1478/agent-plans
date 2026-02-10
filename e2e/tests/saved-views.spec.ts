@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -9,13 +10,13 @@ test.describe('Saved Views (Feature 7)', () => {
   test.afterEach(async ({ request }) => {
     // Clean up: delete created custom view if it exists
     if (createdViewId) {
-      await request.delete(`http://localhost:3001/api/views/${createdViewId}`).catch(() => {});
+      await request.delete(`${API_BASE_URL}/api/views/${createdViewId}`).catch(() => {});
       createdViewId = null;
     }
   });
 
   test('API: should retrieve views list with preset views', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/views');
+    const response = await request.get(`${API_BASE_URL}/api/views`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -39,7 +40,7 @@ test.describe('Saved Views (Feature 7)', () => {
       sortOrder: 'asc' as const,
     };
 
-    const response = await request.post('http://localhost:3001/api/views', {
+    const response = await request.post(`${API_BASE_URL}/api/views`, {
       data: viewData,
     });
 
@@ -59,7 +60,7 @@ test.describe('Saved Views (Feature 7)', () => {
 
   test('API: should delete a custom view', async ({ request }) => {
     // First create a view
-    const createResponse = await request.post('http://localhost:3001/api/views', {
+    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
       data: {
         name: 'View to Delete',
         filters: { status: 'todo' },
@@ -71,12 +72,12 @@ test.describe('Saved Views (Feature 7)', () => {
     const viewId = createData.id;
 
     // Delete the view
-    const deleteResponse = await request.delete(`http://localhost:3001/api/views/${viewId}`);
+    const deleteResponse = await request.delete(`${API_BASE_URL}/api/views/${viewId}`);
 
     expect(deleteResponse.ok()).toBeTruthy();
 
     // Verify it no longer exists
-    const listResponse = await request.get('http://localhost:3001/api/views');
+    const listResponse = await request.get(`${API_BASE_URL}/api/views`);
     const listData = await listResponse.json();
 
     const viewExists = listData.views.some((v: any) => v.id === viewId);
@@ -85,7 +86,7 @@ test.describe('Saved Views (Feature 7)', () => {
 
   test('API: should update a custom view', async ({ request }) => {
     // Create a view
-    const createResponse = await request.post('http://localhost:3001/api/views', {
+    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
       data: {
         name: 'Original Name',
         filters: { status: 'todo' },
@@ -97,7 +98,7 @@ test.describe('Saved Views (Feature 7)', () => {
     createdViewId = createData.id;
 
     // Update the view
-    const updateResponse = await request.put(`http://localhost:3001/api/views/${createdViewId}`, {
+    const updateResponse = await request.put(`${API_BASE_URL}/api/views/${createdViewId}`, {
       data: {
         name: 'Updated Name',
         filters: { status: 'completed' },
@@ -146,7 +147,7 @@ test.describe('Saved Views (Feature 7)', () => {
 
   test('API: should apply view filters correctly', async ({ request }) => {
     // Create a view with status:in_progress filter
-    const createResponse = await request.post('http://localhost:3001/api/views', {
+    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
       data: {
         name: 'In Progress Filter Test',
         filters: { status: 'in_progress' },
@@ -161,7 +162,7 @@ test.describe('Saved Views (Feature 7)', () => {
     expect(viewData.filters.status).toBe('in_progress');
 
     // List views and find our created view
-    const listResponse = await request.get('http://localhost:3001/api/views');
+    const listResponse = await request.get(`${API_BASE_URL}/api/views`);
     const listData = await listResponse.json();
 
     const view = listData.views.find((v: any) => v.id === createdViewId);
@@ -171,7 +172,7 @@ test.describe('Saved Views (Feature 7)', () => {
 
   test('API: should not allow deleting preset views', async ({ request }) => {
     // Try to delete a preset view
-    const deleteResponse = await request.delete('http://localhost:3001/api/views/preset-in-progress');
+    const deleteResponse = await request.delete(`${API_BASE_URL}/api/views/preset-in-progress`);
 
     // Preset IDs are not UUIDs, so validation should reject them (400)
     // or the service should return 404 since presets are not in custom views
@@ -180,7 +181,7 @@ test.describe('Saved Views (Feature 7)', () => {
   });
 
   test('API: should create view with tags filter', async ({ request }) => {
-    const createResponse = await request.post('http://localhost:3001/api/views', {
+    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
       data: {
         name: 'API Tag View',
         filters: { tags: ['api'] },
@@ -196,7 +197,7 @@ test.describe('Saved Views (Feature 7)', () => {
   });
 
   test('API: should create view with date range filter', async ({ request }) => {
-    const createResponse = await request.post('http://localhost:3001/api/views', {
+    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
       data: {
         name: 'Date Range View',
         filters: {
@@ -215,7 +216,7 @@ test.describe('Saved Views (Feature 7)', () => {
   });
 
   test('API: should create view with searchQuery', async ({ request }) => {
-    const createResponse = await request.post('http://localhost:3001/api/views', {
+    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
       data: {
         name: 'Search Query View',
         filters: {

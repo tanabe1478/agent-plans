@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Fixture files:
 // - blue-running-fox.md (todo)
@@ -145,7 +146,7 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(planCard.getByRole('button', { name: 'Review' })).toBeVisible();
 
     // Reset status back for other tests
-    await request.patch('http://localhost:3001/api/plans/green-dancing-cat.md/status', {
+    await request.patch(`${API_BASE_URL}/api/plans/green-dancing-cat.md/status`, {
       data: { status: 'in_progress' },
     });
   });

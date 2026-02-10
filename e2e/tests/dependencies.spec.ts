@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -14,7 +15,7 @@ test.describe('Dependencies functionality (Feature 13)', () => {
   });
 
   test('should retrieve dependency graph via API', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/dependencies');
+    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -27,7 +28,7 @@ test.describe('Dependencies functionality (Feature 13)', () => {
   });
 
   test('should show dependency relationship in graph', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/dependencies');
+    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -51,7 +52,7 @@ test.describe('Dependencies functionality (Feature 13)', () => {
 
   test('should retrieve dependencies for specific plan via API', async ({ request }) => {
     const response = await request.get(
-      'http://localhost:3001/api/dependencies/green-dancing-cat.md'
+      `${API_BASE_URL}/api/dependencies/green-dancing-cat.md`
     );
     expect(response.ok()).toBeTruthy();
 
@@ -96,7 +97,7 @@ test.describe('Dependencies functionality (Feature 13)', () => {
   });
 
   test('should detect no cycle in fixture dependencies', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/dependencies');
+    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -105,7 +106,7 @@ test.describe('Dependencies functionality (Feature 13)', () => {
   });
 
   test('should calculate critical path', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/dependencies');
+    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -121,7 +122,7 @@ test.describe('Dependencies functionality (Feature 13)', () => {
 
     try {
       // Create plan A that is blocked by plan B
-      await request.post('http://localhost:3001/api/plans', {
+      await request.post(`${API_BASE_URL}/api/plans`, {
         data: {
           filename: planA,
           content: `---
@@ -137,7 +138,7 @@ Depends on Plan B.
       });
 
       // Create plan B that is blocked by plan A (creating a cycle)
-      await request.post('http://localhost:3001/api/plans', {
+      await request.post(`${API_BASE_URL}/api/plans`, {
         data: {
           filename: planB,
           content: `---
@@ -153,22 +154,22 @@ Depends on Plan A.
       });
 
       // Check dependency graph for cycle
-      const response = await request.get('http://localhost:3001/api/dependencies');
+      const response = await request.get(`${API_BASE_URL}/api/dependencies`);
       expect(response.ok()).toBeTruthy();
 
       const graph = await response.json();
       expect(graph.hasCycle).toBe(true);
     } finally {
       // Clean up
-      await request.delete(`http://localhost:3001/api/plans/${planA}`).catch(() => {});
-      await request.delete(`http://localhost:3001/api/plans/${planB}`).catch(() => {});
+      await request.delete(`${API_BASE_URL}/api/plans/${planA}`).catch(() => {});
+      await request.delete(`${API_BASE_URL}/api/plans/${planB}`).catch(() => {});
     }
   });
 
   test('should show empty blockedBy/blocks for independent plan', async ({ request }) => {
     // red-sleeping-bear has no blockedBy in its frontmatter
     const response = await request.get(
-      'http://localhost:3001/api/dependencies/red-sleeping-bear.md'
+      `${API_BASE_URL}/api/dependencies/red-sleeping-bear.md`
     );
     expect(response.ok()).toBeTruthy();
 
@@ -185,7 +186,7 @@ Depends on Plan A.
 
     try {
       // Create a plan without dependencies
-      await request.post('http://localhost:3001/api/plans', {
+      await request.post(`${API_BASE_URL}/api/plans`, {
         data: {
           filename: testPlan,
           content: `---
@@ -199,13 +200,13 @@ No dependencies initially.
       });
 
       // Get initial graph - plan should have no dependencies
-      const initialResponse = await request.get(`http://localhost:3001/api/dependencies/${testPlan}`);
+      const initialResponse = await request.get(`${API_BASE_URL}/api/dependencies/${testPlan}`);
       expect(initialResponse.ok()).toBeTruthy();
       const initialData = await initialResponse.json();
       expect(initialData.blockedBy).toHaveLength(0);
 
       // Update the plan to add a dependency
-      await request.put(`http://localhost:3001/api/plans/${testPlan}`, {
+      await request.put(`${API_BASE_URL}/api/plans/${testPlan}`, {
         data: {
           content: `---
 status: todo
@@ -220,7 +221,7 @@ Now depends on blue-running-fox.
       });
 
       // Get updated graph - should show the new dependency
-      const updatedResponse = await request.get(`http://localhost:3001/api/dependencies/${testPlan}`);
+      const updatedResponse = await request.get(`${API_BASE_URL}/api/dependencies/${testPlan}`);
       expect(updatedResponse.ok()).toBeTruthy();
       const updatedData = await updatedResponse.json();
       // blockedBy is an array of DependencyNode objects with filename property
@@ -228,7 +229,7 @@ Now depends on blue-running-fox.
       expect(updatedBlockedByFilenames).toContain('blue-running-fox.md');
 
       // Also check full graph for the edge
-      const graphResponse = await request.get('http://localhost:3001/api/dependencies');
+      const graphResponse = await request.get(`${API_BASE_URL}/api/dependencies`);
       expect(graphResponse.ok()).toBeTruthy();
       const graph = await graphResponse.json();
       const edge = graph.edges.find(
@@ -236,7 +237,7 @@ Now depends on blue-running-fox.
       );
       expect(edge).toBeDefined();
     } finally {
-      await request.delete(`http://localhost:3001/api/plans/${testPlan}`).catch(() => {});
+      await request.delete(`${API_BASE_URL}/api/plans/${testPlan}`).catch(() => {});
     }
   });
 

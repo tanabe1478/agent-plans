@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { API_BASE_URL } from '../lib/test-helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -40,7 +41,7 @@ function add(a: number, b: number): number {
 
 test.describe('Plan detail rendering', () => {
   test.beforeEach(async ({ request }) => {
-    await request.post('http://localhost:3001/api/plans', {
+    await request.post(`${API_BASE_URL}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: TEST_PLAN_CONTENT,
@@ -49,7 +50,7 @@ test.describe('Plan detail rendering', () => {
   });
 
   test.afterEach(async ({ request }) => {
-    await request.delete(`http://localhost:3001/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should not display YAML frontmatter in rendered content', async ({ page }) => {

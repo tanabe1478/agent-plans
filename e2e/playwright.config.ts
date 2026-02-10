@@ -1,10 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getApiPort, getWebPort } from './lib/ports.js';
 
 // Use fixtures directory for tests
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = resolve(__dirname, 'fixtures', 'plans');
+
+const apiPort = getApiPort();
+const webPort = getWebPort();
 
 export default defineConfig({
   testDir: './tests',
@@ -14,7 +18,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: `http://localhost:${webPort}`,
     trace: 'on-first-retry',
   },
   projects: [
@@ -27,19 +31,25 @@ export default defineConfig({
     {
       command: 'pnpm --filter @ccplans/api dev',
       cwd: '..',
-      url: 'http://localhost:3001/api/health',
+      url: `http://localhost:${apiPort}/api/health`,
       reuseExistingServer: false,
       timeout: 120 * 1000,
       env: {
         PLANS_DIR: fixturesDir,
+        PORT: String(apiPort),
+        CORS_ORIGINS: `http://localhost:${webPort}`,
       },
     },
     {
       command: 'pnpm --filter @ccplans/web dev',
       cwd: '..',
-      url: 'http://localhost:5173',
+      url: `http://localhost:${webPort}`,
       reuseExistingServer: false,
       timeout: 120 * 1000,
+      env: {
+        WEB_PORT: String(webPort),
+        API_PORT: String(apiPort),
+      },
     },
   ],
 });
