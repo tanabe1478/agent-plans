@@ -49,14 +49,16 @@ test.describe('Status Filtering and Status Update', () => {
     await statusFilter.selectOption('todo');
 
     // Wait for the filter to apply
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
 
-    // Should show plans with ToDo status (blue-running-fox, yellow-jumping-dog)
-    await expect(page.getByRole('button', { name: 'ToDo' }).first()).toBeVisible();
+    // Should show todo plans (blue-running-fox, yellow-jumping-dog)
+    await expect(page.getByText('blue-running-fox.md')).toBeVisible();
+    await expect(page.getByText('yellow-jumping-dog.md')).toBeVisible();
 
-    // Should NOT show In Progress plans
-    const inProgressButton = page.getByRole('button', { name: 'In Progress' });
-    await expect(inProgressButton).not.toBeVisible();
+    // Should NOT show non-todo plans
+    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
+    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
+    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
   });
 
   test('should filter plans by status - In Progress', async ({ page }) => {
@@ -68,14 +70,16 @@ test.describe('Status Filtering and Status Update', () => {
     await statusFilter.selectOption('in_progress');
 
     // Wait for the filter to apply
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
 
-    // Should show plans with In Progress status
-    await expect(page.getByRole('button', { name: 'In Progress' }).first()).toBeVisible();
+    // Should show in_progress plans (green-dancing-cat, purple-swimming-fish)
+    await expect(page.getByText('green-dancing-cat.md')).toBeVisible();
+    await expect(page.getByText('purple-swimming-fish.md')).toBeVisible();
 
-    // Should NOT show ToDo plans
-    const todoButton = page.getByRole('button', { name: 'ToDo' });
-    await expect(todoButton).not.toBeVisible();
+    // Should NOT show non-in_progress plans
+    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
+    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
+    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
   });
 
   test('should filter plans by status - Completed', async ({ page }) => {
@@ -87,29 +91,31 @@ test.describe('Status Filtering and Status Update', () => {
     await statusFilter.selectOption('completed');
 
     // Wait for the filter to apply
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
 
-    // Should show plans with Completed status (red-sleeping-bear)
-    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible();
+    // Should show completed plans (red-sleeping-bear)
+    await expect(page.getByText('red-sleeping-bear.md')).toBeVisible();
 
-    // Should NOT show ToDo or In Progress plans
-    const todoButton = page.getByRole('button', { name: 'ToDo' });
-    const inProgressButton = page.getByRole('button', { name: 'In Progress' });
-    await expect(todoButton).not.toBeVisible();
-    await expect(inProgressButton).not.toBeVisible();
+    // Should NOT show non-completed plans
+    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
+    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
+    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
+    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
   });
 
   test('should open status dropdown when clicking status badge', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Click a status badge (In Progress from fixture)
-    const statusBadge = page.getByRole('button', { name: 'In Progress' }).first();
+    // Find a specific plan card and click its status badge
+    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: 'green-dancing-cat.md' });
+    await expect(planCard).toBeVisible();
+    const statusBadge = planCard.getByRole('button', { name: 'In Progress' });
     await expect(statusBadge).toBeVisible();
     await statusBadge.click();
 
-    // Dropdown should be open - look for the dropdown container with z-50 class
-    const dropdown = page.locator('.z-50.rounded-md.border');
+    // Dropdown should be open - look for the status dropdown menu
+    const dropdown = planCard.locator('.z-50');
     await expect(dropdown).toBeVisible();
   });
 
@@ -117,24 +123,31 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Click a status badge
-    const statusBadge = page.getByRole('button', { name: 'In Progress' }).first();
+    // Find a specific plan card (in_progress -> review is a valid transition)
+    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: 'green-dancing-cat.md' });
+    await expect(planCard).toBeVisible();
+    const statusBadge = planCard.getByRole('button', { name: 'In Progress' });
     await expect(statusBadge).toBeVisible({ timeout: 5000 });
     await statusBadge.click();
 
     // Wait for dropdown to open
-    const dropdown = page.locator('.z-50.rounded-md.border');
+    const dropdown = planCard.locator('.z-50');
     await expect(dropdown).toBeVisible();
 
-    // Select "Completed" from dropdown (first match is in dropdown)
-    const completedOption = dropdown.getByRole('button', { name: 'Completed' });
-    await completedOption.click();
+    // For in_progress, valid transitions are ToDo and Review
+    const reviewOption = dropdown.getByText('Review');
+    await Promise.all([
+      page.waitForResponse((resp) => resp.url().includes('/status') && resp.request().method() === 'PATCH'),
+      reviewOption.click(),
+    ]);
 
-    // Wait for update
-    await page.waitForTimeout(500);
+    // Verify the update happened (badge should now show Review)
+    await expect(planCard.getByRole('button', { name: 'Review' })).toBeVisible();
 
-    // Verify the update happened (should now have more Completed badges)
-    await expect(page.getByRole('button', { name: 'Completed' }).first()).toBeVisible();
+    // Reset status back for other tests
+    await request.patch('http://localhost:3001/api/plans/green-dancing-cat.md/status', {
+      data: { status: 'in_progress' },
+    });
   });
 
   test('should not navigate when clicking status badge', async ({ page }) => {

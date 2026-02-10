@@ -22,4 +22,7 @@ export const config = {
 
   /** Preview length in characters */
   previewLength: 200,
+
+  /** Archive retention period in days */
+  archiveRetentionDays: parseInt(process.env.ARCHIVE_RETENTION_DAYS || '30', 10),
 } as const;

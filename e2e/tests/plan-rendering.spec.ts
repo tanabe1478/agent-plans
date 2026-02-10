@@ -68,7 +68,7 @@ test.describe('Plan detail rendering', () => {
     await expect(page.getByRole('heading', { name: 'Rendering Test Plan' }).first()).toBeVisible();
 
     // Status badge should be rendered as an interactive button next to the title
-    const statusButton = page.getByRole('button', { name: 'ToDo' });
+    const statusButton = page.getByRole('button', { name: 'ToDo', exact: true });
     await expect(statusButton).toBeVisible();
   });
 
@@ -76,27 +76,23 @@ test.describe('Plan detail rendering', () => {
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(page.getByRole('heading', { name: 'Rendering Test Plan' }).first()).toBeVisible();
 
-    // Project badge should show the last directory name
-    const projectBadge = page.getByText('test').filter({ has: page.locator('svg.lucide-folder') });
-    // Fallback: just check the project name text is present in the metadata area
+    // Project badge should show the last directory name in the metadata area
     const metadataArea = page.locator('.text-muted-foreground').filter({ hasText: 'test' });
     await expect(metadataArea.first()).toBeVisible();
   });
 
   test('should allow status change from detail page', async ({ page }) => {
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
-    await expect(page.getByRole('heading', { name: 'Rendering Test Plan' }).first()).toBeVisible();
+    const main = page.getByRole('main');
+    await expect(main.getByRole('heading', { name: 'Rendering Test Plan' }).first()).toBeVisible();
 
-    // Click status badge to open dropdown
-    const statusButton = page.getByRole('button', { name: 'ToDo' });
+    // Click header status badge to open dropdown
+    const statusButton = main.getByRole('button', { name: 'ToDo', exact: true });
     await expect(statusButton).toBeVisible();
     await statusButton.click();
 
     // Dropdown should show status options
-    const dropdown = page.locator('.absolute.z-50');
-    await expect(dropdown).toBeVisible();
-    await expect(dropdown.getByText('In Progress')).toBeVisible();
-    await expect(dropdown.getByText('Completed')).toBeVisible();
+    await expect(main.getByRole('button', { name: 'In Progress', exact: true })).toBeVisible();
   });
 
   test('should apply syntax highlighting to code blocks', async ({ page }) => {

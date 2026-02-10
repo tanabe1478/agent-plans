@@ -1,9 +1,29 @@
 ---
 created: "2026-01-20T14:30:00Z"
-modified: "2026-01-22T09:15:00Z"
+modified: "2026-02-06T09:22:22.499Z"
 project_path: "/home/user/projects/mobile-app"
 session_id: "fixture-session-002"
 status: in_progress
+priority: medium
+dueDate: "2026-02-06T00:00:00Z"
+tags:
+  - "mobile"
+  - "performance"
+estimate: "1w"
+blockedBy:
+  - "blue-running-fox.md"
+assignee: "bob"
+subtasks:
+  - id: "sub-001"
+    title: "Analyze bundle size"
+    status: done
+  - id: "sub-002"
+    title: "Fix memory leaks"
+    status: todo
+  - id: "sub-003"
+    title: "Implement lazy loading"
+    status: todo
+schemaVersion: 1
 ---
 # Mobile App Performance Optimization
 

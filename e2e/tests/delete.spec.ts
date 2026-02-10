@@ -13,6 +13,31 @@ This is a test plan that will be deleted.
 Testing the delete functionality.
 `;
 
+/**
+ * Helper: Open the PlanActions "more" menu by finding the MoreVertical button
+ * next to the VSCode/Terminal buttons (not the Header's "More actions" button).
+ */
+async function openPlanActionsMenu(page: import('@playwright/test').Page) {
+  // The PlanActions area contains VSCode, Terminal, and Open in default app buttons.
+  // The MoreVertical button is inside that same area. We locate by finding the container
+  // that has the VSCode button, then click the icon-only button (with a small SVG icon).
+  const actionsBar = page.locator('div.flex.items-center.gap-2').filter({
+    has: page.getByRole('button', { name: 'VSCode' }),
+  });
+  // The MoreVertical button is a ghost/icon button with no text label inside actionsBar
+  const moreButton = actionsBar.locator('div.relative > button').first();
+  await moreButton.click();
+}
+
+/**
+ * Helper: Click the Delete option from the already-opened PlanActions menu.
+ */
+async function clickDeleteMenuItem(page: import('@playwright/test').Page) {
+  const deleteMenuItem = page.getByRole('button', { name: 'Delete', exact: true });
+  await expect(deleteMenuItem).toBeVisible();
+  await deleteMenuItem.click();
+}
+
 test.describe('Delete functionality (from detail page)', () => {
   test.beforeEach(async ({ request }) => {
     // Create a test plan via API before each test
@@ -34,18 +59,14 @@ test.describe('Delete functionality (from detail page)', () => {
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(page.getByRole('heading', { name: 'Test Plan for Delete' }).first()).toBeVisible();
 
-    // Click the more actions menu (three dots button - the last button with an icon)
-    const moreButton = page.locator('button').filter({ has: page.locator('svg.lucide-more-vertical') });
-    await moreButton.click();
+    // Click the more actions menu in PlanActions
+    await openPlanActionsMenu(page);
 
     // Wait for menu to appear and click delete option
-    const deleteMenuItem = page.locator('button.text-destructive').filter({ hasText: '削除' });
-    await expect(deleteMenuItem).toBeVisible();
-    await deleteMenuItem.click();
+    await clickDeleteMenuItem(page);
 
     // Verify confirmation dialog appears
-    await expect(page.getByRole('heading', { name: 'プランを削除' })).toBeVisible();
-    await expect(page.getByText('この操作は取り消せません')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Delete Plan' })).toBeVisible();
     await expect(page.getByText(TEST_PLAN_FILENAME).first()).toBeVisible();
   });
 
@@ -55,26 +76,26 @@ test.describe('Delete functionality (from detail page)', () => {
     await expect(page.getByRole('heading', { name: 'Test Plan for Delete' }).first()).toBeVisible();
 
     // Click the more actions menu
-    const moreButton = page.locator('button').filter({ has: page.locator('svg.lucide-more-vertical') });
-    await moreButton.click();
+    await openPlanActionsMenu(page);
 
     // Click delete option
-    const deleteMenuItem = page.locator('button.text-destructive').filter({ hasText: '削除' });
-    await expect(deleteMenuItem).toBeVisible();
-    await deleteMenuItem.click();
+    await clickDeleteMenuItem(page);
 
     // Wait for dialog to appear then confirm deletion
-    const dialogHeading = page.getByRole('heading', { name: 'プランを削除' });
+    const dialogHeading = page.getByRole('heading', { name: 'Delete Plan' });
     await expect(dialogHeading).toBeVisible();
-    // Find the dialog content area (relative z-10) and click the delete button within it
-    const dialogContent = page.locator('div.relative.z-10.bg-background');
-    const deleteConfirmButton = dialogContent.getByRole('button', { name: '削除' });
-    await expect(deleteConfirmButton).toBeVisible();
 
-    // Wait for network to be idle after clicking delete
+    // Click "Permanently delete" to enter permanent delete mode
+    await page.getByRole('button', { name: 'Permanently delete' }).click();
+
+    // Type filename to confirm
+    const confirmInput = page.getByPlaceholder(TEST_PLAN_FILENAME);
+    await confirmInput.fill(TEST_PLAN_FILENAME);
+
+    // Click the final "Permanently delete" button and wait for API response
     await Promise.all([
       page.waitForResponse((resp) => resp.url().includes('/api/plans/') && resp.request().method() === 'DELETE'),
-      deleteConfirmButton.click(),
+      page.getByRole('button', { name: 'Permanently delete' }).click(),
     ]);
 
     // Wait for dialog to close
@@ -94,16 +115,13 @@ test.describe('Delete functionality (from detail page)', () => {
     await expect(page.getByRole('heading', { name: 'Test Plan for Delete' }).first()).toBeVisible();
 
     // Click the more actions menu
-    const moreButton = page.locator('button').filter({ has: page.locator('svg.lucide-more-vertical') });
-    await moreButton.click();
+    await openPlanActionsMenu(page);
 
     // Click delete option
-    const deleteMenuItem = page.locator('button.text-destructive').filter({ hasText: '削除' });
-    await expect(deleteMenuItem).toBeVisible();
-    await deleteMenuItem.click();
+    await clickDeleteMenuItem(page);
 
     // Cancel deletion
-    await page.getByRole('button', { name: 'キャンセル' }).click();
+    await page.getByRole('button', { name: 'Cancel' }).click();
 
     // Should still be on the same page
     await expect(page).toHaveURL(`/plan/${TEST_PLAN_FILENAME}`);
@@ -144,11 +162,11 @@ test.describe('Bulk delete functionality', () => {
     await page.getByRole('button', { name: '選択' }).click();
 
     // Wait for checkboxes to appear
-    await page.waitForTimeout(500);
+    await expect(page.locator('input[type="checkbox"]').first()).toBeVisible({ timeout: 3000 });
 
     // Select both test plans by clicking their checkboxes
     for (const filename of BULK_TEST_FILES) {
-      const planCard = page.locator('div.rounded-lg.border').filter({ hasText: filename });
+      const planCard = page.locator('div.rounded-lg.border-2').filter({ hasText: filename });
       await expect(planCard).toBeVisible();
       const checkbox = planCard.locator('input[type="checkbox"]');
       await checkbox.click();
@@ -162,15 +180,19 @@ test.describe('Bulk delete functionality', () => {
     // Verify confirmation dialog
     const bulkDialogHeading = page.getByRole('heading', { name: 'プランを一括削除' });
     await expect(bulkDialogHeading).toBeVisible();
-    await expect(page.getByText('2件のプランを完全に削除しますか')).toBeVisible();
+    await expect(page.getByText(/2件のプランを完全に削除しますか/)).toBeVisible();
 
-    // Find dialog container and confirm deletion
-    const bulkDialogContent = page.locator('div.relative.z-10.bg-background');
-    const bulkConfirmButton = bulkDialogContent.getByRole('button', { name: '削除', exact: true });
-    await bulkConfirmButton.click();
+    // Find the confirm button in the dialog (text is '削除')
+    const bulkConfirmButton = page.getByRole('button', { name: '削除', exact: true });
 
-    // Wait for deletion to complete
-    await page.waitForTimeout(1000);
+    // Click and wait for the bulk delete API response (uses POST /plans/bulk-delete)
+    await Promise.all([
+      page.waitForResponse((resp) => resp.url().includes('/api/plans/bulk-delete') && resp.request().method() === 'POST'),
+      bulkConfirmButton.click(),
+    ]);
+
+    // Wait for UI to update after deletion
+    await expect(bulkDialogHeading).not.toBeVisible({ timeout: 5000 });
 
     // Verify via API that plans no longer exist
     for (const filename of BULK_TEST_FILES) {
