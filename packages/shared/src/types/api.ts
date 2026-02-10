@@ -1,4 +1,4 @@
-import type { PlanMeta, PlanDetail, SearchResult, ExportFormat, ExternalApp, PlanStatus, PlanPriority, Subtask, SavedView, SavedViewFilters, Notification, PlanVersion, DiffResult, ArchivedPlan, PlanTemplate, ImportResult, BackupInfo } from './plan.js';
+import type { PlanMeta, PlanDetail, SearchResult, ExportFormat, ExternalApp, PlanStatus, PlanPriority, Subtask, SavedView, SavedViewFilters, Notification, PlanVersion, DiffResult, ArchivedPlan, ImportResult, BackupInfo } from './plan.js';
 
 /**
  * GET /api/plans response
@@ -213,34 +213,6 @@ export interface NotificationsListResponse {
 export interface ArchiveListResponse {
   archived: ArchivedPlan[];
   total: number;
-}
-
-/**
- * GET /api/templates response
- */
-export interface TemplatesListResponse {
-  templates: PlanTemplate[];
-}
-
-/**
- * POST /api/templates request body
- */
-export interface CreateTemplateRequest {
-  name: string;
-  displayName: string;
-  description: string;
-  category: 'research' | 'implementation' | 'refactor' | 'incident' | 'custom';
-  content: string;
-  frontmatter?: Partial<import('./plan.js').PlanFrontmatter>;
-}
-
-/**
- * POST /api/plans/from-template request body
- */
-export interface CreateFromTemplateRequest {
-  templateName: string;
-  title?: string;
-  filename?: string;
 }
 
 /**

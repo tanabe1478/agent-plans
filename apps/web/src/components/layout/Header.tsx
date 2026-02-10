@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, FileText, Sun, Moon, Monitor, PanelLeftOpen, PanelLeftClose, List, Columns, Calendar, Archive, Download, Upload, MoreVertical, DatabaseBackup, Settings } from 'lucide-react';
+import { Search, FileText, Sun, Moon, Monitor, PanelLeftOpen, PanelLeftClose, List, Columns, Archive, Download, Upload, MoreVertical, DatabaseBackup, Settings } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useUiStore, type Theme } from '@/stores/uiStore';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,6 @@ const nextTheme: Record<Theme, Theme> = {
 const viewTabs = [
   { path: '/', label: 'List', icon: List },
   { path: '/kanban', label: 'Kanban', icon: Columns },
-  { path: '/calendar', label: 'Calendar', icon: Calendar },
 ] as const;
 
 function ViewTabs() {
