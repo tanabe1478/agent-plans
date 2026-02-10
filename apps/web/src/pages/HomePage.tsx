@@ -8,6 +8,7 @@ import { useUiStore } from '@/stores/uiStore';
 import { useState, useMemo } from 'react';
 import type { PlanStatus } from '@ccplans/shared';
 import { TemplateSelectDialog } from '@/components/templates/TemplateSelectDialog';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 import {
   Loader2,
   AlertCircle,
@@ -38,6 +39,7 @@ export function HomePage() {
     setProjectFilter,
   } = usePlanStore();
 
+  const fmEnabled = useFrontmatterEnabled();
   const [selectionMode, setSelectionMode] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
@@ -136,20 +138,22 @@ export function HomePage() {
         </div>
 
         {/* Status filter */}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as PlanStatus | 'all')}
-          className="rounded-md border bg-background px-2 py-2 text-sm text-foreground"
-        >
-          <option value="all">All Status</option>
-          <option value="todo">ToDo</option>
-          <option value="in_progress">In Progress</option>
-          <option value="review">Review</option>
-          <option value="completed">Completed</option>
-        </select>
+        {fmEnabled && (
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as PlanStatus | 'all')}
+            className="rounded-md border bg-background px-2 py-2 text-sm text-foreground"
+          >
+            <option value="all">All Status</option>
+            <option value="todo">ToDo</option>
+            <option value="in_progress">In Progress</option>
+            <option value="review">Review</option>
+            <option value="completed">Completed</option>
+          </select>
+        )}
 
         {/* Project filter */}
-        {uniqueProjects.length > 0 && (
+        {fmEnabled && uniqueProjects.length > 0 && (
           <select
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}

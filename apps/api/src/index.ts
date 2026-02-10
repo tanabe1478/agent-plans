@@ -11,6 +11,7 @@ import { templatesRoutes } from './routes/templates.js';
 import { exportRoutes } from './routes/export.js';
 import { importRoutes } from './routes/import.js';
 import { adminRoutes } from './routes/admin.js';
+import { settingsRoutes } from './routes/settings.js';
 
 const fastify = Fastify({
   logger: true,
@@ -33,6 +34,7 @@ await fastify.register(templatesRoutes, { prefix: '/api/templates' });
 await fastify.register(exportRoutes, { prefix: '/api/export' });
 await fastify.register(importRoutes, { prefix: '/api/import' });
 await fastify.register(adminRoutes, { prefix: '/api/admin' });
+await fastify.register(settingsRoutes, { prefix: '/api/settings' });
 
 // Backup routes (registered under /api/backup for create/restore, /api/backups for list)
 fastify.post('/api/backup', async (_request, reply) => {

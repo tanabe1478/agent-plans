@@ -11,6 +11,8 @@ import { DependencyPage } from './pages/DependencyPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { BackupPage } from './pages/BackupPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { useUiStore } from './stores/uiStore';
 
 function App() {
@@ -40,20 +42,23 @@ function App() {
   }, [theme]);
 
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
-        <Route path="plan/:filename" element={<ViewPage />} />
-        <Route path="plan/:filename/review" element={<ReviewPage />} />
-        <Route path="search" element={<SearchPage />} />
-        <Route path="kanban" element={<KanbanPage />} />
-        <Route path="calendar" element={<CalendarPage />} />
-        <Route path="archive" element={<ArchivePage />} />
-        <Route path="dependencies" element={<DependencyPage />} />
-        <Route path="templates" element={<TemplatesPage />} />
-        <Route path="backups" element={<BackupPage />} />
-      </Route>
-    </Routes>
+    <SettingsProvider>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="plan/:filename" element={<ViewPage />} />
+          <Route path="plan/:filename/review" element={<ReviewPage />} />
+          <Route path="search" element={<SearchPage />} />
+          <Route path="kanban" element={<KanbanPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="archive" element={<ArchivePage />} />
+          <Route path="dependencies" element={<DependencyPage />} />
+          <Route path="templates" element={<TemplatesPage />} />
+          <Route path="backups" element={<BackupPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </SettingsProvider>
   );
 }
 

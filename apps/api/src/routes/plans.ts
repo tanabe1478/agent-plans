@@ -16,6 +16,7 @@ import {
   deleteSubtask,
   toggleSubtask,
 } from '../services/subtaskService.js';
+import { isFrontmatterEnabled } from '../services/settingsService.js';
 import type {
   PlansListResponse,
   PlanDetailResponse,
@@ -110,6 +111,14 @@ const bulkPrioritySchema = z.object({
 const bulkArchiveSchema = z.object({
   filenames: bulkFilenamesSchema,
 });
+
+async function requireFrontmatter(reply: import('fastify').FastifyReply): Promise<boolean> {
+  if (!(await isFrontmatterEnabled())) {
+    reply.status(403).send({ error: 'Frontmatter features are disabled. Enable them in Settings.' });
+    return false;
+  }
+  return true;
+}
 
 export const plansRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/plans - List all plans
@@ -275,6 +284,7 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     Params: { filename: string };
     Body: UpdateStatusRequest;
   }>('/:filename/status', async (request, reply) => {
+    if (!(await requireFrontmatter(reply))) return;
     const { filename } = request.params;
 
     try {
@@ -305,6 +315,7 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     Params: { filename: string };
     Body: z.infer<typeof subtaskActionSchema>;
   }>('/:filename/subtasks', async (request, reply) => {
+    if (!(await requireFrontmatter(reply))) return;
     const { filename } = request.params;
 
     try {
@@ -348,6 +359,7 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: z.infer<typeof bulkStatusSchema>;
   }>('/bulk-status', async (request, reply) => {
+    if (!(await requireFrontmatter(reply))) return;
     try {
       const { filenames, status } = bulkStatusSchema.parse(request.body);
       const succeeded: string[] = [];
@@ -381,6 +393,7 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: z.infer<typeof bulkTagsSchema>;
   }>('/bulk-tags', async (request, reply) => {
+    if (!(await requireFrontmatter(reply))) return;
     try {
       const { filenames, action, tags } = bulkTagsSchema.parse(request.body);
       const succeeded: string[] = [];
@@ -419,6 +432,7 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: z.infer<typeof bulkAssignSchema>;
   }>('/bulk-assign', async (request, reply) => {
+    if (!(await requireFrontmatter(reply))) return;
     try {
       const { filenames, assignee } = bulkAssignSchema.parse(request.body);
       const succeeded: string[] = [];
@@ -446,6 +460,7 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: z.infer<typeof bulkPrioritySchema>;
   }>('/bulk-priority', async (request, reply) => {
+    if (!(await requireFrontmatter(reply))) return;
     try {
       const { filenames, priority } = bulkPrioritySchema.parse(request.body);
       const succeeded: string[] = [];

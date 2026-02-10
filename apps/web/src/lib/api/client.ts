@@ -28,6 +28,9 @@ import type {
   DependencyGraphResponse,
   PlanDependenciesResponse,
   BackupsListResponse,
+  GetSettingsResponse,
+  UpdateSettingsRequest,
+  UpdateSettingsResponse,
 } from '@ccplans/shared';
 
 const API_BASE = '/api';
@@ -279,6 +282,17 @@ export const api = {
     restore: (id: string) =>
       fetchApi<ImportResult>(`/backup/${encodeURIComponent(id)}/restore`, {
         method: 'POST',
+      }),
+  },
+
+  // Settings
+  settings: {
+    get: () => fetchApi<GetSettingsResponse>('/settings'),
+
+    update: (data: UpdateSettingsRequest) =>
+      fetchApi<UpdateSettingsResponse>('/settings', {
+        method: 'PUT',
+        body: JSON.stringify(data),
       }),
   },
 

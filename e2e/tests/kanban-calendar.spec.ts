@@ -4,6 +4,13 @@ import { test, expect } from '@playwright/test';
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Kanban & Calendar Views (Feature 8)', () => {
+  test.beforeEach(async ({ request }) => {
+    // Ensure frontmatter is enabled (may be disabled by parallel settings tests)
+    await request.put('http://localhost:3001/api/settings', {
+      data: { frontmatterEnabled: true },
+    });
+  });
+
   test('should navigate to kanban page', async ({ page }) => {
     await page.goto('/');
 

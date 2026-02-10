@@ -4,10 +4,14 @@ import {
   markAsRead,
   markAllAsRead,
 } from '../services/notificationService.js';
+import { isFrontmatterEnabled } from '../services/settingsService.js';
 
 export const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/notifications - List all notifications
   fastify.get('/', async () => {
+    if (!(await isFrontmatterEnabled())) {
+      return { notifications: [], unreadCount: 0 };
+    }
     const notifications = await generateNotifications();
     const unreadCount = notifications.filter((n) => !n.read).length;
     return { notifications, unreadCount };

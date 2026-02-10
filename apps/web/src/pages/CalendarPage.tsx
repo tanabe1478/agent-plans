@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
 import { usePlans } from '@/lib/hooks/usePlans';
 import { getDeadlineBgColor, cn } from '@/lib/utils';
 import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -131,6 +132,11 @@ function CalendarCell({ date, plans, isCurrentMonth, isToday, view }: CalendarCe
 }
 
 export function CalendarPage() {
+  const frontmatterEnabled = useFrontmatterEnabled();
+  const settingsLoading = useSettingsLoading();
+  if (settingsLoading) return null;
+  if (!frontmatterEnabled) return <Navigate to="/" replace />;
+
   const { data, isLoading, error } = usePlans();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarView>('month');

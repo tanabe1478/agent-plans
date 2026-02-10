@@ -4,12 +4,18 @@ import {
   buildDependencyGraph,
   getPlanDependencies,
 } from '../services/dependencyService.js';
+import { isFrontmatterEnabled } from '../services/settingsService.js';
 
 const filenameSchema = z.string().regex(/^[a-zA-Z0-9_-]+\.md$/);
+
+const EMPTY_GRAPH = { nodes: [], edges: [], hasCycle: false, criticalPath: [] };
 
 export const dependenciesRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/dependencies - Full dependency graph
   fastify.get('/', async () => {
+    if (!(await isFrontmatterEnabled())) {
+      return EMPTY_GRAPH;
+    }
     return buildDependencyGraph();
   });
 
@@ -17,6 +23,9 @@ export const dependenciesRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{
     Params: { filename: string };
   }>('/:filename', async (request, reply) => {
+    if (!(await isFrontmatterEnabled())) {
+      return { blockedBy: [], blocks: [] };
+    }
     const { filename } = request.params;
 
     try {

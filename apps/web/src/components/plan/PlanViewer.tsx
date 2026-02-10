@@ -5,6 +5,7 @@ import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 import type { PlanDetail } from '@ccplans/shared';
 import { SubtaskList } from './SubtaskList';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 
 interface PlanViewerProps {
   plan: PlanDetail;
@@ -50,12 +51,16 @@ for (const tag of blockTags) {
 }
 
 export function PlanViewer({ plan, showLineNumbers = false }: PlanViewerProps) {
+  const fmEnabled = useFrontmatterEnabled();
+
   return (
     <div>
-      <SubtaskList
-        filename={plan.filename}
-        subtasks={plan.frontmatter?.subtasks || []}
-      />
+      {fmEnabled && (
+        <SubtaskList
+          filename={plan.filename}
+          subtasks={plan.frontmatter?.subtasks || []}
+        />
+      )}
       <article className={`markdown-content mt-6${showLineNumbers ? ' with-line-numbers' : ''}`}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}

@@ -39,6 +39,15 @@ export type {
 export { STATUS_TRANSITIONS } from './types/plan.js';
 
 export type {
+  AppSettings,
+  GetSettingsResponse,
+  UpdateSettingsRequest,
+  UpdateSettingsResponse,
+} from './types/settings.js';
+
+export { DEFAULT_SETTINGS } from './types/settings.js';
+
+export type {
   PlansListResponse,
   PlanDetailResponse,
   CreatePlanRequest,

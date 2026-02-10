@@ -1,0 +1,106 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+
+// Mock historyService
+vi.mock('../services/historyService.js', () => ({
+  saveVersion: vi.fn().mockResolvedValue({
+    version: new Date().toISOString(),
+    filename: 'mock.md',
+    size: 0,
+    createdAt: new Date().toISOString(),
+    summary: 'mock',
+  }),
+}));
+
+// Mock archiveService
+vi.mock('../services/archiveService.js', () => ({
+  recordArchiveMeta: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock auditService
+vi.mock('../services/auditService.js', () => ({
+  log: vi.fn().mockResolvedValue(undefined),
+}));
+
+// vi.hoisted runs before vi.mock hoisting, so testDir is available in the mock factory
+const testDir = vi.hoisted(() => {
+  const path = require('node:path');
+  const os = require('node:os');
+  return path.join(os.tmpdir(), `ccplans-gating-test-${Date.now()}`);
+});
+
+vi.mock('../config.js', () => ({
+  config: {
+    plansDir: testDir,
+    archiveDir: require('node:path').join(testDir, 'archive'),
+    previewLength: 200,
+  },
+}));
+
+import { PlanService } from '../services/planService.js';
+import {
+  updateSettings,
+  resetSettingsCache,
+} from '../services/settingsService.js';
+import { clearFileStateCache } from '../services/conflictService.js';
+
+const PLAN_WITH_FRONTMATTER = `---
+created: "2025-01-01T00:00:00Z"
+status: todo
+priority: high
+tags:
+  - api
+  - test
+---
+# Test Plan
+
+Some content here.
+`;
+
+describe('Frontmatter gating', () => {
+  let service: PlanService;
+
+  beforeEach(async () => {
+    clearFileStateCache();
+    resetSettingsCache();
+    await mkdir(testDir, { recursive: true });
+    await writeFile(join(testDir, 'test-plan.md'), PLAN_WITH_FRONTMATTER, 'utf-8');
+    service = new PlanService(testDir, join(testDir, 'archive'));
+  });
+
+  afterEach(async () => {
+    await rm(testDir, { recursive: true, force: true });
+  });
+
+  describe('getPlanMeta', () => {
+    it('returns frontmatter: undefined when disabled (default)', async () => {
+      const meta = await service.getPlanMeta('test-plan.md');
+      expect(meta.frontmatter).toBeUndefined();
+      expect(meta.title).toBe('Test Plan');
+    });
+
+    it('returns frontmatter when enabled', async () => {
+      await updateSettings({ frontmatterEnabled: true });
+      const meta = await service.getPlanMeta('test-plan.md');
+      expect(meta.frontmatter).toBeDefined();
+      expect(meta.frontmatter?.status).toBe('todo');
+      expect(meta.frontmatter?.priority).toBe('high');
+    });
+  });
+
+  describe('getPlan', () => {
+    it('returns frontmatter: undefined when disabled', async () => {
+      const plan = await service.getPlan('test-plan.md');
+      expect(plan.frontmatter).toBeUndefined();
+      expect(plan.content).toContain('Some content here.');
+    });
+
+    it('returns frontmatter when enabled', async () => {
+      await updateSettings({ frontmatterEnabled: true });
+      const plan = await service.getPlan('test-plan.md');
+      expect(plan.frontmatter).toBeDefined();
+      expect(plan.frontmatter?.tags).toEqual(['api', 'test']);
+    });
+  });
+});

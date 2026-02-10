@@ -7,6 +7,7 @@ import { useUpdateStatus } from '@/lib/hooks/usePlans';
 import { StatusDropdown } from './StatusDropdown';
 import { ProjectBadge } from './ProjectBadge';
 import { DependencyBadge } from './DependencyBadge';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 
 interface PlanCardProps {
   plan: PlanMeta;
@@ -17,7 +18,8 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
   const { isSelected, toggleSelect } = usePlanStore();
   const selected = isSelected(plan.filename);
   const updateStatus = useUpdateStatus();
-  const dueDate = plan.frontmatter?.dueDate;
+  const fmEnabled = useFrontmatterEnabled();
+  const dueDate = fmEnabled ? plan.frontmatter?.dueDate : undefined;
   const deadlineColor = getDeadlineColor(dueDate);
 
   const handleStatusChange = (status: PlanStatus) => {
@@ -45,7 +47,7 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
       )}
 
       {/* Status dropdown - outside Link to prevent navigation */}
-      {plan.frontmatter?.status && (
+      {fmEnabled && plan.frontmatter?.status && (
         <div
           className="absolute right-3 top-3 z-10"
           onClick={(e) => e.stopPropagation()}
@@ -104,12 +106,12 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
               {formatRelativeDeadline(dueDate)}
             </span>
           )}
-          {plan.frontmatter?.projectPath && (
+          {fmEnabled && plan.frontmatter?.projectPath && (
             <ProjectBadge projectPath={plan.frontmatter.projectPath} />
           )}
         </div>
 
-        {plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
+        {fmEnabled && plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
           <div className="mt-2">
             <DependencyBadge
               blockedByCount={plan.frontmatter.blockedBy.length}
@@ -118,7 +120,7 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
           </div>
         )}
 
-        {plan.frontmatter?.subtasks && plan.frontmatter.subtasks.length > 0 && (() => {
+        {fmEnabled && plan.frontmatter?.subtasks && plan.frontmatter.subtasks.length > 0 && (() => {
           const subtasks = plan.frontmatter.subtasks!;
           const done = subtasks.filter((s) => s.status === 'done').length;
           const total = subtasks.length;

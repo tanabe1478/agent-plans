@@ -24,6 +24,11 @@ vi.mock('../services/auditService.js', () => ({
   log: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Mock settingsService to enable frontmatter in tests
+vi.mock('../services/settingsService.js', () => ({
+  isFrontmatterEnabled: vi.fn().mockResolvedValue(true),
+}));
+
 import { PlanService } from '../services/planService.js';
 import { clearFileStateCache } from '../services/conflictService.js';
 

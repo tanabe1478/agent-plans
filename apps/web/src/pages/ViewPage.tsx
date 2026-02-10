@@ -9,6 +9,7 @@ import { HistoryPanel } from '@/components/plan/HistoryPanel';
 import { SectionNav } from '@/components/plan/SectionNav';
 import { formatDate, formatFileSize } from '@/lib/utils';
 import type { PlanStatus } from '@ccplans/shared';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 import {
   Loader2,
   AlertCircle,
@@ -30,6 +31,7 @@ export function ViewPage() {
   const navigate = useNavigate();
   const { data: plan, isLoading, error } = usePlan(filename || '');
   const updateStatus = useUpdateStatus();
+  const fmEnabled = useFrontmatterEnabled();
   const [activeTab, setActiveTab] = useState<Tab>('content');
 
   if (isLoading) {
@@ -70,7 +72,7 @@ export function ViewPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold">{plan.title}</h1>
-            {plan.frontmatter?.status && (
+            {fmEnabled && plan.frontmatter?.status && (
               <StatusDropdown
                 currentStatus={plan.frontmatter.status}
                 onStatusChange={(status: PlanStatus) =>
@@ -93,23 +95,23 @@ export function ViewPage() {
               <HardDrive className="h-4 w-4" />
               {formatFileSize(plan.size)}
             </span>
-            {plan.frontmatter?.projectPath && (
+            {fmEnabled && plan.frontmatter?.projectPath && (
               <ProjectBadge projectPath={plan.frontmatter.projectPath} />
             )}
-            {plan.frontmatter?.priority && (
+            {fmEnabled && plan.frontmatter?.priority && (
               <span className="flex items-center gap-1">
                 <Signal className="h-4 w-4" />
                 {plan.frontmatter.priority}
               </span>
             )}
-            {plan.frontmatter?.assignee && (
+            {fmEnabled && plan.frontmatter?.assignee && (
               <span className="flex items-center gap-1">
                 <User className="h-4 w-4" />
                 {plan.frontmatter.assignee}
               </span>
             )}
           </div>
-          {plan.frontmatter?.tags && plan.frontmatter.tags.length > 0 && (
+          {fmEnabled && plan.frontmatter?.tags && plan.frontmatter.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Tag className="h-4 w-4 text-muted-foreground" />
               {plan.frontmatter.tags.map((tag) => (
@@ -122,7 +124,7 @@ export function ViewPage() {
               ))}
             </div>
           )}
-          {plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
+          {fmEnabled && plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
               <GitBranch className="h-4 w-4" />
               <span>Blocked by:</span>

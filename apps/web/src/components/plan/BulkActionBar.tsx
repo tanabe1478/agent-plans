@@ -18,6 +18,7 @@ import {
 } from '@/lib/hooks/usePlans';
 import { usePlanStore } from '@/stores/planStore';
 import { useUiStore } from '@/stores/uiStore';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 
 interface BulkActionBarProps {
   totalCount: number;
@@ -26,6 +27,7 @@ interface BulkActionBarProps {
 export function BulkActionBar({ totalCount }: BulkActionBarProps) {
   const { selectedPlans, selectAll, clearSelection } = usePlanStore();
   const { addToast } = useUiStore();
+  const fmEnabled = useFrontmatterEnabled();
   const count = selectedPlans.size;
 
   const bulkStatus = useBulkUpdateStatus();
@@ -138,47 +140,51 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
           <div className="h-6 w-px bg-border" />
 
           {/* Status change */}
-          <div className="flex items-center gap-1">
-            <ArrowRightCircle className="h-3.5 w-3.5 text-muted-foreground" />
-            <select
-              onChange={(e) => {
-                if (e.target.value) handleBulkStatus(e.target.value as PlanStatus);
-                e.target.value = '';
-              }}
-              disabled={isPending}
-              className="rounded-md border px-2 py-1 text-xs"
-              defaultValue=""
-            >
-              <option value="" disabled>Status...</option>
-              <option value="todo">ToDo</option>
-              <option value="in_progress">In Progress</option>
-              <option value="review">Review</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
+          {fmEnabled && (
+            <div className="flex items-center gap-1">
+              <ArrowRightCircle className="h-3.5 w-3.5 text-muted-foreground" />
+              <select
+                onChange={(e) => {
+                  if (e.target.value) handleBulkStatus(e.target.value as PlanStatus);
+                  e.target.value = '';
+                }}
+                disabled={isPending}
+                className="rounded-md border px-2 py-1 text-xs"
+                defaultValue=""
+              >
+                <option value="" disabled>Status...</option>
+                <option value="todo">ToDo</option>
+                <option value="in_progress">In Progress</option>
+                <option value="review">Review</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          )}
 
           {/* Priority change */}
-          <div className="flex items-center gap-1">
-            <Flag className="h-3.5 w-3.5 text-muted-foreground" />
-            <select
-              onChange={(e) => {
-                if (e.target.value) handleBulkPriority(e.target.value as PlanPriority);
-                e.target.value = '';
-              }}
-              disabled={isPending}
-              className="rounded-md border px-2 py-1 text-xs"
-              defaultValue=""
-            >
-              <option value="" disabled>Priority...</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </select>
-          </div>
+          {fmEnabled && (
+            <div className="flex items-center gap-1">
+              <Flag className="h-3.5 w-3.5 text-muted-foreground" />
+              <select
+                onChange={(e) => {
+                  if (e.target.value) handleBulkPriority(e.target.value as PlanPriority);
+                  e.target.value = '';
+                }}
+                disabled={isPending}
+                className="rounded-md border px-2 py-1 text-xs"
+                defaultValue=""
+              >
+                <option value="" disabled>Priority...</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          )}
 
           {/* Tags */}
-          {showTagInput ? (
+          {fmEnabled && (showTagInput ? (
             <div className="flex items-center gap-1">
               <input
                 type="text"
@@ -220,10 +226,10 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
               <Tags className="h-3.5 w-3.5" />
               Tags
             </button>
-          )}
+          ))}
 
           {/* Assign */}
-          {showAssignInput ? (
+          {fmEnabled && (showAssignInput ? (
             <div className="flex items-center gap-1">
               <input
                 type="text"
@@ -258,7 +264,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
               <User className="h-3.5 w-3.5" />
               Assign
             </button>
-          )}
+          ))}
 
           {/* Archive */}
           <button

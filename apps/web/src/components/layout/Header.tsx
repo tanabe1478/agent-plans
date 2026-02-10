@@ -1,11 +1,12 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, FileText, Sun, Moon, Monitor, PanelLeftOpen, PanelLeftClose, List, Columns, Calendar, Archive, Download, Upload, MoreVertical, DatabaseBackup } from 'lucide-react';
+import { Search, FileText, Sun, Moon, Monitor, PanelLeftOpen, PanelLeftClose, List, Columns, Calendar, Archive, Download, Upload, MoreVertical, DatabaseBackup, Settings } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useUiStore, type Theme } from '@/stores/uiStore';
 import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ExportDialog } from '@/components/export/ExportDialog';
 import { ImportDialog } from '@/components/import/ImportDialog';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 
 const themeIcons: Record<Theme, typeof Sun> = {
   light: Sun,
@@ -27,10 +28,15 @@ const viewTabs = [
 
 function ViewTabs() {
   const location = useLocation();
+  const frontmatterEnabled = useFrontmatterEnabled();
+
+  const visibleTabs = frontmatterEnabled
+    ? viewTabs
+    : viewTabs.filter(({ path }) => path === '/');
 
   return (
     <div className="flex items-center gap-0.5 rounded-md border p-0.5">
-      {viewTabs.map(({ path, label, icon: Icon }) => {
+      {visibleTabs.map(({ path, label, icon: Icon }) => {
         const isActive = location.pathname === path;
         return (
           <Link
@@ -55,6 +61,7 @@ function ViewTabs() {
 
 export function Header() {
   const navigate = useNavigate();
+  const frontmatterEnabled = useFrontmatterEnabled();
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -126,7 +133,7 @@ export function Header() {
           >
             <Archive className="h-5 w-5" />
           </Link>
-          <NotificationBell />
+          {frontmatterEnabled && <NotificationBell />}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -158,6 +165,15 @@ export function Header() {
                 >
                   <DatabaseBackup className="h-4 w-4" />
                   Backups
+                </Link>
+                <div className="border-t my-1" />
+                <Link
+                  to="/settings"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent"
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
                 </Link>
               </div>
             )}

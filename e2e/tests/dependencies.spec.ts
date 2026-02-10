@@ -9,6 +9,13 @@ test.describe.configure({ mode: 'serial' });
 // - green-dancing-cat.md (in_progress, blockedBy: [blue-running-fox.md])
 
 test.describe('Dependencies functionality (Feature 13)', () => {
+  test.beforeEach(async ({ request }) => {
+    // Ensure frontmatter is enabled (may be disabled by parallel settings tests)
+    await request.put('http://localhost:3001/api/settings', {
+      data: { frontmatterEnabled: true },
+    });
+  });
+
   test('should navigate to /dependencies page', async ({ page }) => {
     await page.goto('/dependencies');
     await expect(page.getByRole('heading', { name: 'Dependency Graph' })).toBeVisible();

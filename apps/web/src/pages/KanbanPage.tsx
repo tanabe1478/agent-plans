@@ -1,5 +1,6 @@
 import { useState, type DragEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
 import { usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
 import { StatusBadge } from '@/components/plan/StatusBadge';
 import { getDeadlineColor, formatRelativeDeadline, cn } from '@/lib/utils';
@@ -126,6 +127,11 @@ function KanbanColumn({
 }
 
 export function KanbanPage() {
+  const frontmatterEnabled = useFrontmatterEnabled();
+  const settingsLoading = useSettingsLoading();
+  if (settingsLoading) return null;
+  if (!frontmatterEnabled) return <Navigate to="/" replace />;
+
   const { data, isLoading, error } = usePlans();
   const updateStatus = useUpdateStatus();
   const [draggedPlan, setDraggedPlan] = useState<PlanMeta | null>(null);

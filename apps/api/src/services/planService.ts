@@ -7,6 +7,7 @@ import { recordArchiveMeta } from './archiveService.js';
 import { needsMigration, migrate } from './migrationService.js';
 import { recordFileState, checkConflict } from './conflictService.js';
 import { log as auditLog } from './auditService.js';
+import { isFrontmatterEnabled } from './settingsService.js';
 
 /**
  * Parse a YAML array from frontmatter lines starting at the given index.
@@ -315,6 +316,7 @@ export class PlanService {
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
 
     const { frontmatter, body } = parseFrontmatter(content);
+    const fmEnabled = await isFrontmatterEnabled();
 
     return {
       filename,
@@ -325,7 +327,7 @@ export class PlanService {
       preview: extractPreview(body),
       sections: extractSections(body),
       relatedProject: extractRelatedProject(body),
-      frontmatter,
+      frontmatter: fmEnabled ? frontmatter : undefined,
     };
   }
 
@@ -349,6 +351,8 @@ export class PlanService {
       frontmatter = migrate({});
     }
 
+    const fmEnabled = await isFrontmatterEnabled();
+
     return {
       filename,
       title: extractTitle(body),
@@ -358,7 +362,7 @@ export class PlanService {
       preview: extractPreview(body),
       sections: extractSections(body),
       relatedProject: extractRelatedProject(body),
-      frontmatter,
+      frontmatter: fmEnabled ? frontmatter : undefined,
       content: body,
     };
   }
