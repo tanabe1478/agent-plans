@@ -68,7 +68,8 @@ function layoutGraph(graph: DependencyGraph): Map<string, LayoutPosition> {
   }
 
   while (queue.length > 0) {
-    const current = queue.shift()!;
+    const current = queue.shift();
+    if (!current) break;
     const currentLayer = layers.get(current) ?? 0;
     const node = nodeMap.get(current);
     if (!node) continue;
@@ -204,9 +205,6 @@ function GraphEdge({
 export function DependencyPage() {
   const frontmatterEnabled = useFrontmatterEnabled();
   const settingsLoading = useSettingsLoading();
-  if (settingsLoading) return null;
-  if (!frontmatterEnabled) return <Navigate to="/" replace />;
-
   const { data: graph, isLoading, error } = useDependencyGraph();
   const navigate = useNavigate();
   const [scale, setScale] = useState(1);
@@ -266,6 +264,9 @@ export function DependencyPage() {
     setIsPanning(false);
   }, []);
 
+  if (settingsLoading) return null;
+  if (!frontmatterEnabled) return <Navigate to="/" replace />;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -311,6 +312,7 @@ export function DependencyPage() {
         <h1 className="text-2xl font-bold">Dependency Graph</h1>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleZoomOut}
             className="p-2 rounded-lg border bg-card hover:bg-accent"
             title="Zoom out"
@@ -321,6 +323,7 @@ export function DependencyPage() {
             {Math.round(scale * 100)}%
           </span>
           <button
+            type="button"
             onClick={handleZoomIn}
             className="p-2 rounded-lg border bg-card hover:bg-accent"
             title="Zoom in"
@@ -328,6 +331,7 @@ export function DependencyPage() {
             <ZoomIn className="h-4 w-4" />
           </button>
           <button
+            type="button"
             onClick={handleReset}
             className="p-2 rounded-lg border bg-card hover:bg-accent"
             title="Reset view"
@@ -381,6 +385,7 @@ export function DependencyPage() {
       </div>
 
       <div
+        role="application"
         className="border rounded-lg bg-card overflow-hidden"
         style={{ height: 'calc(100vh - 320px)', minHeight: '400px' }}
         onMouseDown={handleMouseDown}

@@ -29,6 +29,7 @@ export function BackupPage() {
           <h1 className="text-xl font-semibold">Backups</h1>
         </div>
         <button
+          type="button"
           onClick={handleCreate}
           disabled={createBackup.isPending}
           className="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -72,6 +73,7 @@ export function BackupPage() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setConfirmRestore(backup.id)}
                 disabled={restoreBackup.isPending}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border hover:bg-accent disabled:opacity-50"
@@ -100,12 +102,14 @@ export function BackupPage() {
           </div>
           <div className="flex justify-end gap-2">
             <button
+              type="button"
               onClick={() => setConfirmRestore(null)}
               className="px-4 py-2 text-sm rounded-md border hover:bg-accent"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={() => confirmRestore && handleRestore(confirmRestore)}
               disabled={restoreBackup.isPending}
               className="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -141,6 +145,7 @@ export function BackupPage() {
             </div>
             <div className="flex justify-end">
               <button
+                type="button"
                 onClick={() => setRestoreResult(null)}
                 className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
               >

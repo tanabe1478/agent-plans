@@ -34,8 +34,10 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
+        role="presentation"
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
+        onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
       />
       <div
         ref={dialogRef}
@@ -47,6 +49,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 hover:bg-accent rounded"
           >

@@ -67,6 +67,7 @@ export function SubtaskList({ filename, subtasks }: SubtaskListProps) {
             className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50 group"
           >
             <button
+              type="button"
               onClick={() => handleToggle(subtask.id)}
               className="flex-shrink-0 text-muted-foreground hover:text-primary"
               disabled={updateSubtask.isPending}
@@ -85,6 +86,7 @@ export function SubtaskList({ filename, subtasks }: SubtaskListProps) {
               {subtask.title}
             </span>
             <button
+              type="button"
               onClick={() => handleDelete(subtask.id)}
               className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
               disabled={updateSubtask.isPending}
@@ -107,6 +109,7 @@ export function SubtaskList({ filename, subtasks }: SubtaskListProps) {
           className="flex-1 rounded-md border px-3 py-1.5 text-sm"
         />
         <button
+          type="button"
           onClick={handleAdd}
           disabled={!newTitle.trim() || updateSubtask.isPending}
           className="rounded-md border px-2 py-1.5 text-sm hover:bg-muted disabled:opacity-50"

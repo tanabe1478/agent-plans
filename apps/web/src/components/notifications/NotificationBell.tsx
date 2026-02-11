@@ -27,6 +27,7 @@ export function NotificationBell() {
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen((prev) => !prev)}
         className="p-2 hover:bg-accent rounded-md relative"
         title="Notifications"

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+  "files": {
+    "ignore": ["**/node_modules/**", "**/dist/**", "**/*.css"]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "correctness": {
+        "useHookAtTopLevel": "error",
+        "noInvalidUseBeforeDeclaration": "error"
+      },
+      "a11y": {
+        "useButtonType": "error",
+        "noStaticElementInteractions": "error",
+        "noLabelWithoutControl": "error",
+        "useKeyWithClickEvents": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "error",
+        "noExplicitAny": "error"
+      }
+    }
+  }
+}

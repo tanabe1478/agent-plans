@@ -48,7 +48,7 @@ export function SavedViewsSidebar() {
     );
   };
 
-  const handleDeleteView = (id: string, e: React.MouseEvent) => {
+  const handleDeleteView = (id: string, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     deleteView.mutate(id);
   };
@@ -60,7 +60,7 @@ export function SavedViewsSidebar() {
           <Eye className="h-4 w-4" />
           Views
         </h2>
-        <button onClick={toggleSidebar} className="p-1 hover:bg-accent rounded">
+        <button type="button" onClick={toggleSidebar} className="p-1 hover:bg-accent rounded">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -120,6 +120,7 @@ export function SavedViewsSidebar() {
               />
               <div className="flex gap-1">
                 <button
+                  type="button"
                   onClick={handleCreateView}
                   disabled={!newViewName.trim()}
                   className="flex-1 rounded bg-primary px-2 py-1 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -127,6 +128,7 @@ export function SavedViewsSidebar() {
                   Save
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowCreateForm(false)}
                   className="flex-1 rounded border px-2 py-1 text-xs hover:bg-accent"
                 >
@@ -136,6 +138,7 @@ export function SavedViewsSidebar() {
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => setShowCreateForm(true)}
               className="flex items-center gap-1.5 w-full rounded px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
             >
@@ -158,10 +161,11 @@ function ViewItem({
   view: SavedView;
   isActive: boolean;
   onClick: () => void;
-  onDelete?: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`group flex items-center justify-between w-full rounded px-2 py-1.5 text-sm text-left hover:bg-accent ${
         isActive ? 'bg-accent font-medium' : ''
@@ -170,7 +174,10 @@ function ViewItem({
       <span className="truncate">{view.name}</span>
       {onDelete && (
         <span
+          role="button"
+          tabIndex={0}
           onClick={onDelete}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onDelete(e); } }}
           className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive"
         >
           <Trash2 className="h-3 w-3" />

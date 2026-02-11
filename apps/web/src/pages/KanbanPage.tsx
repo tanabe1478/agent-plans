@@ -30,6 +30,7 @@ function KanbanCard({ plan, onDragStart }: KanbanCardProps) {
 
   return (
     <div
+      role="listitem"
       draggable
       onDragStart={(e) => onDragStart(e, plan)}
       className={cn(
@@ -90,6 +91,7 @@ function KanbanColumn({
 
   return (
     <div
+      role="group"
       className={cn(
         'flex-shrink-0 w-72 flex flex-col rounded-lg border bg-muted/30 transition-colors',
         isDragOver && canDrop && 'border-primary bg-primary/5',
@@ -129,13 +131,13 @@ function KanbanColumn({
 export function KanbanPage() {
   const frontmatterEnabled = useFrontmatterEnabled();
   const settingsLoading = useSettingsLoading();
-  if (settingsLoading) return null;
-  if (!frontmatterEnabled) return <Navigate to="/" replace />;
-
   const { data, isLoading, error } = usePlans();
   const updateStatus = useUpdateStatus();
   const [draggedPlan, setDraggedPlan] = useState<PlanMeta | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<PlanStatus | null>(null);
+
+  if (settingsLoading) return null;
+  if (!frontmatterEnabled) return <Navigate to="/" replace />;
 
   if (isLoading) {
     return (

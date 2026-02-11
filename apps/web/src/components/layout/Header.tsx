@@ -92,6 +92,7 @@ export function Header() {
       <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={toggleSidebar}
             className="p-2 hover:bg-accent rounded-md"
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
@@ -135,6 +136,7 @@ export function Header() {
           {frontmatterEnabled && <NotificationBell />}
           <div className="relative" ref={menuRef}>
             <button
+              type="button"
               onClick={() => setMenuOpen(!menuOpen)}
               className="p-2 hover:bg-accent rounded-md"
               title="More actions"
@@ -144,6 +146,7 @@ export function Header() {
             {menuOpen && (
               <div className="absolute right-0 mt-1 w-48 rounded-md border bg-background shadow-lg z-50">
                 <button
+                  type="button"
                   onClick={() => { setExportOpen(true); setMenuOpen(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent text-left"
                 >
@@ -151,6 +154,7 @@ export function Header() {
                   Export Plans
                 </button>
                 <button
+                  type="button"
                   onClick={() => { setImportOpen(true); setMenuOpen(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent text-left"
                 >
@@ -178,6 +182,7 @@ export function Header() {
             )}
           </div>
           <button
+            type="button"
             onClick={() => setTheme(nextTheme[theme])}
             className="p-2 hover:bg-accent rounded-md"
             title={`Theme: ${theme}`}

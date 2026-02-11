@@ -85,6 +85,7 @@ export function HistoryPanel({ filename }: HistoryPanelProps) {
           </p>
           <div className="mt-3 flex gap-2">
             <button
+              type="button"
               onClick={() => handleRollback(showRollbackConfirm)}
               disabled={rollbackMutation.isPending}
               className="rounded bg-orange-600 px-3 py-1 text-sm text-white hover:bg-orange-700 disabled:opacity-50"
@@ -92,6 +93,7 @@ export function HistoryPanel({ filename }: HistoryPanelProps) {
               {rollbackMutation.isPending ? 'ロールバック中...' : 'ロールバック'}
             </button>
             <button
+              type="button"
               onClick={() => setShowRollbackConfirm(null)}
               className="rounded border px-3 py-1 text-sm hover:bg-muted"
             >
@@ -138,6 +140,7 @@ function VersionItem({ version, isSelected, onSelect, onRollback }: VersionItemP
     >
       <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={onSelect}
           className="flex flex-1 items-center gap-2 text-left"
         >
@@ -154,6 +157,7 @@ function VersionItem({ version, isSelected, onSelect, onRollback }: VersionItemP
           </div>
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRollback();
@@ -188,9 +192,9 @@ function DiffView({ lines, stats }: DiffViewProps) {
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full font-mono text-sm">
           <tbody>
-            {lines.map((line, i) => (
+            {lines.map((line) => (
               <tr
-                key={i}
+                key={`${line.lineNumber}-${line.type}`}
                 className={
                   line.type === 'added'
                     ? 'bg-[#dcfce7] dark:bg-[#166534]/40'

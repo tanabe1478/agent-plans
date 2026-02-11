@@ -160,6 +160,7 @@ export function ViewPage() {
       {/* Tabs */}
       <div className="mb-4 flex border-b">
         <button
+          type="button"
           onClick={() => setActiveTab('content')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'content'
@@ -170,6 +171,7 @@ export function ViewPage() {
           内容
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('history')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'history'

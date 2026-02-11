@@ -49,8 +49,10 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
       {/* Status dropdown - outside Link to prevent navigation */}
       {fmEnabled && plan.frontmatter?.status && (
         <div
+          role="presentation"
           className="absolute right-3 top-3 z-10"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         >
           <StatusDropdown
             currentStatus={plan.frontmatter.status}
@@ -121,7 +123,7 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
         )}
 
         {fmEnabled && plan.frontmatter?.subtasks && plan.frontmatter.subtasks.length > 0 && (() => {
-          const subtasks = plan.frontmatter.subtasks!;
+          const subtasks = plan.frontmatter.subtasks ?? [];
           const done = subtasks.filter((s) => s.status === 'done').length;
           const total = subtasks.length;
           const pct = Math.round((done / total) * 100);

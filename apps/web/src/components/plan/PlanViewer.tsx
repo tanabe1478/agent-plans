@@ -18,11 +18,15 @@ interface NodeWithPosition {
   };
 }
 
+interface LineNumberedProps {
+  node?: NodeWithPosition;
+  children?: ReactNode;
+  [key: string]: unknown;
+}
+
 function lineNumberComponent(tag: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return function LineNumbered({ node, children, ...props }: any) {
-    const typedNode = node as NodeWithPosition | undefined;
-    const line = typedNode?.position?.start?.line;
+  return function LineNumbered({ node, children, ...props }: LineNumberedProps) {
+    const line = node?.position?.start?.line;
     return createElement(
       tag,
       { ...props, 'data-line': line },
@@ -38,8 +42,7 @@ function lineNumberComponent(tag: string) {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const lineNumberComponents: Record<string, any> = {};
+const lineNumberComponents: Record<string, ReturnType<typeof lineNumberComponent>> = {};
 const blockTags = [
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'p', 'blockquote', 'pre', 'table', 'hr',

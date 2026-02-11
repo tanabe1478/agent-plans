@@ -51,6 +51,7 @@ export function InlineComment({
         </span>
         <div className="flex shrink-0 items-center gap-1">
           <button
+            type="button"
             onClick={onCopyPrompt}
             title="Copy prompt"
             className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -58,6 +59,7 @@ export function InlineComment({
             <Copy className="h-3.5 w-3.5" />
           </button>
           <button
+            type="button"
             onClick={onEdit}
             title="Edit"
             className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -65,6 +67,7 @@ export function InlineComment({
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
+            type="button"
             onClick={onDelete}
             title="Delete"
             className="rounded p-1 text-muted-foreground hover:bg-red-200 hover:text-red-800 dark:hover:bg-red-800 dark:hover:text-red-200"

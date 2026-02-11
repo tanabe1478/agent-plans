@@ -72,8 +72,8 @@ export function SearchPage() {
 
               {result.matches.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {result.matches.slice(0, 3).map((match, index) => (
-                    <div key={index} className="text-sm border-l-2 border-muted pl-3 py-1">
+                  {result.matches.slice(0, 3).map((match) => (
+                    <div key={match.line} className="text-sm border-l-2 border-muted pl-3 py-1">
                       <span className="text-xs text-muted-foreground mr-2">L{match.line}</span>
                       <span
                         className="text-muted-foreground"

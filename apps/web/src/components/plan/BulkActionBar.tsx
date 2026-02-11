@@ -123,6 +123,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
 
           {/* Select all / clear */}
           <button
+            type="button"
             onClick={() => selectAll(Array.from({ length: totalCount }, (_, i) => `plan-${i}`))}
             className="text-xs text-primary hover:underline"
             style={{ display: 'none' }}
@@ -130,6 +131,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
             Select all
           </button>
           <button
+            type="button"
             onClick={clearSelection}
             className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
           >
@@ -198,6 +200,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
                 }}
               />
               <button
+                type="button"
                 onClick={() => handleBulkTags('add')}
                 disabled={isPending || !tagInput.trim()}
                 className="rounded-md border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
@@ -205,6 +208,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
                 Add
               </button>
               <button
+                type="button"
                 onClick={() => handleBulkTags('remove')}
                 disabled={isPending || !tagInput.trim()}
                 className="rounded-md border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
@@ -212,6 +216,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
                 Remove
               </button>
               <button
+                type="button"
                 onClick={() => setShowTagInput(false)}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
@@ -220,6 +225,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => setShowTagInput(true)}
               className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
             >
@@ -243,6 +249,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
                 }}
               />
               <button
+                type="button"
                 onClick={handleBulkAssign}
                 disabled={isPending || !assigneeInput.trim()}
                 className="rounded-md border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
@@ -250,6 +257,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
                 Assign
               </button>
               <button
+                type="button"
                 onClick={() => setShowAssignInput(false)}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
@@ -258,6 +266,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => setShowAssignInput(true)}
               className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
             >
@@ -268,6 +277,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
 
           {/* Archive */}
           <button
+            type="button"
             onClick={handleBulkArchive}
             disabled={isPending}
             className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted text-orange-600 border-orange-300"

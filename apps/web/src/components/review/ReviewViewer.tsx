@@ -205,12 +205,12 @@ export function ReviewViewer({
                       </td>
                     </tr>
                   ))}
-                  {(showForm || showFormRange) && (
+                  {(showForm || showFormRange) && activeForm && (
                     <tr className="review-comment-row">
                       <td colSpan={2} className="review-comment-cell">
                         <CommentForm
-                          line={activeForm!.line}
-                          quotedContent={extractQuotedLines(activeForm!.line)}
+                          line={activeForm.line}
+                          quotedContent={extractQuotedLines(activeForm.line)}
                           onSubmit={handleFormSubmit}
                           onCancel={handleFormCancel}
                         />
