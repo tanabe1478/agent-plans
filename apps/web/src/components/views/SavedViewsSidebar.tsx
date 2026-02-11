@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import type { SavedView } from '@ccplans/shared';
 import { Eye, Plus, Trash2, X } from 'lucide-react';
-import { useViews, useCreateView, useDeleteView } from '@/lib/hooks/useViews';
+import { useState } from 'react';
+import { useCreateView, useDeleteView, useViews } from '@/lib/hooks/useViews';
 import { usePlanStore } from '@/stores/planStore';
 import { useUiStore } from '@/stores/uiStore';
-import type { SavedView } from '@ccplans/shared';
 
 export function SavedViewsSidebar() {
   const { data, isLoading } = useViews();
@@ -44,7 +44,7 @@ export function SavedViewsSidebar() {
           setNewViewName('');
           setShowCreateForm(false);
         },
-      },
+      }
     );
   };
 
@@ -71,7 +71,9 @@ export function SavedViewsSidebar() {
         <>
           {presets.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">Presets</h3>
+              <h3 className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
+                Presets
+              </h3>
               <div className="space-y-0.5">
                 {presets.map((view) => (
                   <ViewItem
@@ -86,7 +88,9 @@ export function SavedViewsSidebar() {
           )}
 
           <div className="mb-4">
-            <h3 className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">Custom</h3>
+            <h3 className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
+              Custom
+            </h3>
             {custom.length === 0 ? (
               <p className="text-xs text-muted-foreground py-1">No custom views</p>
             ) : (
@@ -116,7 +120,6 @@ export function SavedViewsSidebar() {
                 }}
                 placeholder="View name..."
                 className="w-full rounded border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                autoFocus
               />
               <div className="flex gap-1">
                 <button

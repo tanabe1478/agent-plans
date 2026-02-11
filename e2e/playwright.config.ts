@@ -1,24 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { getApiPort, getWebPort } from './lib/ports.js';
-
-// Use fixtures directory for tests
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const fixturesDir = resolve(__dirname, 'fixtures', 'plans');
-
-const apiPort = getApiPort();
-const webPort = getWebPort();
 
 export default defineConfig({
+  globalSetup: './global-setup.ts',
+  globalTeardown: './global-teardown.ts',
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 2 : undefined,
   reporter: 'html',
   use: {
-    baseURL: `http://localhost:${webPort}`,
     trace: 'on-first-retry',
   },
   projects: [
@@ -32,33 +23,6 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       testMatch: /settings\.spec\.ts/,
       dependencies: ['chromium'],
-    },
-  ],
-  webServer: [
-    {
-      command: 'pnpm --filter @ccplans/api dev',
-      cwd: '..',
-      url: `http://localhost:${apiPort}/api/health`,
-      reuseExistingServer: false,
-      timeout: 120 * 1000,
-      env: {
-        TZ: 'UTC',
-        PLANS_DIR: fixturesDir,
-        PORT: String(apiPort),
-        CORS_ORIGINS: `http://localhost:${webPort}`,
-      },
-    },
-    {
-      command: 'pnpm --filter @ccplans/web dev',
-      cwd: '..',
-      url: `http://localhost:${webPort}`,
-      reuseExistingServer: false,
-      timeout: 120 * 1000,
-      env: {
-        TZ: 'UTC',
-        WEB_PORT: String(webPort),
-        API_PORT: String(apiPort),
-      },
     },
   ],
 });

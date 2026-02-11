@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { PlanMeta } from '@ccplans/shared';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  isOverdue,
-  isToday,
-  isThisWeek,
-  getDeadlineColor,
   categorizeByDeadline,
   formatRelativeDeadline,
+  getDeadlineColor,
+  isOverdue,
+  isThisWeek,
+  isToday,
 } from '../lib/utils';
 
 function makePlan(overrides: Partial<PlanMeta> = {}): PlanMeta {
@@ -51,7 +51,7 @@ describe('Deadline Utils', () => {
   });
 
   describe('isToday', () => {
-    it('should return true for today\'s date', () => {
+    it("should return true for today's date", () => {
       expect(isToday('2026-02-04')).toBe(true);
     });
 

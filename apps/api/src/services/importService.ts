@@ -1,7 +1,7 @@
-import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises';
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { BackupInfo, ImportResult } from '@ccplans/shared';
 import { config } from '../config.js';
-import type { ImportResult, BackupInfo } from '@ccplans/shared';
 import { planService } from './planService.js';
 
 const BACKUPS_DIR = join(config.plansDir, '.backups');
@@ -102,7 +102,7 @@ export async function listBackups(): Promise<BackupInfo[]> {
   try {
     await mkdir(BACKUPS_DIR, { recursive: true });
     const files = await readdir(BACKUPS_DIR);
-    const jsonFiles = files.filter(f => f.endsWith('.json'));
+    const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
     const backups: BackupInfo[] = [];
 
@@ -125,8 +125,8 @@ export async function listBackups(): Promise<BackupInfo[]> {
       }
     }
 
-    return backups.sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    return backups.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   } catch {
     return [];

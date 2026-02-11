@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { parseQuery } from '../services/queryParser.js';
 
 describe('parseQuery', () => {
@@ -117,7 +117,11 @@ describe('parseQuery', () => {
   describe('blockedBy filter', () => {
     it('should parse blockedBy:other-plan.md', () => {
       const result = parseQuery('blockedBy:other-plan.md');
-      expect(result.filters[0]).toEqual({ field: 'blockedBy', operator: ':', value: 'other-plan.md' });
+      expect(result.filters[0]).toEqual({
+        field: 'blockedBy',
+        operator: ':',
+        value: 'other-plan.md',
+      });
     });
   });
 

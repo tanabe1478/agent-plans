@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
-import { Header } from './Header';
 import { Toasts } from '../ui/Toasts';
 import { SavedViewsSidebar } from '../views/SavedViewsSidebar';
+import { Header } from './Header';
 
 export function Layout() {
   return (

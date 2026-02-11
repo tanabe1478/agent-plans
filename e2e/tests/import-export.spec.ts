@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -22,13 +21,13 @@ Testing markdown import.
 `;
 
 test.describe('Import/Export functionality (Feature 14)', () => {
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up: try to delete imported plans
-    await request.delete(`${API_BASE_URL}/api/plans/${TEST_IMPORT_FILENAME}`).catch(() => {});
+    await request.delete(`${apiBaseUrl}/api/plans/${TEST_IMPORT_FILENAME}`).catch(() => {});
   });
 
-  test('should export plans as JSON via API', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/export?format=json`);
+  test('should export plans as JSON via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/export?format=json`);
     expect(response.ok()).toBeTruthy();
 
     const contentType = response.headers()['content-type'];
@@ -40,8 +39,8 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(json.exportedAt).toBeDefined();
   });
 
-  test('should export plans as CSV via API', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/export?format=csv`);
+  test('should export plans as CSV via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/export?format=csv`);
     expect(response.ok()).toBeTruthy();
 
     const contentType = response.headers()['content-type'];
@@ -53,8 +52,8 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(csv).toContain('status');
   });
 
-  test('should export plans as tar.gz via API', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/export?format=zip`);
+  test('should export plans as tar.gz via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/export?format=zip`);
     expect(response.ok()).toBeTruthy();
 
     const contentType = response.headers()['content-type'];
@@ -64,8 +63,8 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(buffer.length).toBeGreaterThan(0);
   });
 
-  test('should import markdown files via API', async ({ request }) => {
-    const response = await request.post(`${API_BASE_URL}/api/import/markdown`, {
+  test('should import markdown files via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.post(`${apiBaseUrl}/api/import/markdown`, {
       data: {
         files: [
           {
@@ -84,12 +83,12 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(Array.isArray(result.errors)).toBeTruthy();
 
     // Verify imported plan exists
-    const planResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_IMPORT_FILENAME}`);
+    const planResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_IMPORT_FILENAME}`);
     expect(planResponse.ok()).toBeTruthy();
   });
 
-  test('should create backup via API', async ({ request }) => {
-    const response = await request.post(`${API_BASE_URL}/api/backup`);
+  test('should create backup via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.post(`${apiBaseUrl}/api/backup`);
     expect(response.status()).toBe(201);
 
     const backup = await response.json();
@@ -100,12 +99,12 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(backup.size).toBeGreaterThan(0);
   });
 
-  test('should retrieve backup list via API', async ({ request }) => {
+  test('should retrieve backup list via API', async ({ request, apiBaseUrl }) => {
     // Create a backup first
-    await request.post(`${API_BASE_URL}/api/backup`);
+    await request.post(`${apiBaseUrl}/api/backup`);
 
     // Get backup list
-    const response = await request.get(`${API_BASE_URL}/api/backups`);
+    const response = await request.get(`${apiBaseUrl}/api/backups`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -131,7 +130,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Click More menu (three vertical dots)
-    const moreButton = page.locator('button').filter({ has: page.locator('svg.lucide-more-vertical') });
+    const moreButton = page
+      .locator('button')
+      .filter({ has: page.locator('svg.lucide-more-vertical') });
     await moreButton.click();
 
     // Check Export and Import options are visible
@@ -140,8 +141,8 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     await expect(page.getByRole('link', { name: 'Backups' })).toBeVisible();
   });
 
-  test('should filter export by status', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/export?format=json&filterStatus=todo`);
+  test('should filter export by status', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/export?format=json&filterStatus=todo`);
     expect(response.ok()).toBeTruthy();
 
     const json = await response.json();
@@ -154,9 +155,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     }
   });
 
-  test('should skip duplicate files on import', async ({ request }) => {
+  test('should skip duplicate files on import', async ({ request, apiBaseUrl }) => {
     // First import
-    const firstResponse = await request.post(`${API_BASE_URL}/api/import/markdown`, {
+    const firstResponse = await request.post(`${apiBaseUrl}/api/import/markdown`, {
       data: {
         files: [
           {
@@ -171,7 +172,7 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(firstResult.imported).toBeGreaterThan(0);
 
     // Second import of the same file should be skipped
-    const secondResponse = await request.post(`${API_BASE_URL}/api/import/markdown`, {
+    const secondResponse = await request.post(`${apiBaseUrl}/api/import/markdown`, {
       data: {
         files: [
           {
@@ -186,9 +187,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(secondResult.skipped).toBeGreaterThan(0);
   });
 
-  test('should export individual plan as markdown via API', async ({ request }) => {
+  test('should export individual plan as markdown via API', async ({ request, apiBaseUrl }) => {
     const response = await request.get(
-      `${API_BASE_URL}/api/plans/blue-running-fox.md/export?format=md`
+      `${apiBaseUrl}/api/plans/blue-running-fox.md/export?format=md`
     );
     expect(response.ok()).toBeTruthy();
 
@@ -202,9 +203,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(content).toContain('Web Application Authentication System');
   });
 
-  test('should export individual plan as HTML via API', async ({ request }) => {
+  test('should export individual plan as HTML via API', async ({ request, apiBaseUrl }) => {
     const response = await request.get(
-      `${API_BASE_URL}/api/plans/blue-running-fox.md/export?format=html`
+      `${apiBaseUrl}/api/plans/blue-running-fox.md/export?format=html`
     );
     expect(response.ok()).toBeTruthy();
 
@@ -216,9 +217,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(html).toContain('Web Application Authentication System');
   });
 
-  test('should return 501 for PDF export', async ({ request }) => {
+  test('should return 501 for PDF export', async ({ request, apiBaseUrl }) => {
     const response = await request.get(
-      `${API_BASE_URL}/api/plans/blue-running-fox.md/export?format=pdf`
+      `${apiBaseUrl}/api/plans/blue-running-fox.md/export?format=pdf`
     );
     expect(response.status()).toBe(501);
 
@@ -226,17 +227,15 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(data.error).toContain('PDF');
   });
 
-  test('should restore from backup via API', async ({ request }) => {
+  test('should restore from backup via API', async ({ request, apiBaseUrl }) => {
     // Create a backup first
-    const backupResponse = await request.post(`${API_BASE_URL}/api/backup`);
+    const backupResponse = await request.post(`${apiBaseUrl}/api/backup`);
     expect(backupResponse.status()).toBe(201);
     const backup = await backupResponse.json();
     expect(backup.id).toBeDefined();
 
     // Restore from the backup
-    const restoreResponse = await request.post(
-      `${API_BASE_URL}/api/backup/${backup.id}/restore`
-    );
+    const restoreResponse = await request.post(`${apiBaseUrl}/api/backup/${backup.id}/restore`);
     expect(restoreResponse.ok()).toBeTruthy();
 
     const result = await restoreResponse.json();
@@ -245,10 +244,8 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(result.errors).toBeDefined();
   });
 
-  test('should filter export by tags', async ({ request }) => {
-    const response = await request.get(
-      `${API_BASE_URL}/api/export?format=json&filterTags=backend`
-    );
+  test('should filter export by tags', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/export?format=json&filterTags=backend`);
     expect(response.ok()).toBeTruthy();
 
     const json = await response.json();
@@ -261,9 +258,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     }
   });
 
-  test('should display backup page with backup list', async ({ page, request }) => {
+  test('should display backup page with backup list', async ({ page, request, apiBaseUrl }) => {
     // Ensure at least one backup exists
-    await request.post(`${API_BASE_URL}/api/backup`);
+    await request.post(`${apiBaseUrl}/api/backup`);
 
     // Navigate to backups page
     await page.goto('/backups');
@@ -285,7 +282,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
 
     // Click and wait for the backup API response
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/api/backup') && resp.request().method() === 'POST'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/api/backup') && resp.request().method() === 'POST'
+      ),
       createButton.click(),
     ]);
 

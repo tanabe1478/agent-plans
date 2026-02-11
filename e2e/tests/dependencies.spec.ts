@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -9,9 +8,9 @@ test.describe.configure({ mode: 'serial' });
 // - green-dancing-cat.md (in_progress, blockedBy: [blue-running-fox.md])
 
 test.describe('Dependencies functionality (Feature 13)', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     // Ensure frontmatter is enabled (may be disabled by parallel settings tests)
-    await request.put(`${API_BASE_URL}/api/settings`, {
+    await request.put(`${apiBaseUrl}/api/settings`, {
       data: { frontmatterEnabled: true },
     });
   });
@@ -21,8 +20,8 @@ test.describe('Dependencies functionality (Feature 13)', () => {
     await expect(page.getByRole('heading', { name: 'Dependency Graph' })).toBeVisible();
   });
 
-  test('should retrieve dependency graph via API', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
+  test('should retrieve dependency graph via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -34,8 +33,8 @@ test.describe('Dependencies functionality (Feature 13)', () => {
     expect(graph.criticalPath).toBeDefined();
   });
 
-  test('should show dependency relationship in graph', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
+  test('should show dependency relationship in graph', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -57,10 +56,11 @@ test.describe('Dependencies functionality (Feature 13)', () => {
     expect(edge).toBeDefined();
   });
 
-  test('should retrieve dependencies for specific plan via API', async ({ request }) => {
-    const response = await request.get(
-      `${API_BASE_URL}/api/dependencies/green-dancing-cat.md`
-    );
+  test('should retrieve dependencies for specific plan via API', async ({
+    request,
+    apiBaseUrl,
+  }) => {
+    const response = await request.get(`${apiBaseUrl}/api/dependencies/green-dancing-cat.md`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -103,8 +103,8 @@ test.describe('Dependencies functionality (Feature 13)', () => {
     await expect(reset).toBeVisible();
   });
 
-  test('should detect no cycle in fixture dependencies', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
+  test('should detect no cycle in fixture dependencies', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -112,8 +112,8 @@ test.describe('Dependencies functionality (Feature 13)', () => {
     expect(graph.hasCycle).toBe(false);
   });
 
-  test('should calculate critical path', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/dependencies`);
+  test('should calculate critical path', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/dependencies`);
     expect(response.ok()).toBeTruthy();
 
     const graph = await response.json();
@@ -123,13 +123,13 @@ test.describe('Dependencies functionality (Feature 13)', () => {
     expect(graph.criticalPath.length).toBeGreaterThan(0);
   });
 
-  test('should detect cycle when circular dependency exists', async ({ request }) => {
+  test('should detect cycle when circular dependency exists', async ({ request, apiBaseUrl }) => {
     const planA = 'test-dep-cycle-a.md';
     const planB = 'test-dep-cycle-b.md';
 
     try {
       // Create plan A that is blocked by plan B
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: planA,
           content: `---
@@ -145,7 +145,7 @@ Depends on Plan B.
       });
 
       // Create plan B that is blocked by plan A (creating a cycle)
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: planB,
           content: `---
@@ -161,23 +161,24 @@ Depends on Plan A.
       });
 
       // Check dependency graph for cycle
-      const response = await request.get(`${API_BASE_URL}/api/dependencies`);
+      const response = await request.get(`${apiBaseUrl}/api/dependencies`);
       expect(response.ok()).toBeTruthy();
 
       const graph = await response.json();
       expect(graph.hasCycle).toBe(true);
     } finally {
       // Clean up
-      await request.delete(`${API_BASE_URL}/api/plans/${planA}`).catch(() => {});
-      await request.delete(`${API_BASE_URL}/api/plans/${planB}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${planA}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${planB}`).catch(() => {});
     }
   });
 
-  test('should show empty blockedBy/blocks for independent plan', async ({ request }) => {
+  test('should show empty blockedBy/blocks for independent plan', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     // red-sleeping-bear has no blockedBy in its frontmatter
-    const response = await request.get(
-      `${API_BASE_URL}/api/dependencies/red-sleeping-bear.md`
-    );
+    const response = await request.get(`${apiBaseUrl}/api/dependencies/red-sleeping-bear.md`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -188,12 +189,12 @@ Depends on Plan A.
     expect(data.blocks).toHaveLength(0);
   });
 
-  test('should update graph when blockedBy is added', async ({ request }) => {
+  test('should update graph when blockedBy is added', async ({ request, apiBaseUrl }) => {
     const testPlan = 'test-dep-added.md';
 
     try {
       // Create a plan without dependencies
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testPlan,
           content: `---
@@ -207,13 +208,13 @@ No dependencies initially.
       });
 
       // Get initial graph - plan should have no dependencies
-      const initialResponse = await request.get(`${API_BASE_URL}/api/dependencies/${testPlan}`);
+      const initialResponse = await request.get(`${apiBaseUrl}/api/dependencies/${testPlan}`);
       expect(initialResponse.ok()).toBeTruthy();
       const initialData = await initialResponse.json();
       expect(initialData.blockedBy).toHaveLength(0);
 
       // Update the plan to add a dependency
-      await request.put(`${API_BASE_URL}/api/plans/${testPlan}`, {
+      await request.put(`${apiBaseUrl}/api/plans/${testPlan}`, {
         data: {
           content: `---
 status: todo
@@ -228,7 +229,7 @@ Now depends on blue-running-fox.
       });
 
       // Get updated graph - should show the new dependency
-      const updatedResponse = await request.get(`${API_BASE_URL}/api/dependencies/${testPlan}`);
+      const updatedResponse = await request.get(`${apiBaseUrl}/api/dependencies/${testPlan}`);
       expect(updatedResponse.ok()).toBeTruthy();
       const updatedData = await updatedResponse.json();
       // blockedBy is an array of DependencyNode objects with filename property
@@ -236,7 +237,7 @@ Now depends on blue-running-fox.
       expect(updatedBlockedByFilenames).toContain('blue-running-fox.md');
 
       // Also check full graph for the edge
-      const graphResponse = await request.get(`${API_BASE_URL}/api/dependencies`);
+      const graphResponse = await request.get(`${apiBaseUrl}/api/dependencies`);
       expect(graphResponse.ok()).toBeTruthy();
       const graph = await graphResponse.json();
       const edge = graph.edges.find(
@@ -244,7 +245,7 @@ Now depends on blue-running-fox.
       );
       expect(edge).toBeDefined();
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testPlan}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testPlan}`).catch(() => {});
     }
   });
 
@@ -253,7 +254,9 @@ Now depends on blue-running-fox.
     await page.goto('/plan/green-dancing-cat.md');
 
     // Wait for the page to load
-    await expect(page.getByRole('heading', { name: 'Mobile App Performance Optimization' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Mobile App Performance Optimization' }).first()
+    ).toBeVisible();
 
     // Check for dependency-related info on the page
     // The plan detail should show that it is blocked by blue-running-fox

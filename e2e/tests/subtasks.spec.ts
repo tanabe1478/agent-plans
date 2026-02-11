@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -8,7 +7,9 @@ const FIXTURE_WITH_SUBTASKS = 'green-dancing-cat.md'; // Has 3 subtasks: 1 done,
 test.describe('Subtasks (Feature 4)', () => {
   test('should display subtask list on detail page', async ({ page }) => {
     await page.goto(`/plan/${FIXTURE_WITH_SUBTASKS}`);
-    await expect(page.getByRole('heading', { name: /Mobile App Performance/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Mobile App Performance/i }).first()
+    ).toBeVisible();
 
     // Subtask section should be visible
     await expect(page.getByRole('heading', { name: 'Subtasks' })).toBeVisible();
@@ -21,7 +22,9 @@ test.describe('Subtasks (Feature 4)', () => {
 
   test('should display subtask progress on detail page', async ({ page }) => {
     await page.goto(`/plan/${FIXTURE_WITH_SUBTASKS}`);
-    await expect(page.getByRole('heading', { name: /Mobile App Performance/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Mobile App Performance/i }).first()
+    ).toBeVisible();
 
     // Progress indicator should show 1/3 (33%)
     const progressText = page.getByText(/1\/3/);
@@ -32,12 +35,12 @@ test.describe('Subtasks (Feature 4)', () => {
     await expect(percentageText).toBeVisible();
   });
 
-  test('should add new subtask via API', async ({ request }) => {
+  test('should add new subtask via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-subtask-add.md';
 
     try {
       // Create plan with initial subtasks
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -55,7 +58,7 @@ Content.
       });
 
       // Add a new subtask
-      const addResponse = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/subtasks`, {
+      const addResponse = await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/subtasks`, {
         data: {
           action: 'add',
           subtask: {
@@ -72,21 +75,23 @@ Content.
       expect(addResult.subtask.title).toBe('New subtask');
 
       // Verify by fetching plan
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter.subtasks).toHaveLength(2);
-      expect(plan.frontmatter.subtasks.some((s: { title: string }) => s.title === 'New subtask')).toBe(true);
+      expect(
+        plan.frontmatter.subtasks.some((s: { title: string }) => s.title === 'New subtask')
+      ).toBe(true);
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should toggle subtask status via API', async ({ request }) => {
+  test('should toggle subtask status via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-subtask-toggle.md';
 
     try {
       // Create plan with subtasks
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -104,12 +109,15 @@ Content.
       });
 
       // Toggle subtask status
-      const toggleResponse = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/subtasks`, {
-        data: {
-          action: 'toggle',
-          subtaskId: 'sub-001',
-        },
-      });
+      const toggleResponse = await request.patch(
+        `${apiBaseUrl}/api/plans/${testFilename}/subtasks`,
+        {
+          data: {
+            action: 'toggle',
+            subtaskId: 'sub-001',
+          },
+        }
+      );
 
       expect(toggleResponse.ok()).toBeTruthy();
       const toggleResult = await toggleResponse.json();
@@ -117,24 +125,27 @@ Content.
       expect(toggleResult.subtask.status).toBe('done');
 
       // Verify by fetching plan
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       const subtask = plan.frontmatter.subtasks.find((s: { id: string }) => s.id === 'sub-001');
       expect(subtask.status).toBe('done');
 
       // Toggle again to switch back
-      const toggle2Response = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/subtasks`, {
-        data: {
-          action: 'toggle',
-          subtaskId: 'sub-001',
-        },
-      });
+      const toggle2Response = await request.patch(
+        `${apiBaseUrl}/api/plans/${testFilename}/subtasks`,
+        {
+          data: {
+            action: 'toggle',
+            subtaskId: 'sub-001',
+          },
+        }
+      );
 
       expect(toggle2Response.ok()).toBeTruthy();
       const toggle2Result = await toggle2Response.json();
       expect(toggle2Result.subtask.status).toBe('todo');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
@@ -143,7 +154,9 @@ Content.
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find plan card with subtasks
-    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: FIXTURE_WITH_SUBTASKS });
+    const planCard = page
+      .locator('[class*="rounded-lg"][class*="border"]')
+      .filter({ hasText: FIXTURE_WITH_SUBTASKS });
     await expect(planCard).toBeVisible();
 
     // Should show progress indicator (1/3)
@@ -154,12 +167,12 @@ Content.
     await expect(progressBar).toBeVisible();
   });
 
-  test('should delete subtask via API', async ({ request }) => {
+  test('should delete subtask via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-subtask-delete.md';
 
     try {
       // Create plan with subtasks
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -180,33 +193,36 @@ Content.
       });
 
       // Delete the first subtask
-      const deleteResponse = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/subtasks`, {
-        data: {
-          action: 'delete',
-          subtaskId: 'del-001',
-        },
-      });
+      const deleteResponse = await request.patch(
+        `${apiBaseUrl}/api/plans/${testFilename}/subtasks`,
+        {
+          data: {
+            action: 'delete',
+            subtaskId: 'del-001',
+          },
+        }
+      );
 
       expect(deleteResponse.ok()).toBeTruthy();
       const deleteResult = await deleteResponse.json();
       expect(deleteResult.success).toBe(true);
 
       // Verify subtask was removed
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter.subtasks).toHaveLength(1);
       expect(plan.frontmatter.subtasks[0].id).toBe('del-002');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should update subtask title via API', async ({ request }) => {
+  test('should update subtask title via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-subtask-update-title.md';
 
     try {
       // Create plan with subtask
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -224,15 +240,18 @@ Content.
       });
 
       // Update subtask title
-      const updateResponse = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/subtasks`, {
-        data: {
-          action: 'update',
-          subtaskId: 'upd-001',
-          subtask: {
-            title: 'Updated title',
+      const updateResponse = await request.patch(
+        `${apiBaseUrl}/api/plans/${testFilename}/subtasks`,
+        {
+          data: {
+            action: 'update',
+            subtaskId: 'upd-001',
+            subtask: {
+              title: 'Updated title',
+            },
           },
-        },
-      });
+        }
+      );
 
       expect(updateResponse.ok()).toBeTruthy();
       const updateResult = await updateResponse.json();
@@ -240,21 +259,24 @@ Content.
       expect(updateResult.subtask.title).toBe('Updated title');
 
       // Verify by fetching plan
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       const subtask = plan.frontmatter.subtasks.find((s: { id: string }) => s.id === 'upd-001');
       expect(subtask.title).toBe('Updated title');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should update subtask with assignee and dueDate via API', async ({ request }) => {
+  test('should update subtask with assignee and dueDate via API', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     const testFilename = 'test-subtask-extra-fields.md';
 
     try {
       // Create plan with subtask
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -272,7 +294,7 @@ Content.
       });
 
       // Add new subtask with assignee and dueDate
-      const addResponse = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/subtasks`, {
+      const addResponse = await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/subtasks`, {
         data: {
           action: 'add',
           subtask: {
@@ -291,16 +313,16 @@ Content.
       expect(addResult.subtask.assignee).toBe('alice');
       expect(addResult.subtask.dueDate).toBe('2026-03-01');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should toggle subtask via UI checkbox', async ({ page, request }) => {
+  test('should toggle subtask via UI checkbox', async ({ page, request, apiBaseUrl }) => {
     const testFilename = 'test-subtask-ui-toggle.md';
 
     try {
       // Create plan with subtasks
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -333,26 +355,28 @@ Content.
 
       // Click to toggle from todo to done and wait for API response
       await Promise.all([
-        page.waitForResponse((resp) => resp.url().includes('/subtasks') && resp.request().method() === 'PATCH'),
+        page.waitForResponse(
+          (resp) => resp.url().includes('/subtasks') && resp.request().method() === 'PATCH'
+        ),
         toggleButton.click(),
       ]);
 
       // Verify via API that subtask was toggled
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       const subtask = plan.frontmatter.subtasks.find((s: { id: string }) => s.id === 'ui-001');
       expect(subtask.status).toBe('done');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should show correct progress after toggling subtask', async ({ request }) => {
+  test('should show correct progress after toggling subtask', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-subtask-progress-update.md';
 
     try {
       // Create plan with 3 subtasks: 1 done, 2 todo
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -376,13 +400,15 @@ Content.
       });
 
       // Verify initial progress (1/3 = 33%)
-      const initialResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const initialResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const initialPlan = await initialResponse.json();
-      const initialDone = initialPlan.frontmatter.subtasks.filter((s: { status: string }) => s.status === 'done').length;
+      const initialDone = initialPlan.frontmatter.subtasks.filter(
+        (s: { status: string }) => s.status === 'done'
+      ).length;
       expect(initialDone).toBe(1);
 
       // Toggle prog-002 to done
-      await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/subtasks`, {
+      await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/subtasks`, {
         data: {
           action: 'toggle',
           subtaskId: 'prog-002',
@@ -390,13 +416,15 @@ Content.
       });
 
       // Verify updated progress (2/3 = 67%)
-      const updatedResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const updatedResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const updatedPlan = await updatedResponse.json();
-      const updatedDone = updatedPlan.frontmatter.subtasks.filter((s: { status: string }) => s.status === 'done').length;
+      const updatedDone = updatedPlan.frontmatter.subtasks.filter(
+        (s: { status: string }) => s.status === 'done'
+      ).length;
       expect(updatedDone).toBe(2);
       expect(updatedPlan.frontmatter.subtasks).toHaveLength(3);
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 });

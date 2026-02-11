@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import { NotificationPanel } from './NotificationPanel';
 
@@ -39,12 +39,7 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <NotificationPanel
-          notifications={notifications}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {open && <NotificationPanel notifications={notifications} onClose={() => setOpen(false)} />}
     </div>
   );
 }

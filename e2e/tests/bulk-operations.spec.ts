@@ -1,15 +1,14 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
 const BULK_TEST_FILES = ['bulk-test-1.md', 'bulk-test-2.md', 'bulk-test-3.md'];
 
 test.describe('Bulk Operations (Feature 5)', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     // Create test plans
     for (const filename of BULK_TEST_FILES) {
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename,
           content: `---
@@ -28,16 +27,16 @@ Test content for bulk operations.
     }
   });
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up
     for (const filename of BULK_TEST_FILES) {
-      await request.delete(`${API_BASE_URL}/api/plans/${filename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${filename}`).catch(() => {});
     }
   });
 
-  test('should perform bulk status change via API', async ({ request }) => {
+  test('should perform bulk status change via API', async ({ request, apiBaseUrl }) => {
     // Bulk update status to in_progress
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-status`, {
       data: {
         filenames: BULK_TEST_FILES,
         status: 'in_progress',
@@ -51,15 +50,15 @@ Test content for bulk operations.
 
     // Verify each plan was updated
     for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
       const plan = await planResponse.json();
       expect(plan.frontmatter.status).toBe('in_progress');
     }
   });
 
-  test('should perform bulk tag addition via API', async ({ request }) => {
+  test('should perform bulk tag addition via API', async ({ request, apiBaseUrl }) => {
     // Add tags to all plans
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-tags`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-tags`, {
       data: {
         filenames: BULK_TEST_FILES,
         action: 'add',
@@ -73,7 +72,7 @@ Test content for bulk operations.
 
     // Verify tags were added
     for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
       const plan = await planResponse.json();
       expect(plan.frontmatter.tags).toContain('bulk-added');
       expect(plan.frontmatter.tags).toContain('automation');
@@ -81,9 +80,9 @@ Test content for bulk operations.
     }
   });
 
-  test('should perform bulk priority change via API', async ({ request }) => {
+  test('should perform bulk priority change via API', async ({ request, apiBaseUrl }) => {
     // Update priority for all plans
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-priority`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-priority`, {
       data: {
         filenames: BULK_TEST_FILES,
         priority: 'high',
@@ -96,15 +95,15 @@ Test content for bulk operations.
 
     // Verify priority was updated
     for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
       const plan = await planResponse.json();
       expect(plan.frontmatter.priority).toBe('high');
     }
   });
 
-  test('should perform bulk assignee change via API', async ({ request }) => {
+  test('should perform bulk assignee change via API', async ({ request, apiBaseUrl }) => {
     // Assign all plans to a user
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-assign`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-assign`, {
       data: {
         filenames: BULK_TEST_FILES,
         assignee: 'charlie',
@@ -117,15 +116,15 @@ Test content for bulk operations.
 
     // Verify assignee was updated
     for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
       const plan = await planResponse.json();
       expect(plan.frontmatter.assignee).toBe('charlie');
     }
   });
 
-  test('should perform bulk archive via API', async ({ request }) => {
+  test('should perform bulk archive via API', async ({ request, apiBaseUrl }) => {
     // Archive all plans
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-archive`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-archive`, {
       data: {
         filenames: BULK_TEST_FILES,
       },
@@ -137,14 +136,14 @@ Test content for bulk operations.
 
     // Verify plans were archived (should return 404)
     for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
       expect(planResponse.status()).toBe(404);
     }
   });
 
-  test('should handle bulk tag removal via API', async ({ request }) => {
+  test('should handle bulk tag removal via API', async ({ request, apiBaseUrl }) => {
     // First add some tags
-    await request.post(`${API_BASE_URL}/api/plans/bulk-tags`, {
+    await request.post(`${apiBaseUrl}/api/plans/bulk-tags`, {
       data: {
         filenames: BULK_TEST_FILES,
         action: 'add',
@@ -153,7 +152,7 @@ Test content for bulk operations.
     });
 
     // Remove specific tag
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-tags`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-tags`, {
       data: {
         filenames: BULK_TEST_FILES,
         action: 'remove',
@@ -167,7 +166,7 @@ Test content for bulk operations.
 
     // Verify tag was removed but others remain
     for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
       const plan = await planResponse.json();
       expect(plan.frontmatter.tags).not.toContain('remove-me');
       expect(plan.frontmatter.tags).toContain('keep-me');
@@ -175,11 +174,11 @@ Test content for bulk operations.
     }
   });
 
-  test('should handle partial failures in bulk operations', async ({ request }) => {
+  test('should handle partial failures in bulk operations', async ({ request, apiBaseUrl }) => {
     const mixedFiles = [...BULK_TEST_FILES, 'non-existent-file.md'];
 
     // Try bulk status update with one non-existent file
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-status`, {
       data: {
         filenames: mixedFiles,
         status: 'in_progress',
@@ -285,13 +284,13 @@ Test content for bulk operations.
     await expect(bulkBar.getByText('Archive')).toBeVisible();
   });
 
-  test('should handle bulk delete with permanent flag via API', async ({ request }) => {
+  test('should handle bulk delete with permanent flag via API', async ({ request, apiBaseUrl }) => {
     const deleteTestFiles = ['bulk-perm-del-1.md', 'bulk-perm-del-2.md'];
 
     try {
       // Create test plans for deletion
       for (const filename of deleteTestFiles) {
-        await request.post(`${API_BASE_URL}/api/plans`, {
+        await request.post(`${apiBaseUrl}/api/plans`, {
           data: {
             filename,
             content: `---
@@ -306,7 +305,7 @@ Test content for permanent deletion.
       }
 
       // Perform bulk delete with permanent flag
-      const response = await request.post(`${API_BASE_URL}/api/plans/bulk-delete?permanent=true`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans/bulk-delete?permanent=true`, {
         data: {
           filenames: deleteTestFiles,
         },
@@ -319,20 +318,20 @@ Test content for permanent deletion.
 
       // Verify plans are permanently deleted (404)
       for (const filename of deleteTestFiles) {
-        const getResponse = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+        const getResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
         expect(getResponse.status()).toBe(404);
       }
     } finally {
       // Cleanup just in case
       for (const filename of deleteTestFiles) {
-        await request.delete(`${API_BASE_URL}/api/plans/${filename}`).catch(() => {});
+        await request.delete(`${apiBaseUrl}/api/plans/${filename}`).catch(() => {});
       }
     }
   });
 
-  test('should reject bulk operations with empty filenames', async ({ request }) => {
+  test('should reject bulk operations with empty filenames', async ({ request, apiBaseUrl }) => {
     // POST with empty filenames array - should be rejected by schema validation (min 1)
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-status`, {
       data: {
         filenames: [],
         status: 'in_progress',
@@ -342,9 +341,12 @@ Test content for permanent deletion.
     expect(response.status()).toBe(400);
   });
 
-  test('should handle invalid status transition in bulk (partial failure)', async ({ request }) => {
+  test('should handle invalid status transition in bulk (partial failure)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     // First, set bulk-test-1 to in_progress (valid: todo -> in_progress)
-    await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
+    await request.post(`${apiBaseUrl}/api/plans/bulk-status`, {
       data: {
         filenames: BULK_TEST_FILES,
         status: 'in_progress',
@@ -352,14 +354,16 @@ Test content for permanent deletion.
     });
 
     // Now set bulk-test-1 to review (valid: in_progress -> review)
-    await request.patch(`${API_BASE_URL}/api/plans/bulk-status`, {
-      data: {
-        filenames: ['bulk-test-1.md'],
-        status: 'review',
-      },
-    }).catch(() => {});
+    await request
+      .patch(`${apiBaseUrl}/api/plans/bulk-status`, {
+        data: {
+          filenames: ['bulk-test-1.md'],
+          status: 'review',
+        },
+      })
+      .catch(() => {});
     // Use POST endpoint
-    await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
+    await request.post(`${apiBaseUrl}/api/plans/bulk-status`, {
       data: {
         filenames: ['bulk-test-1.md'],
         status: 'review',
@@ -369,7 +373,7 @@ Test content for permanent deletion.
     // Now try to bulk update all 3 to 'completed':
     // - bulk-test-1 is in 'review' -> 'completed' is VALID
     // - bulk-test-2 and bulk-test-3 are in 'in_progress' -> 'completed' is INVALID
-    const response = await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-status`, {
       data: {
         filenames: BULK_TEST_FILES,
         status: 'completed',
@@ -383,7 +387,11 @@ Test content for permanent deletion.
     expect(result.succeeded).toContain('bulk-test-1.md');
     // bulk-test-2 and bulk-test-3 (in_progress) should fail
     expect(result.failed.length).toBe(2);
-    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-2.md')).toBe(true);
-    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-3.md')).toBe(true);
+    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-2.md')).toBe(
+      true
+    );
+    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-3.md')).toBe(
+      true
+    );
   });
 });

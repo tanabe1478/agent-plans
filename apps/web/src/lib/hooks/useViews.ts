@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../api/client';
 import type { CreateViewRequest, UpdateViewRequest } from '@ccplans/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from '../api/client';
 
 export function useViews() {
   return useQuery({
@@ -24,7 +24,8 @@ export function useUpdateView() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateViewRequest }) => api.views.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateViewRequest }) =>
+      api.views.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['views'] });
     },

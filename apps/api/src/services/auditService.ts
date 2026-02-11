@@ -7,7 +7,7 @@ const AUDIT_FILENAME = '.audit.jsonl';
 
 export async function log(
   entry: Omit<AuditEntry, 'timestamp'>,
-  plansDir: string = config.plansDir,
+  plansDir: string = config.plansDir
 ): Promise<void> {
   const fullEntry: AuditEntry = {
     ...entry,
@@ -15,12 +15,12 @@ export async function log(
   };
 
   const auditPath = join(plansDir, AUDIT_FILENAME);
-  await appendFile(auditPath, JSON.stringify(fullEntry) + '\n', 'utf-8');
+  await appendFile(auditPath, `${JSON.stringify(fullEntry)}\n`, 'utf-8');
 }
 
 export async function getAuditLog(
   options: { limit?: number; filename?: string; action?: string } = {},
-  plansDir: string = config.plansDir,
+  plansDir: string = config.plansDir
 ): Promise<AuditEntry[]> {
   const auditPath = join(plansDir, AUDIT_FILENAME);
 

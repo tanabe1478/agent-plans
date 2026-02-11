@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -40,8 +39,8 @@ function add(a: number, b: number): number {
 `;
 
 test.describe('Plan detail rendering', () => {
-  test.beforeEach(async ({ request }) => {
-    await request.post(`${API_BASE_URL}/api/plans`, {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
+    await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: TEST_PLAN_CONTENT,
@@ -49,8 +48,8 @@ test.describe('Plan detail rendering', () => {
     });
   });
 
-  test.afterEach(async ({ request }) => {
-    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+  test.afterEach(async ({ request, apiBaseUrl }) => {
+    await request.delete(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should not display YAML frontmatter in rendered content', async ({ page }) => {
@@ -165,10 +164,7 @@ test.describe('Plan detail rendering', () => {
     const sectionNav = page.locator('.section-nav').first();
     await sectionNav.getByText('Code Example').click();
 
-    // Wait for smooth scroll
-    await page.waitForTimeout(500);
-
-    // The heading should be visible in the viewport
+    // The heading should be visible in the viewport (auto-retries)
     const heading = page.locator('.markdown-content').getByText('Code Example');
     await expect(heading).toBeInViewport();
   });

@@ -1,12 +1,12 @@
+import type { ArchiveListResponse } from '@ccplans/shared';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
-  listArchived,
-  restoreFromArchive,
-  permanentlyDelete,
   cleanupExpired,
+  listArchived,
+  permanentlyDelete,
+  restoreFromArchive,
 } from '../services/archiveService.js';
-import type { ArchiveListResponse } from '@ccplans/shared';
 
 const filenameSchema = z.string().regex(/^[a-zA-Z0-9_-]+\.md$/);
 

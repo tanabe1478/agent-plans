@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -7,16 +6,16 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Saved Views (Feature 7)', () => {
   let createdViewId: string | null = null;
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up: delete created custom view if it exists
     if (createdViewId) {
-      await request.delete(`${API_BASE_URL}/api/views/${createdViewId}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/views/${createdViewId}`).catch(() => {});
       createdViewId = null;
     }
   });
 
-  test('API: should retrieve views list with preset views', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/views`);
+  test('API: should retrieve views list with preset views', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/views`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -29,7 +28,7 @@ test.describe('Saved Views (Feature 7)', () => {
     expect(presets.length).toBeGreaterThan(0);
   });
 
-  test('API: should create a custom view', async ({ request }) => {
+  test('API: should create a custom view', async ({ request, apiBaseUrl }) => {
     const viewData = {
       name: 'Test Custom View',
       filters: {
@@ -40,7 +39,7 @@ test.describe('Saved Views (Feature 7)', () => {
       sortOrder: 'asc' as const,
     };
 
-    const response = await request.post(`${API_BASE_URL}/api/views`, {
+    const response = await request.post(`${apiBaseUrl}/api/views`, {
       data: viewData,
     });
 
@@ -58,9 +57,9 @@ test.describe('Saved Views (Feature 7)', () => {
     createdViewId = data.id;
   });
 
-  test('API: should delete a custom view', async ({ request }) => {
+  test('API: should delete a custom view', async ({ request, apiBaseUrl }) => {
     // First create a view
-    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
+    const createResponse = await request.post(`${apiBaseUrl}/api/views`, {
       data: {
         name: 'View to Delete',
         filters: { status: 'todo' },
@@ -72,21 +71,21 @@ test.describe('Saved Views (Feature 7)', () => {
     const viewId = createData.id;
 
     // Delete the view
-    const deleteResponse = await request.delete(`${API_BASE_URL}/api/views/${viewId}`);
+    const deleteResponse = await request.delete(`${apiBaseUrl}/api/views/${viewId}`);
 
     expect(deleteResponse.ok()).toBeTruthy();
 
     // Verify it no longer exists
-    const listResponse = await request.get(`${API_BASE_URL}/api/views`);
+    const listResponse = await request.get(`${apiBaseUrl}/api/views`);
     const listData = await listResponse.json();
 
     const viewExists = listData.views.some((v: any) => v.id === viewId);
     expect(viewExists).toBe(false);
   });
 
-  test('API: should update a custom view', async ({ request }) => {
+  test('API: should update a custom view', async ({ request, apiBaseUrl }) => {
     // Create a view
-    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
+    const createResponse = await request.post(`${apiBaseUrl}/api/views`, {
       data: {
         name: 'Original Name',
         filters: { status: 'todo' },
@@ -98,7 +97,7 @@ test.describe('Saved Views (Feature 7)', () => {
     createdViewId = createData.id;
 
     // Update the view
-    const updateResponse = await request.put(`${API_BASE_URL}/api/views/${createdViewId}`, {
+    const updateResponse = await request.put(`${apiBaseUrl}/api/views/${createdViewId}`, {
       data: {
         name: 'Updated Name',
         filters: { status: 'completed' },
@@ -119,7 +118,9 @@ test.describe('Saved Views (Feature 7)', () => {
     const sidebarOpen = await page.locator('aside').filter({ hasText: 'Views' }).isVisible();
 
     if (!sidebarOpen) {
-      const toggleButton = page.locator('button').filter({ has: page.locator('svg.lucide-panel-left-open') });
+      const toggleButton = page
+        .locator('button')
+        .filter({ has: page.locator('svg.lucide-panel-left-open') });
       await toggleButton.click();
     }
 
@@ -133,7 +134,9 @@ test.describe('Saved Views (Feature 7)', () => {
     // Open sidebar if needed
     const sidebarOpen = await page.locator('aside').filter({ hasText: 'Views' }).isVisible();
     if (!sidebarOpen) {
-      const toggleButton = page.locator('button').filter({ has: page.locator('svg.lucide-panel-left-open') });
+      const toggleButton = page
+        .locator('button')
+        .filter({ has: page.locator('svg.lucide-panel-left-open') });
       await toggleButton.click();
     }
 
@@ -142,12 +145,14 @@ test.describe('Saved Views (Feature 7)', () => {
 
     // Should have at least one preset view listed
     const sidebar = page.locator('aside').filter({ hasText: 'Views' });
-    await expect(sidebar.getByText(/In Progress|High Priority|Critical|Todo/i).first()).toBeVisible();
+    await expect(
+      sidebar.getByText(/In Progress|High Priority|Critical|Todo/i).first()
+    ).toBeVisible();
   });
 
-  test('API: should apply view filters correctly', async ({ request }) => {
+  test('API: should apply view filters correctly', async ({ request, apiBaseUrl }) => {
     // Create a view with status:in_progress filter
-    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
+    const createResponse = await request.post(`${apiBaseUrl}/api/views`, {
       data: {
         name: 'In Progress Filter Test',
         filters: { status: 'in_progress' },
@@ -162,7 +167,7 @@ test.describe('Saved Views (Feature 7)', () => {
     expect(viewData.filters.status).toBe('in_progress');
 
     // List views and find our created view
-    const listResponse = await request.get(`${API_BASE_URL}/api/views`);
+    const listResponse = await request.get(`${apiBaseUrl}/api/views`);
     const listData = await listResponse.json();
 
     const view = listData.views.find((v: any) => v.id === createdViewId);
@@ -170,9 +175,9 @@ test.describe('Saved Views (Feature 7)', () => {
     expect(view.filters.status).toBe('in_progress');
   });
 
-  test('API: should not allow deleting preset views', async ({ request }) => {
+  test('API: should not allow deleting preset views', async ({ request, apiBaseUrl }) => {
     // Try to delete a preset view
-    const deleteResponse = await request.delete(`${API_BASE_URL}/api/views/preset-in-progress`);
+    const deleteResponse = await request.delete(`${apiBaseUrl}/api/views/preset-in-progress`);
 
     // Preset IDs are not UUIDs, so validation should reject them (400)
     // or the service should return 404 since presets are not in custom views
@@ -180,8 +185,8 @@ test.describe('Saved Views (Feature 7)', () => {
     expect([400, 404]).toContain(deleteResponse.status());
   });
 
-  test('API: should create view with tags filter', async ({ request }) => {
-    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
+  test('API: should create view with tags filter', async ({ request, apiBaseUrl }) => {
+    const createResponse = await request.post(`${apiBaseUrl}/api/views`, {
       data: {
         name: 'API Tag View',
         filters: { tags: ['api'] },
@@ -196,8 +201,8 @@ test.describe('Saved Views (Feature 7)', () => {
     expect(data.filters.tags).toContain('api');
   });
 
-  test('API: should create view with date range filter', async ({ request }) => {
-    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
+  test('API: should create view with date range filter', async ({ request, apiBaseUrl }) => {
+    const createResponse = await request.post(`${apiBaseUrl}/api/views`, {
       data: {
         name: 'Date Range View',
         filters: {
@@ -215,8 +220,8 @@ test.describe('Saved Views (Feature 7)', () => {
     expect(data.filters.dueAfter).toBe('2026-02-01');
   });
 
-  test('API: should create view with searchQuery', async ({ request }) => {
-    const createResponse = await request.post(`${API_BASE_URL}/api/views`, {
+  test('API: should create view with searchQuery', async ({ request, apiBaseUrl }) => {
+    const createResponse = await request.post(`${apiBaseUrl}/api/views`, {
       data: {
         name: 'Search Query View',
         filters: {
@@ -238,7 +243,9 @@ test.describe('Saved Views (Feature 7)', () => {
     // Open sidebar if needed
     const sidebarOpen = await page.locator('aside').filter({ hasText: 'Views' }).isVisible();
     if (!sidebarOpen) {
-      const toggleButton = page.locator('button').filter({ has: page.locator('svg.lucide-panel-left-open') });
+      const toggleButton = page
+        .locator('button')
+        .filter({ has: page.locator('svg.lucide-panel-left-open') });
       await toggleButton.click();
     }
 

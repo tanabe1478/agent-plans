@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Fixture files:
 // - blue-running-fox.md (todo)
@@ -12,6 +11,24 @@ import { API_BASE_URL } from '../lib/test-helpers';
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Status Filtering and Status Update', () => {
+  // Reset fixture statuses before each test to ensure consistent state
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
+    const fixtures = [
+      { file: 'blue-running-fox.md', status: 'todo' },
+      { file: 'green-dancing-cat.md', status: 'in_progress' },
+      { file: 'red-sleeping-bear.md', status: 'completed' },
+      { file: 'yellow-jumping-dog.md', status: 'todo' },
+      { file: 'purple-swimming-fish.md', status: 'in_progress' },
+    ];
+    for (const { file, status } of fixtures) {
+      await request
+        .patch(`${apiBaseUrl}/api/plans/${file}/status`, {
+          data: { status },
+        })
+        .catch(() => {});
+    }
+  });
+
   test('should display status filter dropdown with all options', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
@@ -49,17 +66,14 @@ test.describe('Status Filtering and Status Update', () => {
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('todo');
 
-    // Wait for the filter to apply
-    await page.waitForTimeout(500);
+    // not.toBeVisible() auto-retries until the element disappears
+    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
+    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
+    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
 
     // Should show todo plans (blue-running-fox, yellow-jumping-dog)
     await expect(page.getByText('blue-running-fox.md')).toBeVisible();
     await expect(page.getByText('yellow-jumping-dog.md')).toBeVisible();
-
-    // Should NOT show non-todo plans
-    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
-    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
-    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
   });
 
   test('should filter plans by status - In Progress', async ({ page }) => {
@@ -70,17 +84,14 @@ test.describe('Status Filtering and Status Update', () => {
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('in_progress');
 
-    // Wait for the filter to apply
-    await page.waitForTimeout(500);
+    // not.toBeVisible() auto-retries until the element disappears
+    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
+    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
+    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
 
     // Should show in_progress plans (green-dancing-cat, purple-swimming-fish)
     await expect(page.getByText('green-dancing-cat.md')).toBeVisible();
     await expect(page.getByText('purple-swimming-fish.md')).toBeVisible();
-
-    // Should NOT show non-in_progress plans
-    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
-    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
-    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
   });
 
   test('should filter plans by status - Completed', async ({ page }) => {
@@ -91,17 +102,14 @@ test.describe('Status Filtering and Status Update', () => {
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('completed');
 
-    // Wait for the filter to apply
-    await page.waitForTimeout(500);
-
-    // Should show completed plans (red-sleeping-bear)
-    await expect(page.getByText('red-sleeping-bear.md')).toBeVisible();
-
-    // Should NOT show non-completed plans
+    // not.toBeVisible() auto-retries until the element disappears
     await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
     await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
     await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
     await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
+
+    // Should show completed plans (red-sleeping-bear)
+    await expect(page.getByText('red-sleeping-bear.md')).toBeVisible();
   });
 
   test('should open status dropdown when clicking status badge', async ({ page }) => {
@@ -109,7 +117,9 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find a specific plan card and click its status badge
-    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: 'green-dancing-cat.md' });
+    const planCard = page
+      .locator('[class*="rounded-lg"][class*="border"]')
+      .filter({ hasText: 'green-dancing-cat.md' });
     await expect(planCard).toBeVisible();
     const statusBadge = planCard.getByRole('button', { name: 'In Progress' });
     await expect(statusBadge).toBeVisible();
@@ -120,12 +130,18 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(dropdown).toBeVisible();
   });
 
-  test('should update status when selecting from dropdown', async ({ page, request }) => {
+  test('should update status when selecting from dropdown', async ({
+    page,
+    request,
+    apiBaseUrl,
+  }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find a specific plan card (in_progress -> review is a valid transition)
-    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: 'green-dancing-cat.md' });
+    const planCard = page
+      .locator('[class*="rounded-lg"][class*="border"]')
+      .filter({ hasText: 'green-dancing-cat.md' });
     await expect(planCard).toBeVisible();
     const statusBadge = planCard.getByRole('button', { name: 'In Progress' });
     await expect(statusBadge).toBeVisible({ timeout: 5000 });
@@ -138,7 +154,9 @@ test.describe('Status Filtering and Status Update', () => {
     // For in_progress, valid transitions are ToDo and Review
     const reviewOption = dropdown.getByText('Review');
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/status') && resp.request().method() === 'PATCH'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/status') && resp.request().method() === 'PATCH'
+      ),
       reviewOption.click(),
     ]);
 
@@ -146,7 +164,7 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(planCard.getByRole('button', { name: 'Review' })).toBeVisible();
 
     // Reset status back for other tests
-    await request.patch(`${API_BASE_URL}/api/plans/green-dancing-cat.md/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/green-dancing-cat.md/status`, {
       data: { status: 'in_progress' },
     });
   });
@@ -175,11 +193,10 @@ test.describe('Status Filtering and Status Update', () => {
 
     // First filter by completed
     await statusFilter.selectOption('completed');
-    await page.waitForTimeout(300);
+    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
 
     // Then reset to all
     await statusFilter.selectOption('all');
-    await page.waitForTimeout(300);
 
     // Should show all statuses again
     await expect(page.getByRole('button', { name: 'ToDo' }).first()).toBeVisible();
@@ -227,12 +244,7 @@ test.describe('Search/Filter functionality', () => {
     const searchInput = page.getByPlaceholder('フィルター...');
     await searchInput.fill('Authentication');
 
-    // Wait for filtering
-    await page.waitForTimeout(300);
-
     // Should show matching plans (blue-running-fox.md has "Authentication" in title)
-    await expect(
-      page.getByRole('heading', { name: /Authentication/i, level: 3 })
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Authentication/i, level: 3 })).toBeVisible();
   });
 });

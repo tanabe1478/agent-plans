@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -27,8 +26,8 @@ Final summary.
 `;
 
 test.describe('Review page', () => {
-  test.beforeEach(async ({ request, page }) => {
-    await request.post(`${API_BASE_URL}/api/plans`, {
+  test.beforeEach(async ({ request, page, apiBaseUrl }) => {
+    await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: TEST_PLAN_CONTENT,
@@ -41,8 +40,8 @@ test.describe('Review page', () => {
     }, TEST_PLAN_FILENAME);
   });
 
-  test.afterEach(async ({ request }) => {
-    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+  test.afterEach(async ({ request, apiBaseUrl }) => {
+    await request.delete(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should navigate from detail to review page', async ({ page }) => {

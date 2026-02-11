@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReviewComment, ReviewCommentsStorage } from '../types/review';
 
 function storageKey(filename: string): string {
@@ -44,16 +44,14 @@ function buildQuotedLines(content: string, line: number | [number, number]): str
 }
 
 export function useReviewComments(filename: string, content: string = '') {
-  const [comments, setComments] = useState<ReviewComment[]>(() =>
-    loadComments(filename),
-  );
+  const [comments, setComments] = useState<ReviewComment[]>(() => loadComments(filename));
 
   const persist = useCallback(
     (next: ReviewComment[]) => {
       setComments(next);
       saveComments(filename, next);
     },
-    [filename],
+    [filename]
   );
 
   const addComment = useCallback(
@@ -70,17 +68,17 @@ export function useReviewComments(filename: string, content: string = '') {
       persist(next);
       return comment;
     },
-    [comments, persist],
+    [comments, persist]
   );
 
   const updateComment = useCallback(
     (id: string, body: string) => {
       const next = comments.map((c) =>
-        c.id === id ? { ...c, body, updatedAt: new Date().toISOString() } : c,
+        c.id === id ? { ...c, body, updatedAt: new Date().toISOString() } : c
       );
       persist(next);
     },
-    [comments, persist],
+    [comments, persist]
   );
 
   const deleteComment = useCallback(
@@ -88,7 +86,7 @@ export function useReviewComments(filename: string, content: string = '') {
       const next = comments.filter((c) => c.id !== id);
       persist(next);
     },
-    [comments, persist],
+    [comments, persist]
   );
 
   const clearAllComments = useCallback(() => {
@@ -99,7 +97,7 @@ export function useReviewComments(filename: string, content: string = '') {
     (line: number | [number, number]): string => {
       return buildQuotedLines(content, line);
     },
-    [content],
+    [content]
   );
 
   const generatePrompt = useCallback(
@@ -110,7 +108,7 @@ export function useReviewComments(filename: string, content: string = '') {
       }
       return `${filename}:${formatLineRef(comment.line)}\n${comment.body}`;
     },
-    [filename, content],
+    [filename, content]
   );
 
   const generateAllPrompts = useCallback((): string => {

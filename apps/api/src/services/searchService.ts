@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SearchResult, SearchMatch, PlanFrontmatter } from '@ccplans/shared';
+import type { PlanFrontmatter, SearchMatch, SearchResult } from '@ccplans/shared';
 import { config } from '../config.js';
 import { parseQuery, type QueryFilter } from './queryParser.js';
 
@@ -36,7 +36,10 @@ function extractFrontmatter(content: string): PlanFrontmatter | undefined {
     let value = line.slice(colonIndex + 1).trim();
 
     // Strip quotes
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
 
@@ -113,7 +116,11 @@ function matchesFilter(filter: QueryFilter, fm: PlanFrontmatter | undefined): bo
       return estimate === lowerValue;
     }
     case 'project': {
-      const project = (fm.projectPath ?? (fm as Record<string, unknown>)['project_path'] as string ?? '').toLowerCase();
+      const project = (
+        fm.projectPath ??
+        ((fm as Record<string, unknown>).project_path as string) ??
+        ''
+      ).toLowerCase();
       if (operator === ':') return project.includes(lowerValue);
       return project === lowerValue;
     }
@@ -203,9 +210,7 @@ export class SearchService {
             matches: matches.slice(0, 10),
           });
         }
-      } catch {
-        continue;
-      }
+      } catch {}
     }
 
     return results.sort((a, b) => b.matches.length - a.matches.length).slice(0, limit);
@@ -226,7 +231,8 @@ export class SearchService {
       if (matchIndex !== -1) {
         const start = Math.max(0, matchIndex - 20);
         const end = Math.min(line.length, matchIndex + query.length + 20);
-        const highlight = (start > 0 ? '...' : '') + line.slice(start, end) + (end < line.length ? '...' : '');
+        const highlight =
+          (start > 0 ? '...' : '') + line.slice(start, end) + (end < line.length ? '...' : '');
 
         matches.push({
           line: index + 1,

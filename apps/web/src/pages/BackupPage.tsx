@@ -1,7 +1,7 @@
+import { AlertTriangle, DatabaseBackup, Plus, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import { DatabaseBackup, RotateCcw, Plus, AlertTriangle } from 'lucide-react';
-import { useBackups, useCreateBackup, useRestoreBackup } from '@/lib/hooks/useImportExport';
 import { Dialog } from '@/components/ui/Dialog';
+import { useBackups, useCreateBackup, useRestoreBackup } from '@/lib/hooks/useImportExport';
 import { formatDate, formatFileSize } from '@/lib/utils';
 
 export function BackupPage() {
@@ -9,7 +9,11 @@ export function BackupPage() {
   const createBackup = useCreateBackup();
   const restoreBackup = useRestoreBackup();
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
-  const [restoreResult, setRestoreResult] = useState<{ imported: number; skipped: number; errors: { filename: string; error: string }[] } | null>(null);
+  const [restoreResult, setRestoreResult] = useState<{
+    imported: number;
+    skipped: number;
+    errors: { filename: string; error: string }[];
+  } | null>(null);
 
   const handleCreate = async () => {
     await createBackup.mutateAsync();
@@ -38,9 +42,7 @@ export function BackupPage() {
         </button>
       </div>
 
-      {isLoading && (
-        <div className="text-sm text-muted-foreground">Loading backups...</div>
-      )}
+      {isLoading && <div className="text-sm text-muted-foreground">Loading backups...</div>}
 
       {error && (
         <div className="text-sm text-red-500">
@@ -127,15 +129,21 @@ export function BackupPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="text-center p-3 rounded-md bg-green-50 dark:bg-green-950/30">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{restoreResult.imported}</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {restoreResult.imported}
+                </div>
                 <div className="text-muted-foreground">Imported</div>
               </div>
               <div className="text-center p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/30">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{restoreResult.skipped}</div>
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {restoreResult.skipped}
+                </div>
                 <div className="text-muted-foreground">Skipped</div>
               </div>
               <div className="text-center p-3 rounded-md bg-red-50 dark:bg-red-950/30">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{restoreResult.errors.length}</div>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {restoreResult.errors.length}
+                </div>
                 <div className="text-muted-foreground">Errors</div>
               </div>
             </div>

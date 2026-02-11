@@ -1,10 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import {
-  getCurrentSchemaVersion,
-  migrateAllPlans,
-} from '../services/migrationService.js';
 import { getAuditLog } from '../services/auditService.js';
+import { getCurrentSchemaVersion, migrateAllPlans } from '../services/migrationService.js';
 
 const auditQuerySchema = z.object({
   limit: z
@@ -21,16 +18,12 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     Querystring: { limit?: string; filename?: string; action?: string };
   }>('/audit', async (request, reply) => {
     try {
-      const { limit, filename, action } = auditQuerySchema.parse(
-        request.query,
-      );
+      const { limit, filename, action } = auditQuerySchema.parse(request.query);
       const entries = await getAuditLog({ limit, filename, action });
       return { entries, total: entries.length };
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return reply
-          .status(400)
-          .send({ error: 'Invalid query parameters', details: err.errors });
+        return reply.status(400).send({ error: 'Invalid query parameters', details: err.errors });
       }
       throw err;
     }

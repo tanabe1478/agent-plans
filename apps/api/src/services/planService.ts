@@ -1,23 +1,37 @@
-import { readdir, readFile, writeFile, stat, unlink, rename, mkdir } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanMeta, PlanDetail, PlanFrontmatter, PlanStatus, PlanPriority, Subtask } from '@ccplans/shared';
+import type {
+  PlanDetail,
+  PlanFrontmatter,
+  PlanMeta,
+  PlanPriority,
+  PlanStatus,
+  Subtask,
+} from '@ccplans/shared';
 import { config } from '../config.js';
-import { saveVersion } from './historyService.js';
 import { recordArchiveMeta } from './archiveService.js';
-import { needsMigration, migrate } from './migrationService.js';
-import { recordFileState, checkConflict } from './conflictService.js';
 import { log as auditLog } from './auditService.js';
+import { checkConflict, recordFileState } from './conflictService.js';
+import { saveVersion } from './historyService.js';
+import { migrate, needsMigration } from './migrationService.js';
 import { isFrontmatterEnabled } from './settingsService.js';
 
 /**
  * Parse a YAML array from frontmatter lines starting at the given index.
  * Supports both inline [a, b] and multi-line "- item" syntax.
  */
-function parseYamlArray(value: string, lines: string[], startIndex: number): { items: string[]; consumed: number } {
+function parseYamlArray(
+  value: string,
+  lines: string[],
+  startIndex: number
+): { items: string[]; consumed: number } {
   // Inline array: [a, b, c]
   if (value.startsWith('[') && value.endsWith(']')) {
     const inner = value.slice(1, -1);
-    const items = inner.split(',').map((s) => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    const items = inner
+      .split(',')
+      .map((s) => s.trim().replace(/^["']|["']$/g, ''))
+      .filter(Boolean);
     return { items, consumed: 0 };
   }
 
@@ -40,7 +54,10 @@ function parseYamlArray(value: string, lines: string[], startIndex: number): { i
 /**
  * Parse subtasks from YAML frontmatter lines.
  */
-function parseSubtasks(lines: string[], startIndex: number): { subtasks: Subtask[]; consumed: number } {
+function parseSubtasks(
+  lines: string[],
+  startIndex: number
+): { subtasks: Subtask[]; consumed: number } {
   const subtasks: Subtask[] = [];
   let consumed = 0;
   let current: Partial<Subtask> | null = null;
@@ -53,7 +70,7 @@ function parseSubtasks(lines: string[], startIndex: number): { subtasks: Subtask
     const propMatch = line.match(/^\s{4,}(\w+):\s*(.*)$/);
 
     if (itemMatch) {
-      if (current && current.id && current.title) {
+      if (current?.id && current.title) {
         subtasks.push(current as Subtask);
       }
       current = {};
@@ -79,7 +96,7 @@ function parseSubtasks(lines: string[], startIndex: number): { subtasks: Subtask
     }
   }
 
-  if (current && current.id && current.title) {
+  if (current?.id && current.title) {
     subtasks.push(current as Subtask);
   }
 
@@ -89,7 +106,10 @@ function parseSubtasks(lines: string[], startIndex: number): { subtasks: Subtask
 /**
  * Parse YAML frontmatter from markdown content
  */
-function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | undefined; body: string } {
+function parseFrontmatter(content: string): {
+  frontmatter: PlanFrontmatter | undefined;
+  body: string;
+} {
   const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
   const match = content.match(pattern);
 
@@ -116,7 +136,10 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | und
     let value = line.slice(colonIndex + 1).trim();
 
     // Remove quotes if present
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
 
@@ -187,7 +210,7 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | und
  */
 function serializeYamlArray(items: string[]): string {
   if (items.length === 0) return '[]';
-  return '\n' + items.map((item) => `  - "${item}"`).join('\n');
+  return `\n${items.map((item) => `  - "${item}"`).join('\n')}`;
 }
 
 /**
@@ -195,15 +218,20 @@ function serializeYamlArray(items: string[]): string {
  */
 function serializeSubtasks(subtasks: Subtask[]): string {
   if (subtasks.length === 0) return '[]';
-  return '\n' + subtasks.map((st) => {
-    const props: string[] = [];
-    props.push(`  - id: "${st.id}"`);
-    props.push(`    title: "${st.title}"`);
-    props.push(`    status: ${st.status}`);
-    if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
-    if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
-    return props.join('\n');
-  }).join('\n');
+  return (
+    '\n' +
+    subtasks
+      .map((st) => {
+        const props: string[] = [];
+        props.push(`  - id: "${st.id}"`);
+        props.push(`    title: "${st.title}"`);
+        props.push(`    status: ${st.status}`);
+        if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
+        if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
+        return props.join('\n');
+      })
+      .join('\n')
+  );
 }
 
 /**
@@ -220,10 +248,12 @@ function serializeFrontmatter(fm: PlanFrontmatter): string {
   if (fm.dueDate) lines.push(`dueDate: "${fm.dueDate}"`);
   if (fm.tags && fm.tags.length > 0) lines.push(`tags:${serializeYamlArray(fm.tags)}`);
   if (fm.estimate) lines.push(`estimate: "${fm.estimate}"`);
-  if (fm.blockedBy && fm.blockedBy.length > 0) lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
+  if (fm.blockedBy && fm.blockedBy.length > 0)
+    lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
   if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
   if (fm.archivedAt) lines.push(`archivedAt: "${fm.archivedAt}"`);
-  if (fm.subtasks && fm.subtasks.length > 0) lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
+  if (fm.subtasks && fm.subtasks.length > 0)
+    lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
   if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);
   return lines.join('\n');
 }
@@ -378,7 +408,9 @@ export class PlanService {
     await writeFile(filePath, content, 'utf-8');
 
     // Audit log (non-blocking)
-    auditLog({ action: 'create', filename: finalFilename, details: {} }, this.plansDir).catch(() => {});
+    auditLog({ action: 'create', filename: finalFilename, details: {} }, this.plansDir).catch(
+      () => {}
+    );
 
     return this.getPlanMeta(finalFilename);
   }
@@ -415,7 +447,7 @@ export class PlanService {
     // Audit log (non-blocking)
     auditLog(
       { action: 'update', filename, details: { contentLength: content.length } },
-      this.plansDir,
+      this.plansDir
     ).catch(() => {});
 
     return this.getPlanMeta(filename);
@@ -441,7 +473,7 @@ export class PlanService {
     // Audit log (non-blocking)
     auditLog(
       { action: 'delete', filename, details: { permanent: !archive, archived: archive } },
-      this.plansDir,
+      this.plansDir
     ).catch(() => {});
   }
 
@@ -491,7 +523,7 @@ export class PlanService {
     // Audit log (non-blocking)
     auditLog(
       { action: 'status_change', filename, details: { from: previousStatus, to: status } },
-      this.plansDir,
+      this.plansDir
     ).catch(() => {});
 
     return this.getPlanMeta(filename);
@@ -500,7 +532,11 @@ export class PlanService {
   /**
    * Update a single frontmatter field
    */
-  async updateFrontmatterField(filename: string, field: keyof PlanFrontmatter, value: unknown): Promise<PlanMeta> {
+  async updateFrontmatterField(
+    filename: string,
+    field: keyof PlanFrontmatter,
+    value: unknown
+  ): Promise<PlanMeta> {
     this.validateFilename(filename);
     const filePath = join(this.plansDir, filename);
     const content = await readFile(filePath, 'utf-8');

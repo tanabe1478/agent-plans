@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
 import { List } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface SectionNavProps {
   content: string;
@@ -55,8 +55,8 @@ export function SectionNav({ content }: SectionNavProps) {
 
     let currentId = '';
     for (const { id, el } of headingElements) {
-      const rect = el!.getBoundingClientRect();
-      if (rect.top <= 120) {
+      const rect = el?.getBoundingClientRect();
+      if (rect && rect.top <= 120) {
         currentId = id;
       }
     }

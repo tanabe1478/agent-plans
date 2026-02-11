@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { isValidTransition, getAvailableTransitions } from '../services/statusTransitionService.js';
 import type { PlanStatus } from '@ccplans/shared';
+import { describe, expect, it } from 'vitest';
+import { getAvailableTransitions, isValidTransition } from '../services/statusTransitionService.js';
 
 describe('isValidTransition', () => {
   describe('allowed transitions', () => {

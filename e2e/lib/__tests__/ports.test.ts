@@ -1,5 +1,5 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 import { derivePort, getApiPort, getWebPort } from '../ports.js';
 
 describe('derivePort', () => {

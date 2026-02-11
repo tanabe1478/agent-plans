@@ -1,10 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, writeFile, rm, readFile, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // We need to mock config before importing the module
-const testDir = join(tmpdir(), `ccplans-history-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const testDir = join(
+  tmpdir(),
+  `ccplans-history-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+);
 
 vi.mock('../config.js', () => ({
   config: {

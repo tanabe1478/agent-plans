@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 import { useSettings } from '@/lib/hooks/useSettings';
 
 interface SettingsContextValue {
@@ -19,11 +19,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     isLoading,
   };
 
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 
 export function useFrontmatterEnabled(): boolean {

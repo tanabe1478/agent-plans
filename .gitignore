@@ -38,6 +38,15 @@ playwright-report/
 playwright/.cache/
 .playwright-mcp/
 
+# E2E generated fixture artifacts (reset by global-setup)
+e2e/fixtures/plans/.history/
+e2e/fixtures/plans/.backups/
+e2e/fixtures/plans/.audit.jsonl
+e2e/fixtures/plans/.views.json
+e2e/fixtures/plans/.notifications-read.json
+e2e/fixtures/plans/.settings.json
+e2e/fixtures/plans/archive/
+
 # Claude Code local settings
 .claude/*
 !.claude/skills/

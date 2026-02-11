@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -40,9 +39,9 @@ async function clickDeleteMenuItem(page: import('@playwright/test').Page) {
 }
 
 test.describe('Delete functionality (from detail page)', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     // Create a test plan via API before each test
-    await request.post(`${API_BASE_URL}/api/plans`, {
+    await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: TEST_PLAN_CONTENT,
@@ -50,11 +49,11 @@ test.describe('Delete functionality (from detail page)', () => {
     });
   });
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up: try to delete the test plan if it still exists
-    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
     // Also try to delete from archive
-    await request.delete(`${API_BASE_URL}/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${apiBaseUrl}/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should show delete confirmation dialog on detail page', async ({ page }) => {
@@ -73,7 +72,11 @@ test.describe('Delete functionality (from detail page)', () => {
     await expect(page.getByText(TEST_PLAN_FILENAME).first()).toBeVisible();
   });
 
-  test('should delete plan when confirmed and redirect to home', async ({ page, request }) => {
+  test('should delete plan when confirmed and redirect to home', async ({
+    page,
+    request,
+    apiBaseUrl,
+  }) => {
     // Navigate to the test plan detail page
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(page.getByRole('heading', { name: 'Test Plan for Delete' }).first()).toBeVisible();
@@ -97,7 +100,9 @@ test.describe('Delete functionality (from detail page)', () => {
 
     // Click the final "Permanently delete" button and wait for API response
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/api/plans/') && resp.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/api/plans/') && resp.request().method() === 'DELETE'
+      ),
       page.getByRole('button', { name: 'Permanently delete' }).click(),
     ]);
 
@@ -108,11 +113,11 @@ test.describe('Delete functionality (from detail page)', () => {
     await expect(page).toHaveURL('/', { timeout: 10000 });
 
     // Verify via API that plan no longer exists (should return 404)
-    const response = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    const response = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(response.status()).toBe(404);
   });
 
-  test('should cancel delete when clicking cancel', async ({ page, request }) => {
+  test('should cancel delete when clicking cancel', async ({ page, request, apiBaseUrl }) => {
     // Navigate to the test plan detail page
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(page.getByRole('heading', { name: 'Test Plan for Delete' }).first()).toBeVisible();
@@ -130,7 +135,7 @@ test.describe('Delete functionality (from detail page)', () => {
     await expect(page).toHaveURL(`/plan/${TEST_PLAN_FILENAME}`);
 
     // Verify via API that plan still exists
-    const response = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    const response = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(response.ok()).toBeTruthy();
   });
 });
@@ -138,10 +143,10 @@ test.describe('Delete functionality (from detail page)', () => {
 test.describe('Bulk delete functionality', () => {
   const BULK_TEST_FILES = ['bulk-delete-test-1.md', 'bulk-delete-test-2.md'];
 
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     // Create test plans
     for (const filename of BULK_TEST_FILES) {
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename,
           content: `# ${filename}\n\nTest content for bulk delete.`,
@@ -150,14 +155,14 @@ test.describe('Bulk delete functionality', () => {
     }
   });
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up
     for (const filename of BULK_TEST_FILES) {
-      await request.delete(`${API_BASE_URL}/api/plans/${filename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${filename}`).catch(() => {});
     }
   });
 
-  test('should bulk delete selected plans', async ({ page, request }) => {
+  test('should bulk delete selected plans', async ({ page, request, apiBaseUrl }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
@@ -190,7 +195,10 @@ test.describe('Bulk delete functionality', () => {
 
     // Click and wait for the bulk delete API response (uses POST /plans/bulk-delete)
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/api/plans/bulk-delete') && resp.request().method() === 'POST'),
+      page.waitForResponse(
+        (resp) =>
+          resp.url().includes('/api/plans/bulk-delete') && resp.request().method() === 'POST'
+      ),
       bulkConfirmButton.click(),
     ]);
 
@@ -199,7 +207,7 @@ test.describe('Bulk delete functionality', () => {
 
     // Verify via API that plans no longer exist
     for (const filename of BULK_TEST_FILES) {
-      const response = await request.get(`${API_BASE_URL}/api/plans/${filename}`);
+      const response = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
       expect(response.status()).toBe(404);
     }
   });

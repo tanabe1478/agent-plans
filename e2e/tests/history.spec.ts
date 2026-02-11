@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -25,9 +24,9 @@ This section was added in the update.
 `;
 
 test.describe('History & Rollback (Feature 10)', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     // Create a test plan
-    await request.post(`${API_BASE_URL}/api/plans`, {
+    await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: INITIAL_CONTENT,
@@ -35,20 +34,20 @@ test.describe('History & Rollback (Feature 10)', () => {
     });
   });
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up: delete the test plan
-    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
-  test('API: should save version history when plan is updated', async ({ request }) => {
+  test('API: should save version history when plan is updated', async ({ request, apiBaseUrl }) => {
     // Update the plan
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
     // Get history
     const historyResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
 
     expect(historyResponse.ok()).toBeTruthy();
@@ -66,18 +65,18 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(version.size).toBeGreaterThan(0);
   });
 
-  test('API: should retrieve version history list', async ({ request }) => {
+  test('API: should retrieve version history list', async ({ request, apiBaseUrl }) => {
     // Update plan twice to create multiple versions
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
-      data: { content: UPDATED_CONTENT + '\n\n## Another Update\nMore changes.' },
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
+      data: { content: `${UPDATED_CONTENT}\n\n## Another Update\nMore changes.` },
     });
 
     // Get history
-    const response = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`);
+    const response = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -91,15 +90,15 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(isSorted).toBe(true);
   });
 
-  test('API: should get content of a specific version', async ({ request }) => {
+  test('API: should get content of a specific version', async ({ request, apiBaseUrl }) => {
     // Update the plan to create a version
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
     // Get history to find a version
     const historyResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
     const historyData = await historyResponse.json();
 
@@ -110,7 +109,7 @@ test.describe('History & Rollback (Feature 10)', () => {
 
     // Get the specific version content
     const versionResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history/${encodeURIComponent(version)}`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history/${encodeURIComponent(version)}`
     );
 
     expect(versionResponse.ok()).toBeTruthy();
@@ -122,15 +121,15 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(versionData.filename).toBe(TEST_PLAN_FILENAME);
   });
 
-  test('API: should compute diff between two versions', async ({ request }) => {
+  test('API: should compute diff between two versions', async ({ request, apiBaseUrl }) => {
     // Update the plan to create a version
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
     // Get history
     const historyResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
     const historyData = await historyResponse.json();
 
@@ -141,7 +140,7 @@ test.describe('History & Rollback (Feature 10)', () => {
 
     // Get diff between version and current
     const diffResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
     );
 
     expect(diffResponse.ok()).toBeTruthy();
@@ -155,15 +154,15 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(diffData.stats.unchanged).toBeGreaterThanOrEqual(0);
   });
 
-  test('API: should rollback to a specific version', async ({ request }) => {
+  test('API: should rollback to a specific version', async ({ request, apiBaseUrl }) => {
     // Update the plan to create a version
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
     // Get history
     const historyResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
     const historyData = await historyResponse.json();
 
@@ -174,7 +173,7 @@ test.describe('History & Rollback (Feature 10)', () => {
 
     // Rollback to that version
     const rollbackResponse = await request.post(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/rollback`,
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/rollback`,
       {
         data: { version },
       }
@@ -185,12 +184,12 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(rollbackData.success).toBe(true);
 
     // Verify the current content matches the rolled-back version
-    const currentResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    const currentResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     const currentData = await currentResponse.json();
 
     // Get the version content
     const versionResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history/${encodeURIComponent(version)}`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history/${encodeURIComponent(version)}`
     );
     const versionData = await versionResponse.json();
 
@@ -204,9 +203,9 @@ test.describe('History & Rollback (Feature 10)', () => {
     await expect(page.getByRole('button', { name: '履歴' })).toBeVisible();
   });
 
-  test('should show history panel when clicking history tab', async ({ page }) => {
+  test('should show history panel when clicking history tab', async ({ page, apiBaseUrl }) => {
     // Update plan to create a version
-    await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await page.request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
@@ -228,14 +227,14 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(hasVersions || hasNoHistory).toBe(true);
   });
 
-  test('should display version items in history panel', async ({ page }) => {
+  test('should display version items in history panel', async ({ page, apiBaseUrl }) => {
     // Update plan multiple times to create versions
-    await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await page.request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
-    await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
-      data: { content: UPDATED_CONTENT + '\n\n## Update 2\nMore changes.' },
+    await page.request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
+      data: { content: `${UPDATED_CONTENT}\n\n## Update 2\nMore changes.` },
     });
 
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
@@ -244,16 +243,21 @@ test.describe('History & Rollback (Feature 10)', () => {
     await page.getByRole('button', { name: '履歴' }).click();
 
     // Wait for rollback buttons to appear (indicates version items loaded)
-    const rollbackButtons = page.locator('button').filter({ has: page.locator('svg.lucide-rotate-ccw') });
+    const rollbackButtons = page
+      .locator('button')
+      .filter({ has: page.locator('svg.lucide-rotate-ccw') });
     await expect(rollbackButtons.first()).toBeVisible({ timeout: 5000 });
 
     const count = await rollbackButtons.count();
     expect(count).toBeGreaterThan(0);
   });
 
-  test('should show rollback confirmation dialog when clicking rollback button', async ({ page }) => {
+  test('should show rollback confirmation dialog when clicking rollback button', async ({
+    page,
+    apiBaseUrl,
+  }) => {
     // Update plan to create a version
-    await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await page.request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
@@ -278,33 +282,35 @@ test.describe('History & Rollback (Feature 10)', () => {
     await expect(confirmDialog.getByText('このバージョンにロールバックしますか')).toBeVisible();
 
     // The dialog has "ロールバック" and "キャンセル" buttons
-    await expect(confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first()).toBeVisible();
+    await expect(
+      confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first()
+    ).toBeVisible();
     await expect(confirmDialog.locator('button').filter({ hasText: 'キャンセル' })).toBeVisible();
   });
 
-  test('API: should auto-save history on status change', async ({ request }) => {
+  test('API: should auto-save history on status change', async ({ request, apiBaseUrl }) => {
     // First do a GET to populate the conflict cache
-    await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
 
     // Record time before status change
     const beforeChange = Date.now();
 
     // Change status (todo -> in_progress)
-    const statusResponse = await request.patch(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`, {
-      data: { status: 'in_progress' },
-    });
+    const statusResponse = await request.patch(
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`,
+      {
+        data: { status: 'in_progress' },
+      }
+    );
     expect(statusResponse.ok()).toBeTruthy();
 
-    // Wait briefly for file operations to complete
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    // Check that the latest history version was created after our status change
-    const afterHistoryResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
-    );
-    const afterData = await afterHistoryResponse.json();
-
-    expect(afterData.versions.length).toBeGreaterThan(0);
+    // Poll until history version appears (file operations may not be instant)
+    let afterData: any;
+    await expect(async () => {
+      const resp = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`);
+      afterData = await resp.json();
+      expect(afterData.versions.length).toBeGreaterThan(0);
+    }).toPass({ timeout: 5000 });
 
     // The latest version should have been created recently (after our status change)
     const latestVersion = afterData.versions[0];
@@ -316,15 +322,15 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(typeof latestVersion.summary).toBe('string');
   });
 
-  test('API: rollback should create "Before rollback" version', async ({ request }) => {
+  test('API: rollback should create "Before rollback" version', async ({ request, apiBaseUrl }) => {
     // Update the plan to create a version
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
     // Get history
     const historyResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
     const historyData = await historyResponse.json();
 
@@ -336,13 +342,13 @@ test.describe('History & Rollback (Feature 10)', () => {
     const beforeRollback = Date.now();
 
     // Rollback
-    await request.post(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/rollback`, {
+    await request.post(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/rollback`, {
       data: { version },
     });
 
     // Check history for a version created after our rollback (the "Before rollback" save)
     const afterRollbackHistory = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
     const afterData = await afterRollbackHistory.json();
 
@@ -352,12 +358,12 @@ test.describe('History & Rollback (Feature 10)', () => {
     expect(latestCreatedAt).toBeGreaterThanOrEqual(beforeRollback - 1000);
   });
 
-  test('should execute rollback via UI and verify content', async ({ page }) => {
+  test('should execute rollback via UI and verify content', async ({ page, apiBaseUrl }) => {
     // GET the plan first to refresh the conflict detection cache
-    await page.request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    await page.request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
 
     // Update plan to create a version
-    const updateResponse = await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    const updateResponse = await page.request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
     expect(updateResponse.ok()).toBeTruthy();
@@ -384,9 +390,14 @@ test.describe('History & Rollback (Feature 10)', () => {
     await expect(confirmDialog.getByText('このバージョンにロールバックしますか')).toBeVisible();
 
     // Click the rollback confirm button (inside the dialog, not the icon button)
-    const confirmButton = confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first();
+    const confirmButton = confirmDialog
+      .locator('button')
+      .filter({ hasText: 'ロールバック' })
+      .first();
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/rollback') && resp.request().method() === 'POST'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/rollback') && resp.request().method() === 'POST'
+      ),
       confirmButton.click(),
     ]);
 
@@ -397,15 +408,15 @@ test.describe('History & Rollback (Feature 10)', () => {
     await expect(page.getByText('initial version').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('API: should show diff with correct line types', async ({ request }) => {
+  test('API: should show diff with correct line types', async ({ request, apiBaseUrl }) => {
     // Update the plan to create a version
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
     // Get history
     const historyResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
     const historyData = await historyResponse.json();
 
@@ -415,7 +426,7 @@ test.describe('History & Rollback (Feature 10)', () => {
 
     // Get diff between version and current
     const diffResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
     );
 
     expect(diffResponse.ok()).toBeTruthy();
@@ -435,15 +446,18 @@ test.describe('History & Rollback (Feature 10)', () => {
     }
   });
 
-  test('API: diff should include stats (added/removed/unchanged counts)', async ({ request }) => {
+  test('API: diff should include stats (added/removed/unchanged counts)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     // Update the plan to create a version
-    await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
     });
 
     // Get history
     const historyResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/history`
     );
     const historyData = await historyResponse.json();
 
@@ -453,7 +467,7 @@ test.describe('History & Rollback (Feature 10)', () => {
 
     // Get diff
     const diffResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/diff?from=${encodeURIComponent(version)}`
     );
 
     expect(diffResponse.ok()).toBeTruthy();

@@ -1,6 +1,6 @@
-import { readdir, readFile, writeFile, stat, mkdir, unlink } from 'node:fs/promises';
+import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanVersion, DiffResult, DiffLine } from '@ccplans/shared';
+import type { DiffLine, DiffResult, PlanVersion } from '@ccplans/shared';
 import { config } from '../config.js';
 
 const HISTORY_DIR = join(config.plansDir, '.history');
@@ -101,9 +101,7 @@ export async function listVersions(filename: string): Promise<PlanVersion[]> {
     }
   }
 
-  return versions.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  return versions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 /**

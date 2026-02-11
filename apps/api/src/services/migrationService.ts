@@ -1,6 +1,6 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanFrontmatter, MigrationResult } from '@ccplans/shared';
+import type { MigrationResult, PlanFrontmatter } from '@ccplans/shared';
 import { config } from '../config.js';
 
 const CURRENT_SCHEMA_VERSION = 1;
@@ -19,11 +19,7 @@ const migrations: MigrationStep[] = [
       ...fm,
       schemaVersion: 1,
       priority: fm.priority || undefined,
-      tags: Array.isArray(fm.tags)
-        ? fm.tags
-        : fm.tags
-          ? [fm.tags as string]
-          : undefined,
+      tags: Array.isArray(fm.tags) ? fm.tags : fm.tags ? [fm.tags as string] : undefined,
     }),
   },
 ];
@@ -37,9 +33,7 @@ export function needsMigration(frontmatter: PlanFrontmatter): boolean {
   return version < CURRENT_SCHEMA_VERSION;
 }
 
-export function migrate(
-  frontmatter: Record<string, unknown>,
-): PlanFrontmatter {
+export function migrate(frontmatter: Record<string, unknown>): PlanFrontmatter {
   let currentVersion = (frontmatter.schemaVersion as number) ?? 0;
   let result = { ...frontmatter };
 
@@ -57,9 +51,11 @@ export function migrate(
  * Parse frontmatter from raw markdown content.
  * Returns the frontmatter record and the body text.
  */
-function parseFrontmatterRaw(
-  content: string,
-): { frontmatter: Record<string, unknown> | null; body: string; raw: string | null } {
+function parseFrontmatterRaw(content: string): {
+  frontmatter: Record<string, unknown> | null;
+  body: string;
+  raw: string | null;
+} {
   const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
   const match = content.match(pattern);
 
@@ -156,7 +152,7 @@ function serializeFrontmatterRecord(fm: Record<string, unknown>): string {
 }
 
 export async function migrateAllPlans(
-  plansDir: string = config.plansDir,
+  plansDir: string = config.plansDir
 ): Promise<MigrationResult> {
   const result: MigrationResult = { migrated: 0, errors: [] };
 
@@ -176,9 +172,7 @@ export async function migrateAllPlans(
       const { frontmatter, body } = parseFrontmatterRaw(content);
 
       // Determine current version
-      const version = frontmatter
-        ? ((frontmatter.schemaVersion as number) ?? 0)
-        : 0;
+      const version = frontmatter ? ((frontmatter.schemaVersion as number) ?? 0) : 0;
 
       if (version >= CURRENT_SCHEMA_VERSION) {
         continue;
@@ -189,16 +183,12 @@ export async function migrateAllPlans(
       const migrated = migrate(input);
 
       // Write back
-      const newFmStr = serializeFrontmatterRecord(
-        migrated as unknown as Record<string, unknown>,
-      );
+      const newFmStr = serializeFrontmatterRecord(migrated as unknown as Record<string, unknown>);
       const newContent = `---\n${newFmStr}\n---\n${body}`;
       await writeFile(filePath, newContent, 'utf-8');
       result.migrated++;
     } catch (err) {
-      result.errors.push(
-        `${filename}: ${err instanceof Error ? err.message : 'Unknown error'}`,
-      );
+      result.errors.push(`${filename}: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }
 

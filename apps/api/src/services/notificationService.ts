@@ -1,9 +1,9 @@
+import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
-import type { Notification, NotificationType, NotificationSeverity } from '@ccplans/shared';
-import { planService } from './planService.js';
+import type { Notification, NotificationSeverity, NotificationType } from '@ccplans/shared';
 import { config } from '../config.js';
+import { planService } from './planService.js';
 
 const READ_FILE = join(config.plansDir, '.notifications-read.json');
 

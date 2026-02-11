@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { ReviewComment, ReviewCommentsStorage } from '../lib/types/review';
 
 // Test the pure logic extracted from useReviewComments
@@ -18,7 +18,11 @@ function loadComments(filename: string, storage: Record<string, string>): Review
   }
 }
 
-function saveComments(filename: string, comments: ReviewComment[], storage: Record<string, string>): void {
+function saveComments(
+  filename: string,
+  comments: ReviewComment[],
+  storage: Record<string, string>
+): void {
   const data: ReviewCommentsStorage = { version: 1, comments };
   storage[storageKey(filename)] = JSON.stringify(data);
 }
@@ -52,7 +56,11 @@ function generatePrompt(filename: string, comment: ReviewComment, content: strin
   return `${filename}:${formatLineRef(comment.line)}\n${comment.body}`;
 }
 
-function generateAllPrompts(filename: string, comments: ReviewComment[], content: string = ''): string {
+function generateAllPrompts(
+  filename: string,
+  comments: ReviewComment[],
+  content: string = ''
+): string {
   return comments.map((c) => generatePrompt(filename, c, content)).join('\n\n=====\n\n');
 }
 
@@ -142,7 +150,7 @@ describe('useReviewComments logic', () => {
       const comment = makeComment();
       const comments = [comment];
       const next = comments.map((c) =>
-        c.id === comment.id ? { ...c, body: 'Updated', updatedAt: '2026-02-01T00:00:00Z' } : c,
+        c.id === comment.id ? { ...c, body: 'Updated', updatedAt: '2026-02-01T00:00:00Z' } : c
       );
       expect(next[0].body).toBe('Updated');
       expect(next[0].updatedAt).toBe('2026-02-01T00:00:00Z');
@@ -208,14 +216,14 @@ describe('useReviewComments logic', () => {
     it('should format single-line comment with quoted content', () => {
       const comment = makeComment({ line: 3, body: 'Fix this logic' });
       expect(generatePrompt('plan.md', comment, SAMPLE_CONTENT)).toBe(
-        'plan.md:L3\n> This is line 3.\nFix this logic',
+        'plan.md:L3\n> This is line 3.\nFix this logic'
       );
     });
 
     it('should format range comment with quoted content', () => {
       const comment = makeComment({ line: [2, 3], body: 'Refactor this section' });
       expect(generatePrompt('plan.md', comment, SAMPLE_CONTENT)).toBe(
-        'plan.md:L2-L3\n> ## Overview\n> This is line 3.\nRefactor this section',
+        'plan.md:L2-L3\n> ## Overview\n> This is line 3.\nRefactor this section'
       );
     });
 
@@ -227,7 +235,7 @@ describe('useReviewComments logic', () => {
     it('should handle multiline comment body', () => {
       const comment = makeComment({ line: 1, body: 'Line 1\nLine 2' });
       expect(generatePrompt('plan.md', comment, SAMPLE_CONTENT)).toBe(
-        'plan.md:L1\n> # Title\nLine 1\nLine 2',
+        'plan.md:L1\n> # Title\nLine 1\nLine 2'
       );
     });
   });
@@ -238,7 +246,7 @@ describe('useReviewComments logic', () => {
       const c2 = makeComment({ line: 3, body: 'Second' });
       const result = generateAllPrompts('plan.md', [c1, c2], SAMPLE_CONTENT);
       expect(result).toBe(
-        'plan.md:L1\n> # Title\nFirst\n\n=====\n\nplan.md:L3\n> This is line 3.\nSecond',
+        'plan.md:L1\n> # Title\nFirst\n\n=====\n\nplan.md:L3\n> This is line 3.\nSecond'
       );
     });
 

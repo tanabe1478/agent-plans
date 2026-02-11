@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import {
   generateNotifications,
-  markAsRead,
   markAllAsRead,
+  markAsRead,
 } from '../services/notificationService.js';
 import { isFrontmatterEnabled } from '../services/settingsService.js';
 

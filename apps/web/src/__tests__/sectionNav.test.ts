@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { slugify, extractHeadings } from '../components/plan/SectionNav';
+import { describe, expect, it } from 'vitest';
+import { extractHeadings, slugify } from '../components/plan/SectionNav';
 
 describe('slugify', () => {
   it('should convert text to lowercase kebab-case', () => {

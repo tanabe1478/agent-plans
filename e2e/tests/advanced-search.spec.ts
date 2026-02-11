@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -18,8 +17,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     await expect(page.getByRole('heading', { name: /Authentication/i, level: 3 })).toBeVisible();
   });
 
-  test('API: status:todo filter search should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: status:todo filter search should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'status:todo' },
     });
 
@@ -36,8 +35,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('yellow-jumping-dog.md');
   });
 
-  test('API: tag:api filter search should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: tag:api filter search should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'tag:api' },
     });
 
@@ -53,8 +52,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('red-sleeping-bear.md');
   });
 
-  test('API: priority:high filter search should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: priority:high filter search should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'priority:high' },
     });
 
@@ -70,8 +69,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('blue-running-fox.md');
   });
 
-  test('API: assignee:alice filter search should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: assignee:alice filter search should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'assignee:alice' },
     });
 
@@ -88,8 +87,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('red-sleeping-bear.md');
   });
 
-  test('API: combined query (text + filter) should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: combined query (text + filter) should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'auth status:todo' },
     });
 
@@ -128,8 +127,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     await expect(page.getByText(/Filter by status/i)).toBeVisible();
   });
 
-  test('API: due date less than filter should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: due date less than filter should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'due<2026-02-07' },
     });
 
@@ -145,8 +144,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('green-dancing-cat.md');
   });
 
-  test('API: due date greater than filter should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: due date greater than filter should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'due>2026-02-07' },
     });
 
@@ -161,8 +160,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('blue-running-fox.md');
   });
 
-  test('API: estimate filter should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: estimate filter should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'estimate:3d' },
     });
 
@@ -177,8 +176,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('blue-running-fox.md');
   });
 
-  test('API: project filter should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: project filter should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'project:/home/user/projects/web-app' },
     });
 
@@ -194,8 +193,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('yellow-jumping-dog.md');
   });
 
-  test('API: blockedBy filter should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: blockedBy filter should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'blockedBy:blue-running-fox.md' },
     });
 
@@ -210,8 +209,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('green-dancing-cat.md');
   });
 
-  test('API: quoted phrase search should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: quoted phrase search should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: '"Performance Optimization"' },
     });
 
@@ -226,8 +225,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('green-dancing-cat.md');
   });
 
-  test('API: multiple combined filters should work', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: multiple combined filters should work', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'status:todo priority:high tag:backend' },
     });
 
@@ -245,8 +244,8 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).not.toContain('yellow-jumping-dog.md');
   });
 
-  test('API: empty query should return validation error', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/search`, {
+  test('API: empty query should return validation error', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: '' },
     });
 

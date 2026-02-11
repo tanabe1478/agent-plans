@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -14,9 +13,9 @@ Testing audit log, schema version, and migration.
 `;
 
 test.describe('Quality & Operations functionality (Feature 15)', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     // Create a test plan via API
-    await request.post(`${API_BASE_URL}/api/plans`, {
+    await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: TEST_PLAN_FILENAME,
         content: TEST_PLAN_CONTENT,
@@ -24,13 +23,13 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     });
   });
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up: try to delete the test plan if it still exists
-    await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
+    await request.delete(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
-  test('should retrieve audit log via API', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/admin/audit`);
+  test('should retrieve audit log via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/admin/audit`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -47,8 +46,8 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     }
   });
 
-  test('should retrieve schema version via API', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/admin/schema-version`);
+  test('should retrieve schema version via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/admin/schema-version`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -57,8 +56,8 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     expect(data.version).toBeGreaterThanOrEqual(1);
   });
 
-  test('should run migration via API', async ({ request }) => {
-    const response = await request.post(`${API_BASE_URL}/api/admin/migrate`);
+  test('should run migration via API', async ({ request, apiBaseUrl }) => {
+    const response = await request.post(`${apiBaseUrl}/api/admin/migrate`);
     expect(response.ok()).toBeTruthy();
 
     const result = await response.json();
@@ -68,30 +67,34 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     expect(Array.isArray(result.errors)).toBeTruthy();
   });
 
-  test('should detect conflict on concurrent update (mtime-based)', async ({ request }) => {
+  test('should detect conflict on concurrent update (mtime-based)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     // Use status update to set the modified field in frontmatter
     // (updateStatus sets modified automatically)
-    await request.patch(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'in_progress' },
     });
 
     // Get current plan details (now has modified in frontmatter from the status change)
-    const getResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    const getResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(getResponse.ok()).toBeTruthy();
     const plan = await getResponse.json();
     const originalMtime = plan.frontmatter?.modified;
     expect(originalMtime).toBeDefined();
 
-    // Wait to ensure different timestamp
+    // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
+    // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Use another status update to trigger modified change
-    await request.patch(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'review' },
     });
 
     // Get updated plan
-    const updatedResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    const updatedResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(updatedResponse.ok()).toBeTruthy();
     const updatedPlan = await updatedResponse.json();
     const newMtime = updatedPlan.frontmatter?.modified;
@@ -101,9 +104,9 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     expect(newMtime).not.toBe(originalMtime);
   });
 
-  test('should record audit log on plan operations', async ({ request }) => {
+  test('should record audit log on plan operations', async ({ request, apiBaseUrl }) => {
     // Get initial audit log count
-    const initialResponse = await request.get(`${API_BASE_URL}/api/admin/audit`);
+    const initialResponse = await request.get(`${apiBaseUrl}/api/admin/audit`);
     expect(initialResponse.ok()).toBeTruthy();
     const initialData = await initialResponse.json();
     const initialCount = initialData.entries.length;
@@ -112,7 +115,7 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     const testFilename = 'test-audit-log-plan.md';
 
     // Create
-    await request.post(`${API_BASE_URL}/api/plans`, {
+    await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: testFilename,
         content: '# Test Audit\n\nTesting audit log.',
@@ -120,17 +123,17 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     });
 
     // Update
-    await request.put(`${API_BASE_URL}/api/plans/${testFilename}`, {
+    await request.put(`${apiBaseUrl}/api/plans/${testFilename}`, {
       data: {
         content: '# Test Audit\n\nUpdated content.',
       },
     });
 
     // Delete
-    await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`);
+    await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`);
 
     // Get updated audit log
-    const finalResponse = await request.get(`${API_BASE_URL}/api/admin/audit`);
+    const finalResponse = await request.get(`${apiBaseUrl}/api/admin/audit`);
     expect(finalResponse.ok()).toBeTruthy();
     const finalData = await finalResponse.json();
     const finalCount = finalData.entries.length;
@@ -154,9 +157,9 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     expect(hasCreate || hasUpdate || hasDelete).toBeTruthy();
   });
 
-  test('should filter audit log by filename', async ({ request }) => {
+  test('should filter audit log by filename', async ({ request, apiBaseUrl }) => {
     const response = await request.get(
-      `${API_BASE_URL}/api/admin/audit?filename=${TEST_PLAN_FILENAME}`
+      `${apiBaseUrl}/api/admin/audit?filename=${TEST_PLAN_FILENAME}`
     );
     expect(response.ok()).toBeTruthy();
 
@@ -168,8 +171,8 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     }
   });
 
-  test('should limit audit log results', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/admin/audit?limit=5`);
+  test('should limit audit log results', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/admin/audit?limit=5`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -177,10 +180,10 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     expect(data.entries.length).toBeLessThanOrEqual(5);
   });
 
-  test('should filter audit log by action type', async ({ request }) => {
+  test('should filter audit log by action type', async ({ request, apiBaseUrl }) => {
     // First ensure there are some 'create' entries by creating a plan
     const testFile = 'test-audit-filter-action.md';
-    await request.post(`${API_BASE_URL}/api/plans`, {
+    await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: testFile,
         content: '# Audit Filter Test\n\nTesting action filter.',
@@ -188,7 +191,7 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     });
 
     // Query audit log filtering by action=create
-    const response = await request.get(`${API_BASE_URL}/api/admin/audit?action=create`);
+    const response = await request.get(`${apiBaseUrl}/api/admin/audit?action=create`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -200,13 +203,13 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     }
 
     // Clean up
-    await request.delete(`${API_BASE_URL}/api/plans/${testFile}`).catch(() => {});
+    await request.delete(`${apiBaseUrl}/api/plans/${testFile}`).catch(() => {});
   });
 
-  test('should record status_change in audit log', async ({ request }) => {
+  test('should record status_change in audit log', async ({ request, apiBaseUrl }) => {
     // Change the status of the test plan
     const statusResponse = await request.patch(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`,
+      `${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`,
       {
         data: { status: 'in_progress' },
       }
@@ -215,7 +218,7 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
 
     // Query audit log for this file
     const auditResponse = await request.get(
-      `${API_BASE_URL}/api/admin/audit?filename=${TEST_PLAN_FILENAME}`
+      `${apiBaseUrl}/api/admin/audit?filename=${TEST_PLAN_FILENAME}`
     );
     expect(auditResponse.ok()).toBeTruthy();
 
@@ -223,19 +226,17 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     expect(data.entries).toBeDefined();
 
     // Find a status_change entry
-    const statusEntry = data.entries.find(
-      (e: any) => e.action === 'status_change'
-    );
+    const statusEntry = data.entries.find((e: any) => e.action === 'status_change');
     expect(statusEntry).toBeDefined();
     expect(statusEntry.filename).toBe(TEST_PLAN_FILENAME);
     expect(statusEntry.details).toBeDefined();
   });
 
-  test('should migrate v0 plan to v1', async ({ request }) => {
+  test('should migrate v0 plan to v1', async ({ request, apiBaseUrl }) => {
     // Create a plan without schemaVersion (simulating v0)
     const testFile = 'test-migration-v0.md';
     try {
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFile,
           content: `---
@@ -249,7 +250,7 @@ This plan has no schemaVersion.
       });
 
       // Run migration
-      const response = await request.post(`${API_BASE_URL}/api/admin/migrate`);
+      const response = await request.post(`${apiBaseUrl}/api/admin/migrate`);
       expect(response.ok()).toBeTruthy();
 
       const result = await response.json();
@@ -257,25 +258,25 @@ This plan has no schemaVersion.
       expect(result.errors).toBeDefined();
 
       // Get the plan and verify it now has schemaVersion
-      const planResponse = await request.get(`${API_BASE_URL}/api/plans/${testFile}`);
+      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${testFile}`);
       expect(planResponse.ok()).toBeTruthy();
       const plan = await planResponse.json();
       expect(plan.frontmatter.schemaVersion).toBeDefined();
       expect(plan.frontmatter.schemaVersion).toBeGreaterThanOrEqual(1);
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFile}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFile}`).catch(() => {});
     }
   });
 
-  test('should skip already-migrated plans', async ({ request }) => {
+  test('should skip already-migrated plans', async ({ request, apiBaseUrl }) => {
     // Run migration once
-    const firstResponse = await request.post(`${API_BASE_URL}/api/admin/migrate`);
+    const firstResponse = await request.post(`${apiBaseUrl}/api/admin/migrate`);
     expect(firstResponse.ok()).toBeTruthy();
     const firstResult = await firstResponse.json();
     const firstMigrated = firstResult.migrated;
 
     // Run migration again - should migrate 0 since all are already up-to-date
-    const secondResponse = await request.post(`${API_BASE_URL}/api/admin/migrate`);
+    const secondResponse = await request.post(`${apiBaseUrl}/api/admin/migrate`);
     expect(secondResponse.ok()).toBeTruthy();
     const secondResult = await secondResponse.json();
 
@@ -283,9 +284,9 @@ This plan has no schemaVersion.
     expect(secondResult.migrated).toBeLessThanOrEqual(firstMigrated);
   });
 
-  test('should validate audit entry structure', async ({ request }) => {
+  test('should validate audit entry structure', async ({ request, apiBaseUrl }) => {
     // Get recent audit entries
-    const response = await request.get(`${API_BASE_URL}/api/admin/audit?limit=10`);
+    const response = await request.get(`${apiBaseUrl}/api/admin/audit?limit=10`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -306,13 +307,13 @@ This plan has no schemaVersion.
     }
   });
 
-  test('should record bulk_operation in audit log', async ({ request }) => {
+  test('should record bulk_operation in audit log', async ({ request, apiBaseUrl }) => {
     const bulkFiles = ['test-audit-bulk-1.md', 'test-audit-bulk-2.md'];
 
     try {
       // Create test plans
       for (const filename of bulkFiles) {
-        await request.post(`${API_BASE_URL}/api/plans`, {
+        await request.post(`${apiBaseUrl}/api/plans`, {
           data: {
             filename,
             content: `---
@@ -328,7 +329,7 @@ Bulk audit test.
       }
 
       // Perform bulk status change
-      const bulkResponse = await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
+      const bulkResponse = await request.post(`${apiBaseUrl}/api/plans/bulk-status`, {
         data: {
           filenames: bulkFiles,
           status: 'in_progress',
@@ -337,53 +338,60 @@ Bulk audit test.
       expect(bulkResponse.ok()).toBeTruthy();
 
       // Check audit log for entries related to these plans
-      const auditResponse = await request.get(`${API_BASE_URL}/api/admin/audit?limit=20`);
+      const auditResponse = await request.get(`${apiBaseUrl}/api/admin/audit?limit=20`);
       expect(auditResponse.ok()).toBeTruthy();
 
       const data = await auditResponse.json();
       // Should have audit entries for the bulk operation
       const bulkEntries = data.entries.filter(
-        (e: any) => bulkFiles.includes(e.filename) && (e.action === 'status_change' || e.action === 'bulk_operation' || e.action === 'update')
+        (e: any) =>
+          bulkFiles.includes(e.filename) &&
+          (e.action === 'status_change' || e.action === 'bulk_operation' || e.action === 'update')
       );
       expect(bulkEntries.length).toBeGreaterThan(0);
     } finally {
       for (const filename of bulkFiles) {
-        await request.delete(`${API_BASE_URL}/api/plans/${filename}`).catch(() => {});
+        await request.delete(`${apiBaseUrl}/api/plans/${filename}`).catch(() => {});
       }
     }
   });
 
-  test('API: conflict detection responds with stale mtime info', async ({ request }) => {
+  test('API: conflict detection responds with stale mtime info', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     // Use status update to set modified field
-    await request.patch(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'in_progress' },
     });
 
     // Get plan with modified timestamp set
-    const getResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    const getResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(getResponse.ok()).toBeTruthy();
     const plan = await getResponse.json();
     const originalModified = plan.frontmatter?.modified;
     expect(originalModified).toBeDefined();
 
-    // Wait to ensure different timestamp
+    // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
+    // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Another status update to change modified
-    await request.patch(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'review' },
     });
 
-    // Wait briefly
+    // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
+    // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // One more status update
-    await request.patch(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'completed' },
     });
 
     // Get the final plan to verify mtime tracking works
-    const finalResponse = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
+    const finalResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(finalResponse.ok()).toBeTruthy();
     const finalPlan = await finalResponse.json();
 

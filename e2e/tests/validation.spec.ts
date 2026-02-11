@@ -1,16 +1,18 @@
-import { test, expect } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Validation (Feature 2)', () => {
-  test('should handle plan creation with invalid frontmatter gracefully', async ({ request }) => {
+  test('should handle plan creation with invalid frontmatter gracefully', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     const testFilename = 'test-invalid-frontmatter.md';
 
     try {
       // Create plan with malformed frontmatter
-      const response = await request.post(`${API_BASE_URL}/api/plans`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -34,16 +36,16 @@ Content.
       expect(plan.filename).toBe(testFilename);
     } finally {
       // Clean up if created
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should validate invalid status values via API', async ({ request }) => {
+  test('should validate invalid status values via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-invalid-status.md';
 
     try {
       // First create a valid plan
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -57,7 +59,7 @@ Content.
       });
 
       // Try to update with invalid status
-      const response = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/status`, {
+      const response = await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/status`, {
         data: {
           status: 'invalid_status',
         },
@@ -68,16 +70,16 @@ Content.
       const error = await response.json();
       expect(error.error).toBeTruthy();
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should validate priority values via API', async ({ request }) => {
+  test('should validate priority values via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-priority-validation.md';
 
     try {
       // Create plan
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: '# Test Plan\n\nContent.',
@@ -85,7 +87,7 @@ Content.
       });
 
       // Try bulk priority update with invalid priority
-      const response = await request.post(`${API_BASE_URL}/api/plans/bulk-priority`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans/bulk-priority`, {
         data: {
           filenames: [testFilename],
           priority: 'super_critical', // Invalid priority
@@ -95,16 +97,19 @@ Content.
       // Should return validation error
       expect(response.status()).toBe(400);
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should accept plan with invalid due date format (stored as-is)', async ({ request }) => {
+  test('should accept plan with invalid due date format (stored as-is)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     const testFilename = 'test-duedate-validation.md';
 
     try {
       // Create plan with invalid date format
-      const response = await request.post(`${API_BASE_URL}/api/plans`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -121,20 +126,23 @@ Content.
       expect(response.status()).toBe(201);
 
       // Verify the plan was stored
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       expect(getResponse.ok()).toBeTruthy();
       const plan = await getResponse.json();
       expect(plan.frontmatter?.dueDate).toBe('not-a-valid-date');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should store invalid status as-is (no auto-correction on create)', async ({ request }) => {
+  test('should store invalid status as-is (no auto-correction on create)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     const testFilename = 'test-autocorrect-status.md';
 
     try {
-      const response = await request.post(`${API_BASE_URL}/api/plans`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -151,19 +159,22 @@ Content.
       expect(response.status()).toBe(201);
 
       // Invalid status is stored as-is in the frontmatter
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter?.status).toBe('invalid');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should store invalid priority as-is (no auto-correction on create)', async ({ request }) => {
+  test('should store invalid priority as-is (no auto-correction on create)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     const testFilename = 'test-autocorrect-priority.md';
 
     try {
-      const response = await request.post(`${API_BASE_URL}/api/plans`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -180,20 +191,20 @@ Content.
       expect(response.status()).toBe(201);
 
       // Invalid priority is stored as-is
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter?.priority).toBe('super');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should auto-correct tags string to array', async ({ request }) => {
+  test('should auto-correct tags string to array', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-autocorrect-tags.md';
 
     try {
       // Use YAML array syntax to provide tags as an actual array
-      const response = await request.post(`${API_BASE_URL}/api/plans`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -208,7 +219,7 @@ Content.
       });
 
       if (response.ok()) {
-        const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+        const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
         const plan = await getResponse.json();
         // Tags should be stored as an array
         if (plan.frontmatter?.tags) {
@@ -219,16 +230,16 @@ Content.
         expect(response.status()).toBeGreaterThanOrEqual(400);
       }
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should auto-correct blockedBy string to array', async ({ request }) => {
+  test('should auto-correct blockedBy string to array', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-autocorrect-blockedby.md';
 
     try {
       // Use YAML array syntax to provide blockedBy as a proper array
-      const response = await request.post(`${API_BASE_URL}/api/plans`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -243,7 +254,7 @@ Content.
       });
 
       if (response.ok()) {
-        const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+        const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
         const plan = await getResponse.json();
         // blockedBy should be stored as an array
         if (plan.frontmatter?.blockedBy) {
@@ -254,15 +265,18 @@ Content.
         expect(response.status()).toBeGreaterThanOrEqual(400);
       }
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should store invalid estimate as-is (no validation on create)', async ({ request }) => {
+  test('should store invalid estimate as-is (no validation on create)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     const testFilename = 'test-estimate-validation.md';
 
     try {
-      const response = await request.post(`${API_BASE_URL}/api/plans`, {
+      const response = await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -279,17 +293,17 @@ Content.
       expect(response.status()).toBe(201);
 
       // Invalid estimate '3days' (doesn't match /^\d+[hdwm]$/) is stored as-is
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter?.estimate).toBe('3days');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should reject empty filename', async ({ request }) => {
+  test('should reject empty filename', async ({ request, apiBaseUrl }) => {
     // POST plan with empty filename
-    const response = await request.post(`${API_BASE_URL}/api/plans`, {
+    const response = await request.post(`${apiBaseUrl}/api/plans`, {
       data: {
         filename: '',
         content: '# Empty Filename Test\n\nContent.',

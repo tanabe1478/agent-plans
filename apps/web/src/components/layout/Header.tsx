@@ -1,12 +1,28 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, FileText, Sun, Moon, Monitor, PanelLeftOpen, PanelLeftClose, List, Columns, Archive, Download, Upload, MoreVertical, DatabaseBackup, Settings } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-import { useUiStore, type Theme } from '@/stores/uiStore';
-import { cn } from '@/lib/utils';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
+import {
+  Archive,
+  Columns,
+  DatabaseBackup,
+  Download,
+  FileText,
+  List,
+  Monitor,
+  Moon,
+  MoreVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Settings,
+  Sun,
+  Upload,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ExportDialog } from '@/components/export/ExportDialog';
 import { ImportDialog } from '@/components/import/ImportDialog';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
+import { cn } from '@/lib/utils';
+import { type Theme, useUiStore } from '@/stores/uiStore';
 
 const themeIcons: Record<Theme, typeof Sun> = {
   light: Sun,
@@ -29,9 +45,7 @@ function ViewTabs() {
   const location = useLocation();
   const frontmatterEnabled = useFrontmatterEnabled();
 
-  const visibleTabs = frontmatterEnabled
-    ? viewTabs
-    : viewTabs.filter(({ path }) => path === '/');
+  const visibleTabs = frontmatterEnabled ? viewTabs : viewTabs.filter(({ path }) => path === '/');
 
   return (
     <div className="flex items-center gap-0.5 rounded-md border p-0.5">
@@ -144,14 +158,20 @@ export function Header() {
             {menuOpen && (
               <div className="absolute right-0 mt-1 w-48 rounded-md border bg-background shadow-lg z-50">
                 <button
-                  onClick={() => { setExportOpen(true); setMenuOpen(false); }}
+                  onClick={() => {
+                    setExportOpen(true);
+                    setMenuOpen(false);
+                  }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent text-left"
                 >
                   <Download className="h-4 w-4" />
                   Export Plans
                 </button>
                 <button
-                  onClick={() => { setImportOpen(true); setMenuOpen(false); }}
+                  onClick={() => {
+                    setImportOpen(true);
+                    setMenuOpen(false);
+                  }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent text-left"
                 >
                   <Upload className="h-4 w-4" />
