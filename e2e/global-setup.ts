@@ -1,5 +1,5 @@
-import { readdirSync, copyFileSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { copyFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -8,10 +8,11 @@ const seedDir = resolve(__dirname, 'fixtures', 'seed');
 const plansDir = resolve(__dirname, 'fixtures', 'plans');
 
 export default function globalSetup() {
+  // 0. Ensure plansDir exists (first run or clean checkout)
+  mkdirSync(plansDir, { recursive: true });
+
   // 1. Copy all .md files from seed/ -> plans/
-  const seedFiles = new Set(
-    readdirSync(seedDir).filter((f) => f.endsWith('.md'))
-  );
+  const seedFiles = new Set(readdirSync(seedDir).filter((f) => f.endsWith('.md')));
   for (const file of seedFiles) {
     copyFileSync(resolve(seedDir, file), resolve(plansDir, file));
   }
@@ -34,8 +35,5 @@ export default function globalSetup() {
   writeFileSync(resolve(plansDir, '.audit.jsonl'), '');
   writeFileSync(resolve(plansDir, '.views.json'), '[]');
   writeFileSync(resolve(plansDir, '.notifications-read.json'), '[]');
-  writeFileSync(
-    resolve(plansDir, '.settings.json'),
-    '{"frontmatterEnabled":true}'
-  );
+  writeFileSync(resolve(plansDir, '.settings.json'), '{"frontmatterEnabled":true}');
 }

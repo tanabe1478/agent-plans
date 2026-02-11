@@ -32,7 +32,7 @@ Refactor the CLI tool to use a plugin architecture.
 - Create example plugins
 
 ## Architecture
-```
+```text
 cli/
   plugins/
     core/

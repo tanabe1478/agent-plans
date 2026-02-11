@@ -307,9 +307,7 @@ test.describe('History & Rollback (Feature 10)', () => {
     // Poll until history version appears (file operations may not be instant)
     let afterData: any;
     await expect(async () => {
-      const resp = await request.get(
-        `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
-      );
+      const resp = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`);
       afterData = await resp.json();
       expect(afterData.versions.length).toBeGreaterThan(0);
     }).toPass({ timeout: 5000 });
