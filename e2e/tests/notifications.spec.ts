@@ -1,12 +1,11 @@
-import { expect, test } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Notifications (Feature 9)', () => {
-  test('API: should retrieve notifications list', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/notifications`);
+  test('API: should retrieve notifications list', async ({ request, apiBaseUrl }) => {
+    const response = await request.get(`${apiBaseUrl}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -17,8 +16,11 @@ test.describe('Notifications (Feature 9)', () => {
     expect(typeof data.unreadCount).toBe('number');
   });
 
-  test('API: should generate overdue notification for past due date', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/notifications`);
+  test('API: should generate overdue notification for past due date', async ({
+    request,
+    apiBaseUrl,
+  }) => {
+    const response = await request.get(`${apiBaseUrl}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -33,8 +35,11 @@ test.describe('Notifications (Feature 9)', () => {
     expect(overdueNotification.message).toContain('overdue');
   });
 
-  test('API: should generate due soon notification for upcoming deadlines', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/notifications`);
+  test('API: should generate due soon notification for upcoming deadlines', async ({
+    request,
+    apiBaseUrl,
+  }) => {
+    const response = await request.get(`${apiBaseUrl}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -51,9 +56,9 @@ test.describe('Notifications (Feature 9)', () => {
     expect(catNotification.message).toMatch(/due|overdue/);
   });
 
-  test('API: should mark notification as read', async ({ request }) => {
+  test('API: should mark notification as read', async ({ request, apiBaseUrl }) => {
     // Get notifications - fixture data has overdue plans so notifications must exist
-    const listResponse = await request.get(`${API_BASE_URL}/api/notifications`);
+    const listResponse = await request.get(`${apiBaseUrl}/api/notifications`);
     const listData = await listResponse.json();
 
     expect(listData.notifications.length).toBeGreaterThan(0);
@@ -62,7 +67,7 @@ test.describe('Notifications (Feature 9)', () => {
 
     // Mark as read
     const readResponse = await request.patch(
-      `${API_BASE_URL}/api/notifications/${notificationId}/read`
+      `${apiBaseUrl}/api/notifications/${notificationId}/read`
     );
 
     expect(readResponse.ok()).toBeTruthy();
@@ -70,23 +75,23 @@ test.describe('Notifications (Feature 9)', () => {
     expect(readData.success).toBe(true);
 
     // Verify notification is marked as read
-    const verifyResponse = await request.get(`${API_BASE_URL}/api/notifications`);
+    const verifyResponse = await request.get(`${apiBaseUrl}/api/notifications`);
     const verifyData = await verifyResponse.json();
 
     const notification = verifyData.notifications.find((n: any) => n.id === notificationId);
     expect(notification.read).toBe(true);
   });
 
-  test('API: should mark all notifications as read', async ({ request }) => {
+  test('API: should mark all notifications as read', async ({ request, apiBaseUrl }) => {
     // Mark all as read
-    const response = await request.post(`${API_BASE_URL}/api/notifications/mark-all-read`);
+    const response = await request.post(`${apiBaseUrl}/api/notifications/mark-all-read`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data.success).toBe(true);
 
     // Verify all are read
-    const verifyResponse = await request.get(`${API_BASE_URL}/api/notifications`);
+    const verifyResponse = await request.get(`${apiBaseUrl}/api/notifications`);
     const verifyData = await verifyResponse.json();
 
     const allRead = verifyData.notifications.every((n: any) => n.read === true);
@@ -172,8 +177,11 @@ test.describe('Notifications (Feature 9)', () => {
     expect(hasSeverityIcon).toBe(true);
   });
 
-  test('API: should sort notifications by severity (critical first)', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/notifications`);
+  test('API: should sort notifications by severity (critical first)', async ({
+    request,
+    apiBaseUrl,
+  }) => {
+    const response = await request.get(`${apiBaseUrl}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -214,9 +222,9 @@ test.describe('Notifications (Feature 9)', () => {
     });
   });
 
-  test('should mark notification as read via UI', async ({ page }) => {
+  test('should mark notification as read via UI', async ({ page, apiBaseUrl }) => {
     // First, reset notifications so there are unread ones
-    await page.request.post(`${API_BASE_URL}/api/notifications/mark-all-read`).catch(() => {});
+    await page.request.post(`${apiBaseUrl}/api/notifications/mark-all-read`).catch(() => {});
 
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
@@ -238,8 +246,11 @@ test.describe('Notifications (Feature 9)', () => {
     // Verify the notification was interacted with (no error thrown)
   });
 
-  test('API: should not generate notification for completed plans', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/notifications`);
+  test('API: should not generate notification for completed plans', async ({
+    request,
+    apiBaseUrl,
+  }) => {
+    const response = await request.get(`${apiBaseUrl}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -254,8 +265,11 @@ test.describe('Notifications (Feature 9)', () => {
 
   // Skip: green-dancing-cat's modified date gets updated by other tests (status changes),
   // so it may not be stale (3+ days old) when this test runs.
-  test.skip('API: blocked_stale notification for stale blocked plans', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/notifications`);
+  test.skip('API: blocked_stale notification for stale blocked plans', async ({
+    request,
+    apiBaseUrl,
+  }) => {
+    const response = await request.get(`${apiBaseUrl}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();

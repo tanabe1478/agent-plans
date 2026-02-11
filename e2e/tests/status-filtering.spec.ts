@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Fixture files:
 // - blue-running-fox.md (todo)
@@ -12,8 +11,8 @@ import { API_BASE_URL } from '../lib/test-helpers';
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Status Filtering and Status Update', () => {
-  // Reset fixture statuses before tests to handle parallel test interference
-  test.beforeAll(async ({ request }) => {
+  // Reset fixture statuses before each test to ensure consistent state
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     const fixtures = [
       { file: 'blue-running-fox.md', status: 'todo' },
       { file: 'green-dancing-cat.md', status: 'in_progress' },
@@ -23,7 +22,7 @@ test.describe('Status Filtering and Status Update', () => {
     ];
     for (const { file, status } of fixtures) {
       await request
-        .patch(`${API_BASE_URL}/api/plans/${file}/status`, {
+        .patch(`${apiBaseUrl}/api/plans/${file}/status`, {
           data: { status },
         })
         .catch(() => {});
@@ -131,7 +130,11 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(dropdown).toBeVisible();
   });
 
-  test('should update status when selecting from dropdown', async ({ page, request }) => {
+  test('should update status when selecting from dropdown', async ({
+    page,
+    request,
+    apiBaseUrl,
+  }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
@@ -161,7 +164,7 @@ test.describe('Status Filtering and Status Update', () => {
     await expect(planCard.getByRole('button', { name: 'Review' })).toBeVisible();
 
     // Reset status back for other tests
-    await request.patch(`${API_BASE_URL}/api/plans/green-dancing-cat.md/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/green-dancing-cat.md/status`, {
       data: { status: 'in_progress' },
     });
   });

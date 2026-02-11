@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test';
-import { API_BASE_URL } from '../lib/test-helpers';
+import { expect, test } from '../lib/fixtures';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -8,18 +7,18 @@ const FIXTURE_FILE = 'blue-running-fox.md'; // Fixture with status=todo
 test.describe('Status Transitions (Feature 3)', () => {
   let originalStatus: string;
 
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, apiBaseUrl }) => {
     // Get original status to restore later
-    const response = await request.get(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}`);
+    const response = await request.get(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}`);
     const plan = await response.json();
     originalStatus = plan.frontmatter?.status || 'todo';
   });
 
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ request, apiBaseUrl }) => {
     // Restore original status
     if (originalStatus) {
       await request
-        .patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+        .patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
           data: { status: originalStatus },
         })
         .catch(() => {});
@@ -28,9 +27,10 @@ test.describe('Status Transitions (Feature 3)', () => {
 
   test('should show only valid transitions in status dropdown for todo status', async ({
     page,
+    apiBaseUrl,
   }) => {
     // Ensure fixture is in todo status
-    await page.request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await page.request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
     });
 
@@ -61,9 +61,12 @@ test.describe('Status Transitions (Feature 3)', () => {
     await expect(dropdown.getByText('Completed')).not.toBeVisible();
   });
 
-  test('should show todo and review as transitions for in_progress status', async ({ page }) => {
+  test('should show todo and review as transitions for in_progress status', async ({
+    page,
+    apiBaseUrl,
+  }) => {
     // Set fixture to in_progress
-    await page.request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await page.request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'in_progress' },
     });
 
@@ -96,9 +99,10 @@ test.describe('Status Transitions (Feature 3)', () => {
   test('should successfully transition status from todo to in_progress', async ({
     page,
     request,
+    apiBaseUrl,
   }) => {
     // Set fixture to todo
-    await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
     });
 
@@ -126,19 +130,19 @@ test.describe('Status Transitions (Feature 3)', () => {
     ]);
 
     // Verify status changed via API
-    const response = await request.get(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}`);
+    const response = await request.get(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}`);
     const plan = await response.json();
     expect(plan.frontmatter.status).toBe('in_progress');
   });
 
-  test('should reject invalid status transition via API', async ({ request }) => {
+  test('should reject invalid status transition via API', async ({ request, apiBaseUrl }) => {
     // Set fixture to todo
-    await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
     });
 
     // Try to transition directly from todo to review (invalid)
-    const response = await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    const response = await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'review' },
     });
 
@@ -148,12 +152,16 @@ test.describe('Status Transitions (Feature 3)', () => {
     expect(error.error).toContain('Invalid status transition');
   });
 
-  test('should display review status badge with correct color', async ({ page, request }) => {
+  test('should display review status badge with correct color', async ({
+    page,
+    request,
+    apiBaseUrl,
+  }) => {
     const testFilename = 'test-review-status.md';
 
     try {
       // Create a plan with review status
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -183,16 +191,16 @@ Content.
       const badgeClass = await reviewBadge.getAttribute('class');
       expect(badgeClass).toContain('purple');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should allow review to completed transition via API', async ({ request }) => {
+  test('should allow review to completed transition via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-review-to-completed.md';
 
     try {
       // Create plan with review status
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -206,26 +214,26 @@ Content.
       });
 
       // Transition from review to completed (valid)
-      const response = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/status`, {
+      const response = await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/status`, {
         data: { status: 'completed' },
       });
       expect(response.ok()).toBeTruthy();
 
       // Verify
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter.status).toBe('completed');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should allow completed to todo transition via API', async ({ request }) => {
+  test('should allow completed to todo transition via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-completed-to-todo.md';
 
     try {
       // Create plan with completed status
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -239,26 +247,26 @@ Content.
       });
 
       // Transition from completed to todo (valid: reopening)
-      const response = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/status`, {
+      const response = await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/status`, {
         data: { status: 'todo' },
       });
       expect(response.ok()).toBeTruthy();
 
       // Verify
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter.status).toBe('todo');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should allow review to in_progress transition via API', async ({ request }) => {
+  test('should allow review to in_progress transition via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-review-to-inprogress.md';
 
     try {
       // Create plan with review status
-      await request.post(`${API_BASE_URL}/api/plans`, {
+      await request.post(`${apiBaseUrl}/api/plans`, {
         data: {
           filename: testFilename,
           content: `---
@@ -272,46 +280,46 @@ Content.
       });
 
       // Transition from review to in_progress (valid: sending back for rework)
-      const response = await request.patch(`${API_BASE_URL}/api/plans/${testFilename}/status`, {
+      const response = await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/status`, {
         data: { status: 'in_progress' },
       });
       expect(response.ok()).toBeTruthy();
 
       // Verify
-      const getResponse = await request.get(`${API_BASE_URL}/api/plans/${testFilename}`);
+      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter.status).toBe('in_progress');
     } finally {
-      await request.delete(`${API_BASE_URL}/api/plans/${testFilename}`).catch(() => {});
+      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
   });
 
-  test('should allow same status transition (no-op) via API', async ({ request }) => {
+  test('should allow same status transition (no-op) via API', async ({ request, apiBaseUrl }) => {
     // Set fixture to todo
-    await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
     });
 
     // Transition todo to todo (same status, should be a no-op success)
-    const response = await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    const response = await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
     });
     expect(response.ok()).toBeTruthy();
 
     // Verify status is still todo
-    const getResponse = await request.get(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}`);
+    const getResponse = await request.get(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}`);
     const plan = await getResponse.json();
     expect(plan.frontmatter.status).toBe('todo');
   });
 
-  test('should reject todo to completed transition via API', async ({ request }) => {
+  test('should reject todo to completed transition via API', async ({ request, apiBaseUrl }) => {
     // Set fixture to todo
-    await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
     });
 
     // Try to transition directly from todo to completed (invalid: must go through in_progress and review)
-    const response = await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    const response = await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'completed' },
     });
     expect(response.status()).toBe(400);
@@ -320,17 +328,20 @@ Content.
     expect(error.error).toContain('Invalid status transition');
   });
 
-  test('should reject in_progress to completed transition via API', async ({ request }) => {
+  test('should reject in_progress to completed transition via API', async ({
+    request,
+    apiBaseUrl,
+  }) => {
     // Set fixture to in_progress
-    await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
     });
-    await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'in_progress' },
     });
 
     // Try to transition directly from in_progress to completed (invalid: must go through review)
-    const response = await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+    const response = await request.patch(`${apiBaseUrl}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'completed' },
     });
     expect(response.status()).toBe(400);

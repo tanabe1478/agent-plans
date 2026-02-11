@@ -1,39 +1,29 @@
-import { copyFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { TEMP_DIR_PREFIX } from './lib/constants.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
 const seedDir = resolve(__dirname, 'fixtures', 'seed');
-const plansDir = resolve(__dirname, 'fixtures', 'plans');
 
 export default function globalSetup() {
-  // 0. Ensure plansDir exists (first run or clean checkout)
-  mkdirSync(plansDir, { recursive: true });
-
-  // 1. Copy all .md files from seed/ -> plans/
-  const seedFiles = new Set(readdirSync(seedDir).filter((f) => f.endsWith('.md')));
-  for (const file of seedFiles) {
-    copyFileSync(resolve(seedDir, file), resolve(plansDir, file));
-  }
-
-  // 2. Remove any .md files NOT in seed (test-*, bulk-*, or any other leftovers)
-  const existingFiles = readdirSync(plansDir).filter((f) => f.endsWith('.md'));
-  for (const file of existingFiles) {
-    if (!seedFiles.has(file)) {
-      rmSync(resolve(plansDir, file), { force: true });
+  // 1. Clean up stale temp dirs from crashed previous runs
+  const tmp = tmpdir();
+  try {
+    const entries = readdirSync(tmp);
+    for (const entry of entries) {
+      if (entry.startsWith(TEMP_DIR_PREFIX)) {
+        rmSync(join(tmp, entry), { recursive: true, force: true });
+      }
     }
+  } catch {
+    // tmpdir listing failed — not critical
   }
 
-  // 3. Remove generated dirs and recreate empty
-  for (const dir of ['.history', '.backups', 'archive']) {
-    rmSync(resolve(plansDir, dir), { recursive: true, force: true });
-    mkdirSync(resolve(plansDir, dir), { recursive: true });
+  // 2. Validate seed directory has expected files
+  const seedFiles = readdirSync(seedDir).filter((f) => f.endsWith('.md'));
+  if (seedFiles.length === 0) {
+    throw new Error(`Seed directory ${seedDir} contains no .md files. E2E tests cannot run.`);
   }
-
-  // 4. Reset generated files
-  writeFileSync(resolve(plansDir, '.audit.jsonl'), '');
-  writeFileSync(resolve(plansDir, '.views.json'), '[]');
-  writeFileSync(resolve(plansDir, '.notifications-read.json'), '[]');
-  writeFileSync(resolve(plansDir, '.settings.json'), '{"frontmatterEnabled":true}');
 }
