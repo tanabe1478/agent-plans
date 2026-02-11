@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, writeFile, rm, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock historyService to avoid writing to real ~/.claude/plans/.history
 vi.mock('../services/historyService.js', () => ({
@@ -29,8 +29,8 @@ vi.mock('../services/settingsService.js', () => ({
   isFrontmatterEnabled: vi.fn().mockResolvedValue(true),
 }));
 
-import { PlanService } from '../services/planService.js';
 import { clearFileStateCache } from '../services/conflictService.js';
+import { PlanService } from '../services/planService.js';
 
 describe('PlanService', () => {
   let testDir: string;

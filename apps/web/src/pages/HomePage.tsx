@@ -1,21 +1,14 @@
-import { usePlans, useBulkDelete } from '@/lib/hooks/usePlans';
-import { PlanList } from '@/components/plan/PlanList';
+import type { PlanStatus } from '@ccplans/shared';
+import { AlertCircle, ArrowUpDown, CheckSquare, Loader2, Trash2, XSquare } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { BulkActionBar } from '@/components/plan/BulkActionBar';
+import { PlanList } from '@/components/plan/PlanList';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
+import { useBulkDelete, usePlans } from '@/lib/hooks/usePlans';
 import { usePlanStore } from '@/stores/planStore';
 import { useUiStore } from '@/stores/uiStore';
-import { useState, useMemo } from 'react';
-import type { PlanStatus } from '@ccplans/shared';
-import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
-import {
-  Loader2,
-  AlertCircle,
-  Trash2,
-  CheckSquare,
-  XSquare,
-  ArrowUpDown,
-} from 'lucide-react';
 
 export function HomePage() {
   const { data, isLoading, error } = usePlans();
@@ -89,9 +82,7 @@ export function HomePage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold mb-2">プラン一覧</h1>
-          <p className="text-muted-foreground">
-            {plans.length}件のプラン
-          </p>
+          <p className="text-muted-foreground">{plans.length}件のプラン</p>
         </div>
       </div>
 
@@ -183,19 +174,11 @@ export function HomePage() {
             >
               全選択
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearSelection}
-            >
+            <Button variant="outline" size="sm" onClick={clearSelection}>
               <XSquare className="h-4 w-4 mr-1" />
               選択解除
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowBulkDeleteDialog(true)}
-            >
+            <Button variant="destructive" size="sm" onClick={() => setShowBulkDeleteDialog(true)}>
               <Trash2 className="h-4 w-4 mr-1" />
               {selectedPlans.size}件を削除
             </Button>
@@ -207,9 +190,7 @@ export function HomePage() {
       <PlanList plans={plans} showCheckbox={selectionMode} />
 
       {/* Bulk action bar */}
-      {selectionMode && selectedPlans.size > 0 && (
-        <BulkActionBar totalCount={plans.length} />
-      )}
+      {selectionMode && selectedPlans.size > 0 && <BulkActionBar totalCount={plans.length} />}
 
       {/* Bulk delete dialog */}
       <Dialog
@@ -231,16 +212,11 @@ export function HomePage() {
           <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)}>
             キャンセル
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleBulkDelete}
-            disabled={bulkDelete.isPending}
-          >
+          <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDelete.isPending}>
             {bulkDelete.isPending ? '削除中...' : '削除'}
           </Button>
         </div>
       </Dialog>
-
     </div>
   );
 }

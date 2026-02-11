@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
-import { Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import type { ImportResult } from '@ccplans/shared';
+import { AlertCircle, CheckCircle2, FileText, Upload, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 import { Dialog } from '@/components/ui/Dialog';
 import { useImportMarkdown } from '@/lib/hooks/useImportExport';
-import type { ImportResult } from '@ccplans/shared';
 
 interface ImportDialogProps {
   open: boolean;
@@ -89,15 +89,21 @@ export function ImportDialog({ open, onClose }: ImportDialogProps) {
             </div>
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="text-center p-3 rounded-md bg-green-50 dark:bg-green-950/30">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{result.imported}</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {result.imported}
+                </div>
                 <div className="text-muted-foreground">Imported</div>
               </div>
               <div className="text-center p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/30">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{result.skipped}</div>
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {result.skipped}
+                </div>
                 <div className="text-muted-foreground">Skipped</div>
               </div>
               <div className="text-center p-3 rounded-md bg-red-50 dark:bg-red-950/30">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{result.errors.length}</div>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {result.errors.length}
+                </div>
                 <div className="text-muted-foreground">Errors</div>
               </div>
             </div>
@@ -108,7 +114,9 @@ export function ImportDialog({ open, onClose }: ImportDialogProps) {
                   {result.errors.map((err, i) => (
                     <li key={i} className="flex items-start gap-1 text-red-600 dark:text-red-400">
                       <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                      <span>{err.filename}: {err.error}</span>
+                      <span>
+                        {err.filename}: {err.error}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -127,9 +135,7 @@ export function ImportDialog({ open, onClose }: ImportDialogProps) {
           <>
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                dragOver
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
+                dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
               }`}
               onDragOver={(e) => {
                 e.preventDefault();

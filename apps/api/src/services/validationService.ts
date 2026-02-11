@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import type { PlanFrontmatter } from '@ccplans/shared';
+import { z } from 'zod';
 
 export interface ValidationError {
   field: string;
@@ -18,7 +18,10 @@ const frontmatterSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   dueDate: z.string().datetime().optional(),
   tags: z.array(z.string()).optional(),
-  estimate: z.string().regex(/^\d+[hdwm]$/).optional(),
+  estimate: z
+    .string()
+    .regex(/^\d+[hdwm]$/)
+    .optional(),
   blockedBy: z.array(z.string()).optional(),
   assignee: z.string().optional(),
   created: z.string().datetime().optional(),
@@ -27,13 +30,17 @@ const frontmatterSchema = z.object({
   sessionId: z.string().optional(),
   archivedAt: z.string().datetime().optional(),
   schemaVersion: z.number().optional(),
-  subtasks: z.array(z.object({
-    id: z.string(),
-    title: z.string(),
-    status: z.enum(['todo', 'done']),
-    assignee: z.string().optional(),
-    dueDate: z.string().optional(),
-  })).optional(),
+  subtasks: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        status: z.enum(['todo', 'done']),
+        assignee: z.string().optional(),
+        dueDate: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 /**
@@ -89,7 +96,7 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
   // Due date
   if (data.dueDate !== undefined) {
     const parsed = Date.parse(data.dueDate as string);
-    corrected.dueDate = isNaN(parsed) ? new Date().toISOString() : (data.dueDate as string);
+    corrected.dueDate = Number.isNaN(parsed) ? new Date().toISOString() : (data.dueDate as string);
   }
 
   // Tags: ensure array
@@ -104,7 +111,11 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
   }
 
   // Estimate
-  if (data.estimate !== undefined && typeof data.estimate === 'string' && /^\d+[hdwm]$/.test(data.estimate)) {
+  if (
+    data.estimate !== undefined &&
+    typeof data.estimate === 'string' &&
+    /^\d+[hdwm]$/.test(data.estimate)
+  ) {
     corrected.estimate = data.estimate;
   }
 
@@ -129,13 +140,15 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
   // ArchivedAt
   if (data.archivedAt !== undefined) {
     const parsed = Date.parse(data.archivedAt as string);
-    corrected.archivedAt = isNaN(parsed) ? new Date().toISOString() : (data.archivedAt as string);
+    corrected.archivedAt = Number.isNaN(parsed)
+      ? new Date().toISOString()
+      : (data.archivedAt as string);
   }
 
   // Schema version
   if (data.schemaVersion !== undefined) {
     const num = Number(data.schemaVersion);
-    if (!isNaN(num)) corrected.schemaVersion = num;
+    if (!Number.isNaN(num)) corrected.schemaVersion = num;
   }
 
   return corrected;

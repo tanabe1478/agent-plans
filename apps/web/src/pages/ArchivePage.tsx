@@ -1,8 +1,13 @@
+import { AlertTriangle, Archive, Clock, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { Archive, RotateCcw, Trash2, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { useArchived, useRestore, usePermanentDelete, useCleanupArchive } from '@/lib/hooks/useArchive';
+import {
+  useArchived,
+  useCleanupArchive,
+  usePermanentDelete,
+  useRestore,
+} from '@/lib/hooks/useArchive';
 import { useUiStore } from '@/stores/uiStore';
 
 function remainingDays(expiresAt: string): number {
@@ -77,12 +82,7 @@ export function ArchivePage() {
           <h1 className="text-2xl font-bold">Archive</h1>
           <span className="text-sm text-muted-foreground">({archived.length} plans)</span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCleanup}
-          disabled={cleanup.isPending}
-        >
+        <Button variant="outline" size="sm" onClick={handleCleanup} disabled={cleanup.isPending}>
           {cleanup.isPending ? 'Cleaning up...' : 'Clean up expired'}
         </Button>
       </div>
@@ -106,15 +106,13 @@ export function ArchivePage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{plan.title}</h3>
-                    <p className="text-sm text-muted-foreground truncate mt-1">
-                      {plan.preview}
-                    </p>
+                    <p className="text-sm text-muted-foreground truncate mt-1">{plan.preview}</p>
                     <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                       <span className="font-mono">{plan.filename}</span>
-                      <span>
-                        Archived: {new Date(plan.archivedAt).toLocaleDateString()}
-                      </span>
-                      <span className={`flex items-center gap-1 ${isExpiringSoon ? 'text-destructive font-medium' : ''}`}>
+                      <span>Archived: {new Date(plan.archivedAt).toLocaleDateString()}</span>
+                      <span
+                        className={`flex items-center gap-1 ${isExpiringSoon ? 'text-destructive font-medium' : ''}`}
+                      >
                         {isExpiringSoon && <AlertTriangle className="h-3 w-3" />}
                         <Clock className="h-3 w-3" />
                         {days === 0 ? 'Expires today' : `${days} day(s) remaining`}
@@ -163,13 +161,9 @@ export function ArchivePage() {
               This action cannot be undone. The plan will be permanently deleted.
             </p>
           </div>
-          <p className="text-sm font-mono bg-muted p-2 rounded">
-            {deleteTarget}
-          </p>
+          <p className="text-sm font-mono bg-muted p-2 rounded">{deleteTarget}</p>
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Type the filename to confirm:
-            </label>
+            <label className="block text-sm font-medium mb-1">Type the filename to confirm:</label>
             <input
               type="text"
               value={confirmText}

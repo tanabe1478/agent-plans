@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -159,7 +159,9 @@ Content.
     }
   });
 
-  test('should store invalid priority as-is (no auto-correction on create)', async ({ request }) => {
+  test('should store invalid priority as-is (no auto-correction on create)', async ({
+    request,
+  }) => {
     const testFilename = 'test-autocorrect-priority.md';
 
     try {

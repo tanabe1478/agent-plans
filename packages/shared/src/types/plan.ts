@@ -349,4 +349,3 @@ export interface SavedView {
   createdAt: string;
   isPreset?: boolean;
 }
-

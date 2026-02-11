@@ -115,7 +115,10 @@ function tryParseFilter(token: string): QueryFilter | null {
       const operator = match[1] as QueryFilter['operator'];
       let value = match[2];
       // Strip quotes from value
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
         value = value.slice(1, -1);
       }
       return { field, operator, value };

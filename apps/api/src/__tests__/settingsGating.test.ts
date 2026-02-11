@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock historyService
 vi.mock('../services/historyService.js', () => ({
@@ -38,12 +38,9 @@ vi.mock('../config.js', () => ({
   },
 }));
 
-import { PlanService } from '../services/planService.js';
-import {
-  updateSettings,
-  resetSettingsCache,
-} from '../services/settingsService.js';
 import { clearFileStateCache } from '../services/conflictService.js';
+import { PlanService } from '../services/planService.js';
+import { resetSettingsCache, updateSettings } from '../services/settingsService.js';
 
 const PLAN_WITH_FRONTMATTER = `---
 created: "2025-01-01T00:00:00Z"

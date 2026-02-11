@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, writeFile, rm, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock historyService to avoid writing to real ~/.claude/plans/.history
 vi.mock('../services/historyService.js', () => ({
@@ -93,9 +93,7 @@ Content.`
       await writePlan('plan-a.md', 'todo');
 
       // 'plan-a.md' will succeed, 'nonexistent.md' will fail
-      await expect(
-        service.bulkDelete(['plan-a.md', 'nonexistent.md'])
-      ).rejects.toThrow();
+      await expect(service.bulkDelete(['plan-a.md', 'nonexistent.md'])).rejects.toThrow();
     });
   });
 
@@ -149,9 +147,9 @@ Content.`
     });
 
     it('should throw for invalid filename', async () => {
-      await expect(
-        service.updateFrontmatterField('../bad.md', 'assignee', 'x')
-      ).rejects.toThrow('Invalid filename');
+      await expect(service.updateFrontmatterField('../bad.md', 'assignee', 'x')).rejects.toThrow(
+        'Invalid filename'
+      );
     });
   });
 

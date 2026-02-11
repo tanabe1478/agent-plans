@@ -1,17 +1,17 @@
+import {
+  AlertCircle,
+  Bell,
+  Calendar,
+  CheckSquare,
+  Clock,
+  Columns,
+  GitBranch,
+  Loader2,
+  Signal,
+  Tag,
+} from 'lucide-react';
 import { useSettings, useUpdateSettings } from '@/lib/hooks/useSettings';
 import { useUiStore } from '@/stores/uiStore';
-import {
-  Loader2,
-  AlertCircle,
-  Columns,
-  Calendar,
-  GitBranch,
-  CheckSquare,
-  Tag,
-  Signal,
-  Bell,
-  Clock,
-} from 'lucide-react';
 
 const FRONTMATTER_FEATURES = [
   { icon: CheckSquare, label: 'Status management (ToDo, In Progress, Review, Completed)' },
@@ -53,7 +53,7 @@ export function SettingsPage() {
       await updateSettings.mutateAsync({ frontmatterEnabled: newValue });
       addToast(
         newValue ? 'Frontmatter features enabled' : 'Frontmatter features disabled',
-        'success',
+        'success'
       );
     } catch {
       addToast('Failed to update settings', 'error');
@@ -69,8 +69,8 @@ export function SettingsPage() {
           <div>
             <h2 className="text-lg font-semibold">Frontmatter Features</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Enable YAML frontmatter-based plan management features.
-              These are custom features beyond basic Markdown plans.
+              Enable YAML frontmatter-based plan management features. These are custom features
+              beyond basic Markdown plans.
             </p>
           </div>
           <button
@@ -98,7 +98,9 @@ export function SettingsPage() {
 
         <div className="mt-6 border-t pt-4">
           <h3 className="text-sm font-medium mb-3">
-            {settings?.frontmatterEnabled ? 'Enabled features:' : 'Features available when enabled:'}
+            {settings?.frontmatterEnabled
+              ? 'Enabled features:'
+              : 'Features available when enabled:'}
           </h3>
           <ul className="space-y-2">
             {FRONTMATTER_FEATURES.map(({ icon: Icon, label }) => (
@@ -111,7 +113,8 @@ export function SettingsPage() {
         </div>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          Existing frontmatter data in your plan files is always preserved regardless of this setting.
+          Existing frontmatter data in your plan files is always preserved regardless of this
+          setting.
         </p>
       </div>
     </div>

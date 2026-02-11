@@ -1,38 +1,41 @@
-import type { FastifyPluginAsync } from 'fastify';
-import { z } from 'zod';
-import { planService } from '../services/planService.js';
-import { openerService } from '../services/openerService.js';
-import { isValidTransition } from '../services/statusTransitionService.js';
-import {
-  listVersions,
-  getVersion,
-  rollback as rollbackVersion,
-  computeDiff,
-} from '../services/historyService.js';
-import {
-  addSubtask,
-  updateSubtask,
-  deleteSubtask,
-  toggleSubtask,
-} from '../services/subtaskService.js';
-import { isFrontmatterEnabled } from '../services/settingsService.js';
 import type {
-  PlansListResponse,
-  PlanDetailResponse,
+  BulkDeleteRequest,
   CreatePlanRequest,
+  ExportQuery,
+  OpenPlanRequest,
+  PlanDetailResponse,
+  PlansListResponse,
+  RenamePlanRequest,
   UpdatePlanRequest,
   UpdateStatusRequest,
-  RenamePlanRequest,
-  BulkDeleteRequest,
-  OpenPlanRequest,
-  ExportQuery,
 } from '@ccplans/shared';
+import type { FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
+import {
+  computeDiff,
+  getVersion,
+  listVersions,
+  rollback as rollbackVersion,
+} from '../services/historyService.js';
+import { openerService } from '../services/openerService.js';
+import { planService } from '../services/planService.js';
+import { isFrontmatterEnabled } from '../services/settingsService.js';
+import { isValidTransition } from '../services/statusTransitionService.js';
+import {
+  addSubtask,
+  deleteSubtask,
+  toggleSubtask,
+  updateSubtask,
+} from '../services/subtaskService.js';
 
 // Validation schemas
 const filenameSchema = z.string().regex(/^[a-zA-Z0-9_-]+\.md$/);
 const createPlanSchema = z.object({
   content: z.string().min(1),
-  filename: z.string().regex(/^[a-zA-Z0-9_-]+\.md$/).optional(),
+  filename: z
+    .string()
+    .regex(/^[a-zA-Z0-9_-]+\.md$/)
+    .optional(),
 });
 const updatePlanSchema = z.object({
   content: z.string().min(1),
@@ -113,7 +116,9 @@ const bulkArchiveSchema = z.object({
 
 async function requireFrontmatter(reply: import('fastify').FastifyReply): Promise<boolean> {
   if (!(await isFrontmatterEnabled())) {
-    reply.status(403).send({ error: 'Frontmatter features are disabled. Enable them in Settings.' });
+    reply
+      .status(403)
+      .send({ error: 'Frontmatter features are disabled. Enable them in Settings.' });
     return false;
   }
   return true;
@@ -142,7 +147,7 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const plan = await planService.getPlan(filename);
       return plan;
-    } catch (err) {
+    } catch (_err) {
       return reply.status(404).send({ error: 'Plan not found' } as unknown as PlanDetailResponse);
     }
   });
@@ -180,7 +185,9 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: 'Invalid request', details: err.errors });
       }
       // Handle conflict errors from planService
-      const conflict = (err as { conflict?: boolean; statusCode?: number; lastKnown?: number; current?: number }).conflict;
+      const conflict = (
+        err as { conflict?: boolean; statusCode?: number; lastKnown?: number; current?: number }
+      ).conflict;
       if (conflict) {
         const conflictErr = err as { lastKnown?: number; current?: number };
         return reply.status(409).send({
@@ -344,7 +351,10 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
           const currentPlan = await planService.getPlanMeta(filename);
           const currentStatus = currentPlan.frontmatter?.status ?? 'todo';
           if (!isValidTransition(currentStatus, status)) {
-            failed.push({ filename, error: `Invalid transition from '${currentStatus}' to '${status}'` });
+            failed.push({
+              filename,
+              error: `Invalid transition from '${currentStatus}' to '${status}'`,
+            });
             continue;
           }
           await planService.updateStatus(filename, status);

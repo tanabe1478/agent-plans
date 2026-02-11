@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, writeFile, rm, readFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // vi.hoisted runs before vi.mock hoisting, so testDir is available in the mock factory
 const testDir = vi.hoisted(() => {
@@ -15,13 +15,13 @@ vi.mock('../config.js', () => ({
   },
 }));
 
+import { DEFAULT_SETTINGS } from '@ccplans/shared';
 import {
   getSettings,
-  updateSettings,
   isFrontmatterEnabled,
   resetSettingsCache,
+  updateSettings,
 } from '../services/settingsService.js';
-import { DEFAULT_SETTINGS } from '@ccplans/shared';
 
 describe('settingsService', () => {
   beforeEach(async () => {

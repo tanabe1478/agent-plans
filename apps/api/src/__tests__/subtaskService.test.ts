@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdir, writeFile, rm, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   addSubtask,
-  updateSubtask,
   deleteSubtask,
-  toggleSubtask,
   getSubtaskProgress,
+  toggleSubtask,
+  updateSubtask,
 } from '../services/subtaskService.js';
 
 describe('SubtaskService', () => {
@@ -110,7 +110,11 @@ subtasks:
 Content.`
       );
 
-      const subtask = await addSubtask('plan-b.md', { title: 'Second Task', status: 'todo' }, testDir);
+      const subtask = await addSubtask(
+        'plan-b.md',
+        { title: 'Second Task', status: 'todo' },
+        testDir
+      );
 
       expect(subtask.title).toBe('Second Task');
 
@@ -159,9 +163,9 @@ Content.`
     });
 
     it('should throw for invalid filename', async () => {
-      await expect(addSubtask('../bad.md', { title: 'X', status: 'todo' }, testDir)).rejects.toThrow(
-        'Invalid filename'
-      );
+      await expect(
+        addSubtask('../bad.md', { title: 'X', status: 'todo' }, testDir)
+      ).rejects.toThrow('Invalid filename');
     });
   });
 
@@ -181,7 +185,12 @@ subtasks:
 Content.`
       );
 
-      const updated = await updateSubtask('update-plan.md', 'st-1', { title: 'Updated Title' }, testDir);
+      const updated = await updateSubtask(
+        'update-plan.md',
+        'st-1',
+        { title: 'Updated Title' },
+        testDir
+      );
 
       expect(updated.title).toBe('Updated Title');
       expect(updated.id).toBe('st-1');
@@ -222,7 +231,12 @@ subtasks:
 Content.`
       );
 
-      const updated = await updateSubtask('update-assignee.md', 'st-1', { assignee: 'bob' }, testDir);
+      const updated = await updateSubtask(
+        'update-assignee.md',
+        'st-1',
+        { assignee: 'bob' },
+        testDir
+      );
 
       expect(updated.assignee).toBe('bob');
     });
@@ -242,9 +256,9 @@ subtasks:
 Content.`
       );
 
-      await expect(updateSubtask('no-subtask.md', 'non-existent', { title: 'X' }, testDir)).rejects.toThrow(
-        'Subtask not found'
-      );
+      await expect(
+        updateSubtask('no-subtask.md', 'non-existent', { title: 'X' }, testDir)
+      ).rejects.toThrow('Subtask not found');
     });
 
     it('should throw for plan without subtasks', async () => {
@@ -258,9 +272,9 @@ status: todo
 Content.`
       );
 
-      await expect(updateSubtask('empty-subtask.md', 'any-id', { title: 'X' }, testDir)).rejects.toThrow(
-        'Subtask not found'
-      );
+      await expect(
+        updateSubtask('empty-subtask.md', 'any-id', { title: 'X' }, testDir)
+      ).rejects.toThrow('Subtask not found');
     });
   });
 

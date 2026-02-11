@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { validateFrontmatter, autoCorrectFrontmatter } from '../services/validationService.js';
+import { describe, expect, it } from 'vitest';
+import { autoCorrectFrontmatter, validateFrontmatter } from '../services/validationService.js';
 
 describe('validateFrontmatter', () => {
   describe('valid frontmatter', () => {
@@ -61,7 +61,13 @@ describe('validateFrontmatter', () => {
       const result = validateFrontmatter({
         subtasks: [
           { id: 'st-1', title: 'Setup', status: 'done' },
-          { id: 'st-2', title: 'Implement', status: 'todo', assignee: 'bob', dueDate: '2025-06-01' },
+          {
+            id: 'st-2',
+            title: 'Implement',
+            status: 'todo',
+            assignee: 'bob',
+            dueDate: '2025-06-01',
+          },
         ],
       });
       expect(result.valid).toBe(true);

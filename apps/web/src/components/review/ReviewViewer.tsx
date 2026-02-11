@@ -1,5 +1,5 @@
-import { Fragment, useRef, useState, useCallback } from 'react';
 import type { PlanDetail } from '@ccplans/shared';
+import { Fragment, useCallback, useRef, useState } from 'react';
 import type { ReviewComment } from '@/lib/types/review';
 import { CommentForm } from './CommentForm';
 import { InlineComment } from './InlineComment';
@@ -90,7 +90,7 @@ export function ReviewViewer({
       setActiveForm({ line: selectedLine });
       setLastClickedLine(line);
     },
-    [lastClickedLine],
+    [lastClickedLine]
   );
 
   const handleFormSubmit = useCallback(
@@ -101,7 +101,7 @@ export function ReviewViewer({
         setSelectedRange(null);
       }
     },
-    [activeForm, onAddComment],
+    [activeForm, onAddComment]
   );
 
   const handleFormCancel = useCallback(() => {
@@ -120,7 +120,7 @@ export function ReviewViewer({
       const hi = Math.max(start, dragEnd);
       return line >= lo && line <= hi;
     },
-    [dragEnd, selectedRange],
+    [dragEnd, selectedRange]
   );
 
   const hasCommentOnLine = useCallback(
@@ -132,7 +132,7 @@ export function ReviewViewer({
         return c.line === line;
       });
     },
-    [comments],
+    [comments]
   );
 
   const lines = plan.content.split('\n');
@@ -150,9 +150,13 @@ export function ReviewViewer({
               const lineNum = index + 1;
               const lineComments = getCommentsForLine(comments, lineNum);
               const showForm =
-                activeForm != null && !Array.isArray(activeForm.line) && activeForm.line === lineNum;
+                activeForm != null &&
+                !Array.isArray(activeForm.line) &&
+                activeForm.line === lineNum;
               const showFormRange =
-                activeForm != null && Array.isArray(activeForm.line) && activeForm.line[0] === lineNum;
+                activeForm != null &&
+                Array.isArray(activeForm.line) &&
+                activeForm.line[0] === lineNum;
               const hasComment = hasCommentOnLine(lineNum);
               const inRange = isLineInDragRange(lineNum);
 
@@ -209,8 +213,8 @@ export function ReviewViewer({
                     <tr className="review-comment-row">
                       <td colSpan={2} className="review-comment-cell">
                         <CommentForm
-                          line={activeForm!.line}
-                          quotedContent={extractQuotedLines(activeForm!.line)}
+                          line={activeForm?.line}
+                          quotedContent={extractQuotedLines(activeForm?.line)}
                           onSubmit={handleFormSubmit}
                           onCancel={handleFormCancel}
                         />

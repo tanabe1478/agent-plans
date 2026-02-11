@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -131,7 +131,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Click More menu (three vertical dots)
-    const moreButton = page.locator('button').filter({ has: page.locator('svg.lucide-more-vertical') });
+    const moreButton = page
+      .locator('button')
+      .filter({ has: page.locator('svg.lucide-more-vertical') });
     await moreButton.click();
 
     // Check Export and Import options are visible
@@ -234,9 +236,7 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(backup.id).toBeDefined();
 
     // Restore from the backup
-    const restoreResponse = await request.post(
-      `${API_BASE_URL}/api/backup/${backup.id}/restore`
-    );
+    const restoreResponse = await request.post(`${API_BASE_URL}/api/backup/${backup.id}/restore`);
     expect(restoreResponse.ok()).toBeTruthy();
 
     const result = await restoreResponse.json();
@@ -246,9 +246,7 @@ test.describe('Import/Export functionality (Feature 14)', () => {
   });
 
   test('should filter export by tags', async ({ request }) => {
-    const response = await request.get(
-      `${API_BASE_URL}/api/export?format=json&filterTags=backend`
-    );
+    const response = await request.get(`${API_BASE_URL}/api/export?format=json&filterTags=backend`);
     expect(response.ok()).toBeTruthy();
 
     const json = await response.json();
@@ -285,7 +283,9 @@ test.describe('Import/Export functionality (Feature 14)', () => {
 
     // Click and wait for the backup API response
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/api/backup') && resp.request().method() === 'POST'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/api/backup') && resp.request().method() === 'POST'
+      ),
       createButton.click(),
     ]);
 

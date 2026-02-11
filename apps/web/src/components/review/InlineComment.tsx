@@ -1,6 +1,6 @@
-import { Pencil, Trash2, Copy } from 'lucide-react';
-import { CommentForm } from './CommentForm';
+import { Copy, Pencil, Trash2 } from 'lucide-react';
 import type { ReviewComment } from '@/lib/types/review';
+import { CommentForm } from './CommentForm';
 
 interface InlineCommentProps {
   comment: ReviewComment;
@@ -76,7 +76,9 @@ export function InlineComment({
       {/* Quoted content preview */}
       {quotedContent && (
         <div className="border-b border-border bg-muted/30 px-3 py-2">
-          <pre className="whitespace-pre-wrap text-xs font-mono text-muted-foreground">{quotedContent}</pre>
+          <pre className="whitespace-pre-wrap text-xs font-mono text-muted-foreground">
+            {quotedContent}
+          </pre>
         </div>
       )}
       {/* Comment body */}

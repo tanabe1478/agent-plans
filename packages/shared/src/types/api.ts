@@ -1,4 +1,21 @@
-import type { PlanMeta, PlanDetail, SearchResult, ExportFormat, ExternalApp, PlanStatus, PlanPriority, Subtask, SavedView, SavedViewFilters, Notification, PlanVersion, DiffResult, ArchivedPlan, ImportResult, BackupInfo } from './plan.js';
+import type {
+  ArchivedPlan,
+  BackupInfo,
+  DiffResult,
+  ExportFormat,
+  ExternalApp,
+  ImportResult,
+  Notification,
+  PlanDetail,
+  PlanMeta,
+  PlanPriority,
+  PlanStatus,
+  PlanVersion,
+  SavedView,
+  SavedViewFilters,
+  SearchResult,
+  Subtask,
+} from './plan.js';
 
 /**
  * GET /api/plans response

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { exportAsJson, exportAsCsv, exportAsTarGz } from '../services/exportService.js';
+import { exportAsCsv, exportAsJson, exportAsTarGz } from '../services/exportService.js';
 
 const exportQuerySchema = z.object({
   format: z.enum(['json', 'csv', 'zip']).default('json'),
@@ -25,7 +25,7 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
       const options = {
         includeArchived: query.includeArchived === 'true',
         filterStatus: query.filterStatus as import('@ccplans/shared').PlanStatus | undefined,
-        filterTags: query.filterTags ? query.filterTags.split(',').map(t => t.trim()) : undefined,
+        filterTags: query.filterTags ? query.filterTags.split(',').map((t) => t.trim()) : undefined,
       };
 
       switch (query.format) {

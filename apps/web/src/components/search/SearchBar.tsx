@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const FILTER_HINTS = [
   { prefix: 'status:', description: 'Filter by status (todo, in_progress, review, completed)' },
@@ -24,7 +24,8 @@ function parseChips(query: string): { chips: ParsedChip[]; text: string } {
   const textParts: string[] = [];
   const tokens = query.split(/\s+/).filter(Boolean);
 
-  const filterPattern = /^(status|priority|tag|assignee|due|estimate|project|blockedBy)([:=<>]|<=|>=)(.+)$/;
+  const filterPattern =
+    /^(status|priority|tag|assignee|due|estimate|project|blockedBy)([:=<>]|<=|>=)(.+)$/;
 
   for (const token of tokens) {
     const match = token.match(filterPattern);
@@ -53,8 +54,22 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
 
   const lastWord = value.split(/\s+/).pop() ?? '';
   const matchingHints = lastWord
-    ? FILTER_HINTS.filter((h) => h.prefix.startsWith(lastWord.toLowerCase()) && h.prefix !== lastWord.toLowerCase())
+    ? FILTER_HINTS.filter(
+        (h) => h.prefix.startsWith(lastWord.toLowerCase()) && h.prefix !== lastWord.toLowerCase()
+      )
     : [];
+
+  const applyHint = useCallback(
+    (prefix: string) => {
+      const parts = value.split(/\s+/);
+      parts[parts.length - 1] = prefix;
+      const newValue = parts.join(' ');
+      onChange(newValue);
+      setFocusedHint(-1);
+      inputRef.current?.focus();
+    },
+    [value, onChange]
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -76,19 +91,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
         setShowHints(false);
       }
     },
-    [focusedHint, matchingHints, onSubmit, value],
-  );
-
-  const applyHint = useCallback(
-    (prefix: string) => {
-      const parts = value.split(/\s+/);
-      parts[parts.length - 1] = prefix;
-      const newValue = parts.join(' ');
-      onChange(newValue);
-      setFocusedHint(-1);
-      inputRef.current?.focus();
-    },
-    [value, onChange],
+    [focusedHint, matchingHints, onSubmit, value, applyHint]
   );
 
   const removeChip = useCallback(
@@ -96,12 +99,12 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
       const parts = value.split(/\s+/).filter((p) => p !== chipRaw);
       onChange(parts.join(' '));
     },
-    [value, onChange],
+    [value, onChange]
   );
 
   useEffect(() => {
     setFocusedHint(-1);
-  }, [value]);
+  }, []);
 
   return (
     <div className="relative">

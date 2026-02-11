@@ -1,12 +1,12 @@
-import { useState, type DragEvent } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
-import { usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
-import { StatusBadge } from '@/components/plan/StatusBadge';
-import { getDeadlineColor, formatRelativeDeadline, cn } from '@/lib/utils';
-import { Loader2, AlertCircle } from 'lucide-react';
 import type { PlanMeta, PlanStatus } from '@ccplans/shared';
 import { STATUS_TRANSITIONS } from '@ccplans/shared';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { type DragEvent, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { StatusBadge } from '@/components/plan/StatusBadge';
+import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
+import { usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
+import { cn, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
 
 const KANBAN_COLUMNS: { status: PlanStatus; label: string }[] = [
   { status: 'todo', label: 'ToDo' },
@@ -39,9 +39,7 @@ function KanbanCard({ plan, onDragStart }: KanbanCardProps) {
     >
       <Link to={`/plan/${encodeURIComponent(plan.filename)}`} className="block">
         <h4 className="text-sm font-medium truncate">{plan.title}</h4>
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-          {plan.preview}
-        </p>
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{plan.preview}</p>
         {dueDate && (
           <p
             className={cn(
@@ -110,16 +108,10 @@ function KanbanColumn({
       </div>
       <div className="p-2 flex-1 overflow-y-auto space-y-2 min-h-[200px]">
         {plans.map((plan) => (
-          <KanbanCard
-            key={plan.filename}
-            plan={plan}
-            onDragStart={onDragStart}
-          />
+          <KanbanCard key={plan.filename} plan={plan} onDragStart={onDragStart} />
         ))}
         {plans.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-8">
-            No plans
-          </p>
+          <p className="text-xs text-muted-foreground text-center py-8">No plans</p>
         )}
       </div>
     </div>
@@ -158,9 +150,7 @@ export function KanbanPage() {
 
   const plansByStatus = KANBAN_COLUMNS.reduce(
     (acc, col) => {
-      acc[col.status] = plans.filter(
-        (p) => (p.frontmatter?.status ?? 'todo') === col.status
-      );
+      acc[col.status] = plans.filter((p) => (p.frontmatter?.status ?? 'todo') === col.status);
       return acc;
     },
     {} as Record<PlanStatus, PlanMeta[]>

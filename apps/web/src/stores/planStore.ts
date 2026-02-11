@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import type { PlanStatus, SavedView, ViewMode } from '@ccplans/shared';
+import { create } from 'zustand';
 
 interface PlanStore {
   // Selection state
@@ -46,10 +46,8 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
       }
       return { selectedPlans: newSet };
     }),
-  selectAll: (filenames) =>
-    set({ selectedPlans: new Set(filenames) }),
-  clearSelection: () =>
-    set({ selectedPlans: new Set() }),
+  selectAll: (filenames) => set({ selectedPlans: new Set(filenames) }),
+  clearSelection: () => set({ selectedPlans: new Set() }),
   isSelected: (filename) => get().selectedPlans.has(filename),
 
   // View

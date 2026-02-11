@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -42,7 +42,8 @@ test.describe('Notifications (Feature 9)', () => {
     // green-dancing-cat.md has dueDate: 2026-02-06 which is today
     // It should have a due_soon or overdue notification
     const catNotification = data.notifications.find(
-      (n: any) => (n.type === 'due_soon' || n.type === 'overdue') && n.planFilename === 'green-dancing-cat.md'
+      (n: any) =>
+        (n.type === 'due_soon' || n.type === 'overdue') && n.planFilename === 'green-dancing-cat.md'
     );
 
     expect(catNotification).toBeDefined();
@@ -140,7 +141,10 @@ test.describe('Notifications (Feature 9)', () => {
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
 
     // Fixture data has overdue plans, so notifications must exist
-    const notificationItem = page.locator('button').filter({ hasText: /overdue|due/i }).first();
+    const notificationItem = page
+      .locator('button')
+      .filter({ hasText: /overdue|due/i })
+      .first();
     await expect(notificationItem).toBeVisible({ timeout: 5000 });
   });
 
@@ -160,7 +164,9 @@ test.describe('Notifications (Feature 9)', () => {
     const infoIcon = page.locator('svg.lucide-info');
 
     const hasSeverityIcon =
-      (await criticalIcon.count()) > 0 || (await warningIcon.count()) > 0 || (await infoIcon.count()) > 0;
+      (await criticalIcon.count()) > 0 ||
+      (await warningIcon.count()) > 0 ||
+      (await infoIcon.count()) > 0;
 
     // Fixture data includes overdue and blocked_stale notifications, so icons must exist
     expect(hasSeverityIcon).toBe(true);
@@ -197,10 +203,15 @@ test.describe('Notifications (Feature 9)', () => {
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
 
     // Click outside the panel (click on the main content area)
-    await page.locator('main, [class*="content"], body').first().click({ force: true, position: { x: 10, y: 10 } });
+    await page
+      .locator('main, [class*="content"], body')
+      .first()
+      .click({ force: true, position: { x: 10, y: 10 } });
 
     // Panel should be closed after clicking outside
-    await expect(page.getByRole('heading', { name: 'Notifications' })).not.toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole('heading', { name: 'Notifications' })).not.toBeVisible({
+      timeout: 3000,
+    });
   });
 
   test('should mark notification as read via UI', async ({ page }) => {
@@ -217,7 +228,10 @@ test.describe('Notifications (Feature 9)', () => {
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
 
     // Fixture data has overdue plans, so notification items should be present
-    const notificationItem = page.locator('button').filter({ hasText: /overdue|due/i }).first();
+    const notificationItem = page
+      .locator('button')
+      .filter({ hasText: /overdue|due/i })
+      .first();
     await expect(notificationItem).toBeVisible({ timeout: 5000 });
 
     await notificationItem.click();

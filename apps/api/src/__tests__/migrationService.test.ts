@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, writeFile, rm, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock historyService to avoid writing to real ~/.claude/plans/.history
 vi.mock('../services/historyService.js', () => ({
@@ -19,13 +19,13 @@ vi.mock('../services/archiveService.js', () => ({
   recordArchiveMeta: vi.fn().mockResolvedValue(undefined),
 }));
 
+import type { PlanFrontmatter } from '@ccplans/shared';
 import {
   getCurrentSchemaVersion,
-  needsMigration,
   migrate,
   migrateAllPlans,
+  needsMigration,
 } from '../services/migrationService.js';
-import type { PlanFrontmatter } from '@ccplans/shared';
 
 describe('migrationService', () => {
   describe('getCurrentSchemaVersion', () => {

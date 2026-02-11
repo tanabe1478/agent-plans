@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import type { Subtask } from '@ccplans/shared';
+import { CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { useUpdateSubtask } from '@/lib/hooks/usePlans';
 
 interface SubtaskListProps {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
@@ -77,7 +77,7 @@ test.describe('Kanban View (Feature 8)', () => {
     await planLink.click();
 
     // Verify navigation to plan detail page
-    await expect(page).toHaveURL(new RegExp('/plan/'));
+    await expect(page).toHaveURL(/\/plan\//);
   });
 
   test('should show plan count per column on kanban', async ({ page }) => {
@@ -104,9 +104,9 @@ test.describe('Kanban View (Feature 8)', () => {
     await expect(page.locator('a[href*="/plan/"]').first()).toBeVisible({ timeout: 5000 });
 
     // Look for priority badges/indicators on kanban cards
-    const priorityIndicators = page.locator(
-      '[class*="priority"], [data-priority], .badge, span'
-    ).filter({ hasText: /high|critical|medium|low/i });
+    const priorityIndicators = page
+      .locator('[class*="priority"], [data-priority], .badge, span')
+      .filter({ hasText: /high|critical|medium|low/i });
 
     const indicatorCount = await priorityIndicators.count();
 

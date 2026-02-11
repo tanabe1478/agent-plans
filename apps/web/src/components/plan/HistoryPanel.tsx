@@ -1,13 +1,8 @@
+import type { DiffLine, PlanVersion } from '@ccplans/shared';
+import { ChevronRight, History, Loader2, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import { useHistory, useDiff, useRollback } from '@/lib/hooks/useHistory';
+import { useDiff, useHistory, useRollback } from '@/lib/hooks/useHistory';
 import { formatDate, formatFileSize } from '@/lib/utils';
-import type { PlanVersion, DiffLine } from '@ccplans/shared';
-import {
-  Loader2,
-  History,
-  RotateCcw,
-  ChevronRight,
-} from 'lucide-react';
 
 interface HistoryPanelProps {
   filename: string;
@@ -19,10 +14,7 @@ export function HistoryPanel({ filename }: HistoryPanelProps) {
   const [showRollbackConfirm, setShowRollbackConfirm] = useState<string | null>(null);
   const rollbackMutation = useRollback();
 
-  const { data: diffData, isLoading: isDiffLoading } = useDiff(
-    filename,
-    selectedVersion
-  );
+  const { data: diffData, isLoading: isDiffLoading } = useDiff(filename, selectedVersion);
 
   if (isLoading) {
     return (
@@ -64,11 +56,7 @@ export function HistoryPanel({ filename }: HistoryPanelProps) {
             key={v.version}
             version={v}
             isSelected={selectedVersion === v.version}
-            onSelect={() =>
-              setSelectedVersion(
-                selectedVersion === v.version ? null : v.version
-              )
-            }
+            onSelect={() => setSelectedVersion(selectedVersion === v.version ? null : v.version)}
             onRollback={() => setShowRollbackConfirm(v.version)}
           />
         ))}
@@ -104,9 +92,7 @@ export function HistoryPanel({ filename }: HistoryPanelProps) {
       {/* Diff view */}
       {selectedVersion && (
         <div className="mt-4">
-          <h3 className="mb-2 text-sm font-medium">
-            差分（選択バージョン → 現在）
-          </h3>
+          <h3 className="mb-2 text-sm font-medium">差分（選択バージョン → 現在）</h3>
           {isDiffLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -131,20 +117,13 @@ function VersionItem({ version, isSelected, onSelect, onRollback }: VersionItemP
   return (
     <div
       className={`rounded-lg border p-3 transition-colors ${
-        isSelected
-          ? 'border-primary bg-primary/5'
-          : 'hover:bg-muted/50'
+        isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
       }`}
     >
       <div className="flex items-center justify-between">
-        <button
-          onClick={onSelect}
-          className="flex flex-1 items-center gap-2 text-left"
-        >
+        <button onClick={onSelect} className="flex flex-1 items-center gap-2 text-left">
           <ChevronRight
-            className={`h-4 w-4 transition-transform ${
-              isSelected ? 'rotate-90' : ''
-            }`}
+            className={`h-4 w-4 transition-transform ${isSelected ? 'rotate-90' : ''}`}
           />
           <div>
             <p className="text-sm font-medium">{version.summary}</p>
@@ -177,12 +156,8 @@ function DiffView({ lines, stats }: DiffViewProps) {
   return (
     <div>
       <div className="mb-2 flex gap-4 text-xs text-muted-foreground">
-        <span className="text-green-600 dark:text-green-400">
-          +{stats.added} 追加
-        </span>
-        <span className="text-red-600 dark:text-red-400">
-          -{stats.removed} 削除
-        </span>
+        <span className="text-green-600 dark:text-green-400">+{stats.added} 追加</span>
+        <span className="text-red-600 dark:text-red-400">-{stats.removed} 削除</span>
         <span>{stats.unchanged} 変更なし</span>
       </div>
       <div className="overflow-x-auto rounded-lg border">
@@ -203,15 +178,9 @@ function DiffView({ lines, stats }: DiffViewProps) {
                   {line.lineNumber}
                 </td>
                 <td className="w-6 select-none px-1 py-0.5 text-center text-xs">
-                  {line.type === 'added'
-                    ? '+'
-                    : line.type === 'removed'
-                      ? '-'
-                      : ' '}
+                  {line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '}
                 </td>
-                <td className="px-2 py-0.5 whitespace-pre-wrap break-all">
-                  {line.content}
-                </td>
+                <td className="px-2 py-0.5 whitespace-pre-wrap break-all">{line.content}</td>
               </tr>
             ))}
           </tbody>

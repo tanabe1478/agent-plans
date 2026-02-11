@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -119,7 +119,9 @@ test.describe('Saved Views (Feature 7)', () => {
     const sidebarOpen = await page.locator('aside').filter({ hasText: 'Views' }).isVisible();
 
     if (!sidebarOpen) {
-      const toggleButton = page.locator('button').filter({ has: page.locator('svg.lucide-panel-left-open') });
+      const toggleButton = page
+        .locator('button')
+        .filter({ has: page.locator('svg.lucide-panel-left-open') });
       await toggleButton.click();
     }
 
@@ -133,7 +135,9 @@ test.describe('Saved Views (Feature 7)', () => {
     // Open sidebar if needed
     const sidebarOpen = await page.locator('aside').filter({ hasText: 'Views' }).isVisible();
     if (!sidebarOpen) {
-      const toggleButton = page.locator('button').filter({ has: page.locator('svg.lucide-panel-left-open') });
+      const toggleButton = page
+        .locator('button')
+        .filter({ has: page.locator('svg.lucide-panel-left-open') });
       await toggleButton.click();
     }
 
@@ -142,7 +146,9 @@ test.describe('Saved Views (Feature 7)', () => {
 
     // Should have at least one preset view listed
     const sidebar = page.locator('aside').filter({ hasText: 'Views' });
-    await expect(sidebar.getByText(/In Progress|High Priority|Critical|Todo/i).first()).toBeVisible();
+    await expect(
+      sidebar.getByText(/In Progress|High Priority|Critical|Todo/i).first()
+    ).toBeVisible();
   });
 
   test('API: should apply view filters correctly', async ({ request }) => {
@@ -238,7 +244,9 @@ test.describe('Saved Views (Feature 7)', () => {
     // Open sidebar if needed
     const sidebarOpen = await page.locator('aside').filter({ hasText: 'Views' }).isVisible();
     if (!sidebarOpen) {
-      const toggleButton = page.locator('button').filter({ has: page.locator('svg.lucide-panel-left-open') });
+      const toggleButton = page
+        .locator('button')
+        .filter({ has: page.locator('svg.lucide-panel-left-open') });
       await toggleButton.click();
     }
 

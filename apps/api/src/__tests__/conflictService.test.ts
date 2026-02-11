@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdir, writeFile, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  recordFileState,
   checkConflict,
   clearFileStateCache,
+  recordFileState,
 } from '../services/conflictService.js';
 
 describe('conflictService', () => {
@@ -39,9 +39,7 @@ describe('conflictService', () => {
     it('should return no conflict when file has not been modified', async () => {
       const filePath = join(testDir, 'unchanged.md');
       await writeFile(filePath, 'content');
-      const { mtimeMs, size } = await import('node:fs/promises').then((fs) =>
-        fs.stat(filePath),
-      );
+      const { mtimeMs, size } = await import('node:fs/promises').then((fs) => fs.stat(filePath));
 
       recordFileState('unchanged.md', mtimeMs, size);
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -352,12 +352,14 @@ Test content for permanent deletion.
     });
 
     // Now set bulk-test-1 to review (valid: in_progress -> review)
-    await request.patch(`${API_BASE_URL}/api/plans/bulk-status`, {
-      data: {
-        filenames: ['bulk-test-1.md'],
-        status: 'review',
-      },
-    }).catch(() => {});
+    await request
+      .patch(`${API_BASE_URL}/api/plans/bulk-status`, {
+        data: {
+          filenames: ['bulk-test-1.md'],
+          status: 'review',
+        },
+      })
+      .catch(() => {});
     // Use POST endpoint
     await request.post(`${API_BASE_URL}/api/plans/bulk-status`, {
       data: {
@@ -383,7 +385,11 @@ Test content for permanent deletion.
     expect(result.succeeded).toContain('bulk-test-1.md');
     // bulk-test-2 and bulk-test-3 (in_progress) should fail
     expect(result.failed.length).toBe(2);
-    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-2.md')).toBe(true);
-    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-3.md')).toBe(true);
+    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-2.md')).toBe(
+      true
+    );
+    expect(result.failed.some((f: { filename: string }) => f.filename === 'bulk-test-3.md')).toBe(
+      true
+    );
   });
 });

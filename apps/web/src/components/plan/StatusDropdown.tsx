@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
 import type { PlanStatus } from '@ccplans/shared';
 import { STATUS_TRANSITIONS } from '@ccplans/shared';
-import { StatusBadge } from './StatusBadge';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { StatusBadge } from './StatusBadge';
 
 interface StatusDropdownProps {
   currentStatus: PlanStatus | undefined;

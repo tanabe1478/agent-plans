@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 test.describe.configure({ mode: 'serial' });
@@ -52,7 +52,7 @@ test.describe('Settings - Frontmatter opt-out', () => {
     const response = await request.get(`${API_BASE_URL}/api/plans`);
     const data = await response.json();
     const plansWithFm = data.plans.filter(
-      (p: { frontmatter?: unknown }) => p.frontmatter !== undefined,
+      (p: { frontmatter?: unknown }) => p.frontmatter !== undefined
     );
     expect(plansWithFm.length).toBeGreaterThan(0);
   });
@@ -70,10 +70,9 @@ test.describe('Settings - Frontmatter opt-out', () => {
     }
     const filename = plansData.plans[0].filename;
 
-    const response = await request.patch(
-      `${API_BASE_URL}/api/plans/${filename}/status`,
-      { data: { status: 'in_progress' } },
-    );
+    const response = await request.patch(`${API_BASE_URL}/api/plans/${filename}/status`, {
+      data: { status: 'in_progress' },
+    });
     expect(response.status()).toBe(403);
   });
 

@@ -1,16 +1,16 @@
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import Fastify from 'fastify';
 import { config } from './config.js';
-import { plansRoutes } from './routes/plans.js';
-import { searchRoutes } from './routes/search.js';
-import { viewsRoutes } from './routes/views.js';
-import { notificationsRoutes } from './routes/notifications.js';
+import { adminRoutes } from './routes/admin.js';
 import { archiveRoutes } from './routes/archive.js';
 import { dependenciesRoutes } from './routes/dependencies.js';
 import { exportRoutes } from './routes/export.js';
 import { importRoutes } from './routes/import.js';
-import { adminRoutes } from './routes/admin.js';
+import { notificationsRoutes } from './routes/notifications.js';
+import { plansRoutes } from './routes/plans.js';
+import { searchRoutes } from './routes/search.js';
 import { settingsRoutes } from './routes/settings.js';
+import { viewsRoutes } from './routes/views.js';
 
 const fastify = Fastify({
   logger: true,

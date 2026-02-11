@@ -82,9 +82,7 @@ export class OpenerService {
             proc.unref();
             resolve();
             return;
-          } catch {
-            continue;
-          }
+          } catch {}
         }
 
         reject(new Error('No suitable terminal emulator found'));

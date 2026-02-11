@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -47,7 +47,9 @@ This plan tests extended frontmatter fields.
 
   test('should display priority, dueDate, tags, and assignee on detail page', async ({ page }) => {
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
-    await expect(page.getByRole('heading', { name: 'Test Plan with Extended Frontmatter' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Test Plan with Extended Frontmatter' }).first()
+    ).toBeVisible();
 
     // Verify extended frontmatter fields are rendered on the detail page
     const pageContent = await page.textContent('body');
@@ -116,7 +118,9 @@ Content here.
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find the test plan card which has dueDate set (PlanCard uses border-2 class)
-    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: TEST_PLAN_FILENAME });
+    const planCard = page
+      .locator('[class*="rounded-lg"][class*="border"]')
+      .filter({ hasText: TEST_PLAN_FILENAME });
     await expect(planCard).toBeVisible();
 
     // Due date should be displayed somewhere on the card (formatted as relative Japanese text)
@@ -125,7 +129,9 @@ Content here.
     await expect(dueDateText).toBeVisible();
   });
 
-  test('should update frontmatter fields via API (tags, priority, assignee)', async ({ request }) => {
+  test('should update frontmatter fields via API (tags, priority, assignee)', async ({
+    request,
+  }) => {
     const updateFilename = 'test-update-frontmatter-fields.md';
 
     try {

@@ -1,6 +1,6 @@
-import { clsx, type ClassValue } from 'clsx';
+import type { DeadlineCategory, PlanMeta } from '@ccplans/shared';
+import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { PlanMeta, DeadlineCategory } from '@ccplans/shared';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

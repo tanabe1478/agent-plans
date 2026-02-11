@@ -1,5 +1,5 @@
+import { Copy, MessageSquare, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { MessageSquare, Copy, Trash2 } from 'lucide-react';
 
 interface ReviewToolbarProps {
   commentCount: number;

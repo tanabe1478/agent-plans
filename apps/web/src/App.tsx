@@ -1,16 +1,16 @@
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
-import { HomePage } from './pages/HomePage';
-import { ViewPage } from './pages/ViewPage';
-import { SearchPage } from './pages/SearchPage';
-import { KanbanPage } from './pages/KanbanPage';
-import { ArchivePage } from './pages/ArchivePage';
-import { DependencyPage } from './pages/DependencyPage';
-import { BackupPage } from './pages/BackupPage';
-import { ReviewPage } from './pages/ReviewPage';
-import { SettingsPage } from './pages/SettingsPage';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { ArchivePage } from './pages/ArchivePage';
+import { BackupPage } from './pages/BackupPage';
+import { DependencyPage } from './pages/DependencyPage';
+import { HomePage } from './pages/HomePage';
+import { KanbanPage } from './pages/KanbanPage';
+import { ReviewPage } from './pages/ReviewPage';
+import { SearchPage } from './pages/SearchPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { ViewPage } from './pages/ViewPage';
 import { useUiStore } from './stores/uiStore';
 
 function App() {

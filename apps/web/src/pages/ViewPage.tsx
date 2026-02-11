@@ -1,28 +1,28 @@
-import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { usePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
-import { PlanViewer } from '@/components/plan/PlanViewer';
-import { PlanActions } from '@/components/plan/PlanActions';
-import { StatusDropdown } from '@/components/plan/StatusDropdown';
-import { ProjectBadge } from '@/components/plan/ProjectBadge';
-import { HistoryPanel } from '@/components/plan/HistoryPanel';
-import { SectionNav } from '@/components/plan/SectionNav';
-import { formatDate, formatFileSize } from '@/lib/utils';
 import type { PlanStatus } from '@ccplans/shared';
-import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 import {
-  Loader2,
   AlertCircle,
   ArrowLeft,
   Calendar,
-  HardDrive,
   FileText,
+  GitBranch,
+  HardDrive,
+  Loader2,
   MessageSquareText,
   Signal,
-  User,
   Tag,
-  GitBranch,
+  User,
 } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { HistoryPanel } from '@/components/plan/HistoryPanel';
+import { PlanActions } from '@/components/plan/PlanActions';
+import { PlanViewer } from '@/components/plan/PlanViewer';
+import { ProjectBadge } from '@/components/plan/ProjectBadge';
+import { SectionNav } from '@/components/plan/SectionNav';
+import { StatusDropdown } from '@/components/plan/StatusDropdown';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
+import { usePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
+import { formatDate, formatFileSize } from '@/lib/utils';
 
 type Tab = 'content' | 'history';
 
