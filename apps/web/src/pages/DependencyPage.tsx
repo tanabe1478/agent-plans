@@ -132,7 +132,10 @@ function GraphNode({
       transform={`translate(${position.x}, ${position.y})`}
       onClick={onClick}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onClick();
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
       }}
       style={{ cursor: 'pointer' }}
     >

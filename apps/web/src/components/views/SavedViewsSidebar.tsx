@@ -167,10 +167,18 @@ function ViewItem({
   onDelete?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 }) {
   return (
-    <button
-      type="button"
+    // biome-ignore lint/a11y/useSemanticElements: outer element must be div to allow nested <button> for delete
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className={`group flex items-center justify-between w-full rounded px-2 py-1.5 text-sm text-left hover:bg-accent ${
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`group flex items-center justify-between w-full rounded px-2 py-1.5 text-sm text-left hover:bg-accent cursor-pointer ${
         isActive ? 'bg-accent font-medium' : ''
       }`}
     >
@@ -178,7 +186,6 @@ function ViewItem({
       {onDelete && (
         <button
           type="button"
-          tabIndex={0}
           onClick={onDelete}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -191,6 +198,6 @@ function ViewItem({
           <Trash2 className="h-3 w-3" />
         </button>
       )}
-    </button>
+    </div>
   );
 }

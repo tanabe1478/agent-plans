@@ -12,7 +12,12 @@ export function useHistory(filename: string) {
 export function useDiff(filename: string, from: string | null, to?: string) {
   return useQuery({
     queryKey: ['diff', filename, from, to],
-    queryFn: () => api.history.diff(filename, from as string, to),
+    queryFn: () => {
+      if (!from) {
+        return Promise.reject(new Error('from is required'));
+      }
+      return api.history.diff(filename, from, to);
+    },
     enabled: !!filename && !!from,
   });
 }

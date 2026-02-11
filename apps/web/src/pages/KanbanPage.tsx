@@ -110,7 +110,8 @@ function KanbanColumn({
           {plans.length}
         </span>
       </div>
-      <div className="p-2 flex-1 overflow-y-auto space-y-2 min-h-[200px]">
+      {/* biome-ignore lint/a11y/useSemanticElements: kanban column cards container uses role="list" for ARIA semantics */}
+      <div role="list" className="p-2 flex-1 overflow-y-auto space-y-2 min-h-[200px]">
         {plans.map((plan) => (
           <KanbanCard key={plan.filename} plan={plan} onDragStart={onDragStart} />
         ))}

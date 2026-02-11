@@ -1,6 +1,6 @@
 import type { ExportFormat, ExternalApp } from '@ccplans/shared';
 import { Code, Download, Edit3, ExternalLink, MoreVertical, Terminal, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DeleteConfirmDialog } from '@/components/plan/DeleteConfirmDialog';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -25,6 +25,18 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   const openPlan = useOpenPlan();
   const { getExportUrl } = useExportPlan();
   const { addToast } = useUiStore();
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowMenu(false);
+        setShowExportMenu(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showMenu]);
 
   const handleOpen = async (app: ExternalApp) => {
     try {
@@ -202,12 +214,6 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
           onClick={() => {
             setShowMenu(false);
             setShowExportMenu(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              setShowMenu(false);
-              setShowExportMenu(false);
-            }
           }}
         />
       )}
