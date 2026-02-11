@@ -82,7 +82,8 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     const originalMtime = plan.frontmatter?.modified;
     expect(originalMtime).toBeDefined();
 
-    // Wait to ensure different timestamp
+    // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
+    // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Use another status update to trigger modified change
@@ -366,7 +367,8 @@ Bulk audit test.
     const originalModified = plan.frontmatter?.modified;
     expect(originalModified).toBeDefined();
 
-    // Wait to ensure different timestamp
+    // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
+    // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // Another status update to change modified
@@ -374,7 +376,8 @@ Bulk audit test.
       data: { status: 'review' },
     });
 
-    // Wait briefly
+    // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
+    // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // One more status update

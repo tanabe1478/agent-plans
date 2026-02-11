@@ -304,16 +304,13 @@ test.describe('History & Rollback (Feature 10)', () => {
     );
     expect(statusResponse.ok()).toBeTruthy();
 
-    // Wait briefly for file operations to complete
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    // Check that the latest history version was created after our status change
-    const afterHistoryResponse = await request.get(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`
-    );
-    const afterData = await afterHistoryResponse.json();
-
-    expect(afterData.versions.length).toBeGreaterThan(0);
+    // Poll until history version appears (file operations may not be instant)
+    let afterData: any;
+    await expect(async () => {
+      const resp = await request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/history`);
+      afterData = await resp.json();
+      expect(afterData.versions.length).toBeGreaterThan(0);
+    }).toPass({ timeout: 5000 });
 
     // The latest version should have been created recently (after our status change)
     const latestVersion = afterData.versions[0];

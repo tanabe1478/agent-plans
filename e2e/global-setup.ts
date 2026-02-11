@@ -1,29 +1,39 @@
-import { execSync } from 'node:child_process';
-import { rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const fixturesDir = resolve(__dirname, 'fixtures', 'plans');
 
-/**
- * Reset fixture files to their git-committed state before each test run.
- * This prevents state leakage between test files when tests modify
- * fixture plan metadata (e.g. status transitions, bulk operations).
- */
+const seedDir = resolve(__dirname, 'fixtures', 'seed');
+const plansDir = resolve(__dirname, 'fixtures', 'plans');
+
 export default function globalSetup() {
-  // Restore git-tracked fixture files to committed state
-  execSync('git checkout -- .', { cwd: fixturesDir });
+  // 0. Ensure plansDir exists (first run or clean checkout)
+  mkdirSync(plansDir, { recursive: true });
 
-  // Remove test-generated directories that are gitignored
-  const generatedDirs = ['.backups', '.history'];
-  for (const dir of generatedDirs) {
-    rmSync(resolve(fixturesDir, dir), { recursive: true, force: true });
+  // 1. Copy all .md files from seed/ -> plans/
+  const seedFiles = new Set(readdirSync(seedDir).filter((f) => f.endsWith('.md')));
+  for (const file of seedFiles) {
+    copyFileSync(resolve(seedDir, file), resolve(plansDir, file));
   }
 
-  // Remove test-generated files that are gitignored
-  const generatedFiles = ['.audit.jsonl', '.notifications-read.json', '.views.json'];
-  for (const file of generatedFiles) {
-    rmSync(resolve(fixturesDir, file), { force: true });
+  // 2. Remove any .md files NOT in seed (test-*, bulk-*, or any other leftovers)
+  const existingFiles = readdirSync(plansDir).filter((f) => f.endsWith('.md'));
+  for (const file of existingFiles) {
+    if (!seedFiles.has(file)) {
+      rmSync(resolve(plansDir, file), { force: true });
+    }
   }
+
+  // 3. Remove generated dirs and recreate empty
+  for (const dir of ['.history', '.backups', 'archive']) {
+    rmSync(resolve(plansDir, dir), { recursive: true, force: true });
+    mkdirSync(resolve(plansDir, dir), { recursive: true });
+  }
+
+  // 4. Reset generated files
+  writeFileSync(resolve(plansDir, '.audit.jsonl'), '');
+  writeFileSync(resolve(plansDir, '.views.json'), '[]');
+  writeFileSync(resolve(plansDir, '.notifications-read.json'), '[]');
+  writeFileSync(resolve(plansDir, '.settings.json'), '{"frontmatterEnabled":true}');
 }

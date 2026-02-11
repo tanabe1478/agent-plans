@@ -165,10 +165,7 @@ test.describe('Plan detail rendering', () => {
     const sectionNav = page.locator('.section-nav').first();
     await sectionNav.getByText('Code Example').click();
 
-    // Wait for smooth scroll
-    await page.waitForTimeout(500);
-
-    // The heading should be visible in the viewport
+    // The heading should be visible in the viewport (auto-retries)
     const heading = page.locator('.markdown-content').getByText('Code Example');
     await expect(heading).toBeInViewport();
   });
