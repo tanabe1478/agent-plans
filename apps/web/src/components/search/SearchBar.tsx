@@ -59,6 +59,18 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
       )
     : [];
 
+  const applyHint = useCallback(
+    (prefix: string) => {
+      const parts = value.split(/\s+/);
+      parts[parts.length - 1] = prefix;
+      const newValue = parts.join(' ');
+      onChange(newValue);
+      setFocusedHint(-1);
+      inputRef.current?.focus();
+    },
+    [value, onChange]
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -80,18 +92,6 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
       }
     },
     [focusedHint, matchingHints, onSubmit, value, applyHint]
-  );
-
-  const applyHint = useCallback(
-    (prefix: string) => {
-      const parts = value.split(/\s+/);
-      parts[parts.length - 1] = prefix;
-      const newValue = parts.join(' ');
-      onChange(newValue);
-      setFocusedHint(-1);
-      inputRef.current?.focus();
-    },
-    [value, onChange]
   );
 
   const removeChip = useCallback(

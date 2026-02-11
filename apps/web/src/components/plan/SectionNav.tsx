@@ -56,7 +56,7 @@ export function SectionNav({ content }: SectionNavProps) {
     let currentId = '';
     for (const { id, el } of headingElements) {
       const rect = el?.getBoundingClientRect();
-      if (rect.top <= 120) {
+      if (rect && rect.top <= 120) {
         currentId = id;
       }
     }
