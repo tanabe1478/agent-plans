@@ -49,17 +49,14 @@ test.describe('Status Filtering and Status Update', () => {
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('todo');
 
-    // Wait for the filter to apply
-    await page.waitForTimeout(500);
+    // not.toBeVisible() auto-retries until the element disappears
+    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
+    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
+    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
 
     // Should show todo plans (blue-running-fox, yellow-jumping-dog)
     await expect(page.getByText('blue-running-fox.md')).toBeVisible();
     await expect(page.getByText('yellow-jumping-dog.md')).toBeVisible();
-
-    // Should NOT show non-todo plans
-    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
-    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
-    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
   });
 
   test('should filter plans by status - In Progress', async ({ page }) => {
@@ -70,17 +67,14 @@ test.describe('Status Filtering and Status Update', () => {
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('in_progress');
 
-    // Wait for the filter to apply
-    await page.waitForTimeout(500);
+    // not.toBeVisible() auto-retries until the element disappears
+    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
+    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
+    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
 
     // Should show in_progress plans (green-dancing-cat, purple-swimming-fish)
     await expect(page.getByText('green-dancing-cat.md')).toBeVisible();
     await expect(page.getByText('purple-swimming-fish.md')).toBeVisible();
-
-    // Should NOT show non-in_progress plans
-    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
-    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
-    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
   });
 
   test('should filter plans by status - Completed', async ({ page }) => {
@@ -91,17 +85,14 @@ test.describe('Status Filtering and Status Update', () => {
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('completed');
 
-    // Wait for the filter to apply
-    await page.waitForTimeout(500);
-
-    // Should show completed plans (red-sleeping-bear)
-    await expect(page.getByText('red-sleeping-bear.md')).toBeVisible();
-
-    // Should NOT show non-completed plans
+    // not.toBeVisible() auto-retries until the element disappears
     await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
     await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
     await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
     await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
+
+    // Should show completed plans (red-sleeping-bear)
+    await expect(page.getByText('red-sleeping-bear.md')).toBeVisible();
   });
 
   test('should open status dropdown when clicking status badge', async ({ page }) => {
@@ -175,11 +166,10 @@ test.describe('Status Filtering and Status Update', () => {
 
     // First filter by completed
     await statusFilter.selectOption('completed');
-    await page.waitForTimeout(300);
+    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
 
     // Then reset to all
     await statusFilter.selectOption('all');
-    await page.waitForTimeout(300);
 
     // Should show all statuses again
     await expect(page.getByRole('button', { name: 'ToDo' }).first()).toBeVisible();
@@ -226,9 +216,6 @@ test.describe('Search/Filter functionality', () => {
     // Type a search query that matches fixture content
     const searchInput = page.getByPlaceholder('フィルター...');
     await searchInput.fill('Authentication');
-
-    // Wait for filtering
-    await page.waitForTimeout(300);
 
     // Should show matching plans (blue-running-fox.md has "Authentication" in title)
     await expect(
