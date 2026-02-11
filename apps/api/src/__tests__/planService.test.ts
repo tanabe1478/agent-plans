@@ -14,11 +14,6 @@ vi.mock('../services/historyService.js', () => ({
   }),
 }));
 
-// Mock archiveService to avoid writing to real ~/.claude/plans/archive
-vi.mock('../services/archiveService.js', () => ({
-  recordArchiveMeta: vi.fn().mockResolvedValue(undefined),
-}));
-
 // Mock auditService to avoid writing audit logs during tests
 vi.mock('../services/auditService.js', () => ({
   log: vi.fn().mockResolvedValue(undefined),
@@ -34,7 +29,6 @@ import { PlanService } from '../services/planService.js';
 
 describe('PlanService', () => {
   let testDir: string;
-  let archiveDir: string;
   let service: PlanService;
 
   beforeEach(async () => {
@@ -43,10 +37,9 @@ describe('PlanService', () => {
 
     // Create temp directories
     testDir = join(tmpdir(), `ccplans-test-${Date.now()}`);
-    archiveDir = join(testDir, 'archive');
     await mkdir(testDir, { recursive: true });
 
-    service = new PlanService(testDir, archiveDir);
+    service = new PlanService(testDir);
 
     // Create test files
     await writeFile(
@@ -126,29 +119,11 @@ describe('PlanService', () => {
   });
 
   describe('deletePlan', () => {
-    it('should permanently delete plan by default', async () => {
+    it('should permanently delete plan', async () => {
       await service.deletePlan('test-plan.md');
 
       const mainFiles = await readdir(testDir);
       expect(mainFiles).not.toContain('test-plan.md');
-
-      // Archive should not exist or be empty
-      try {
-        const archiveFiles = await readdir(archiveDir);
-        expect(archiveFiles).not.toContain('test-plan.md');
-      } catch {
-        // Archive dir doesn't exist, which is fine
-      }
-    });
-
-    it('should archive plan when archive=true', async () => {
-      await service.deletePlan('test-plan.md', true);
-
-      const mainFiles = await readdir(testDir);
-      expect(mainFiles).not.toContain('test-plan.md');
-
-      const archiveFiles = await readdir(archiveDir);
-      expect(archiveFiles).toContain('test-plan.md');
     });
   });
 

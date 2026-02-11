@@ -66,7 +66,7 @@ export function HomePage() {
 
   const handleBulkDelete = async () => {
     try {
-      await bulkDelete.mutateAsync({ filenames: Array.from(selectedPlans), permanent: true });
+      await bulkDelete.mutateAsync({ filenames: Array.from(selectedPlans) });
       addToast(`${selectedPlans.size}件のプランを削除しました`, 'success');
       clearSelection();
       setShowBulkDeleteDialog(false);
@@ -103,10 +103,9 @@ export function HomePage() {
         <div className="flex items-center gap-1">
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size')}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'size')}
             className="rounded-md border bg-background px-2 py-2 text-sm text-foreground"
           >
-            <option value="date">Date</option>
             <option value="name">Name</option>
             <option value="size">Size</option>
           </select>

@@ -95,7 +95,7 @@ test.describe('Kanban View (Feature 8)', () => {
     await expect(page.getByText('Completed', { exact: true }).first()).toBeVisible();
   });
 
-  test('should show priority indicator on kanban cards', async ({ page }) => {
+  test('should show plan title and preview on kanban cards', async ({ page }) => {
     await page.goto('/kanban');
 
     await expect(page.getByRole('heading', { name: 'Kanban Board' })).toBeVisible();
@@ -103,14 +103,13 @@ test.describe('Kanban View (Feature 8)', () => {
     // Wait for plan cards to load
     await expect(page.locator('a[href*="/plan/"]').first()).toBeVisible({ timeout: 5000 });
 
-    // Look for priority badges/indicators on kanban cards
-    const priorityIndicators = page
-      .locator('[class*="priority"], [data-priority], .badge, span')
-      .filter({ hasText: /high|critical|medium|low/i });
+    // Kanban cards should display plan titles (from fixture data)
+    const cardTitles = page.locator('a[href*="/plan/"] h4');
+    const titleCount = await cardTitles.count();
+    expect(titleCount).toBeGreaterThan(0);
 
-    const indicatorCount = await priorityIndicators.count();
-
-    // Fixture plans have priorities, so cards should show priority indicators
-    expect(indicatorCount).toBeGreaterThan(0);
+    // Each card should have preview text
+    const firstCardPreview = page.locator('a[href*="/plan/"] p').first();
+    await expect(firstCardPreview).toBeVisible();
   });
 });

@@ -110,10 +110,6 @@ const bulkPrioritySchema = z.object({
   filenames: bulkFilenamesSchema,
   priority: z.enum(['low', 'medium', 'high', 'critical']),
 });
-const bulkArchiveSchema = z.object({
-  filenames: bulkFilenamesSchema,
-});
-
 async function requireFrontmatter(reply: import('fastify').FastifyReply): Promise<boolean> {
   if (!(await isFrontmatterEnabled())) {
     reply
@@ -201,18 +197,16 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // DELETE /api/plans/:filename - Delete plan
+  // DELETE /api/plans/:filename - Delete plan permanently
   fastify.delete<{
     Params: { filename: string };
-    Querystring: { permanent?: string };
   }>('/:filename', async (request, reply) => {
     const { filename } = request.params;
-    const permanent = request.query.permanent === 'true';
 
     try {
       filenameSchema.parse(filename);
-      await planService.deletePlan(filename, !permanent);
-      return { success: true, message: permanent ? 'Plan deleted' : 'Plan archived' };
+      await planService.deletePlan(filename);
+      return { success: true, message: 'Plan deleted' };
     } catch (err) {
       if (err instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Invalid filename' });
@@ -221,16 +215,13 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // POST /api/plans/bulk-delete - Bulk delete plans
+  // POST /api/plans/bulk-delete - Bulk delete plans permanently
   fastify.post<{
     Body: BulkDeleteRequest;
-    Querystring: { permanent?: string };
   }>('/bulk-delete', async (request, reply) => {
-    const permanent = request.query.permanent === 'true';
-
     try {
       const { filenames } = bulkDeleteSchema.parse(request.body);
-      await planService.bulkDelete(filenames, !permanent);
+      await planService.bulkDelete(filenames);
       return { success: true, deleted: filenames.length };
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -453,33 +444,6 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
       for (const filename of filenames) {
         try {
           await planService.updateFrontmatterField(filename, 'priority', priority);
-          succeeded.push(filename);
-        } catch (err) {
-          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
-        }
-      }
-
-      return { succeeded, failed };
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
-      }
-      throw err;
-    }
-  });
-
-  // POST /api/plans/bulk-archive - Bulk archive
-  fastify.post<{
-    Body: z.infer<typeof bulkArchiveSchema>;
-  }>('/bulk-archive', async (request, reply) => {
-    try {
-      const { filenames } = bulkArchiveSchema.parse(request.body);
-      const succeeded: string[] = [];
-      const failed: { filename: string; error: string }[] = [];
-
-      for (const filename of filenames) {
-        try {
-          await planService.deletePlan(filename, true);
           succeeded.push(filename);
         } catch (err) {
           failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });

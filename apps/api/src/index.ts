@@ -2,7 +2,6 @@ import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import { config } from './config.js';
 import { adminRoutes } from './routes/admin.js';
-import { archiveRoutes } from './routes/archive.js';
 import { dependenciesRoutes } from './routes/dependencies.js';
 import { exportRoutes } from './routes/export.js';
 import { importRoutes } from './routes/import.js';
@@ -10,7 +9,6 @@ import { notificationsRoutes } from './routes/notifications.js';
 import { plansRoutes } from './routes/plans.js';
 import { searchRoutes } from './routes/search.js';
 import { settingsRoutes } from './routes/settings.js';
-import { viewsRoutes } from './routes/views.js';
 
 const fastify = Fastify({
   logger: true,
@@ -25,9 +23,7 @@ await fastify.register(cors, {
 // Register routes
 await fastify.register(plansRoutes, { prefix: '/api/plans' });
 await fastify.register(searchRoutes, { prefix: '/api/search' });
-await fastify.register(viewsRoutes, { prefix: '/api/views' });
 await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });
-await fastify.register(archiveRoutes, { prefix: '/api/archive' });
 await fastify.register(dependenciesRoutes, { prefix: '/api/dependencies' });
 await fastify.register(exportRoutes, { prefix: '/api/export' });
 await fastify.register(importRoutes, { prefix: '/api/import' });

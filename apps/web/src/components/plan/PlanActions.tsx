@@ -48,21 +48,10 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
     setShowMenu(false);
   };
 
-  const handleArchive = async () => {
+  const handleDelete = async () => {
     try {
-      await deletePlan.mutateAsync({ filename, permanent: false });
-      addToast('Plan archived', 'success');
-      setShowDeleteDialog(false);
-      onDeleted?.();
-    } catch (err) {
-      addToast(`Archive failed: ${err}`, 'error');
-    }
-  };
-
-  const handlePermanentDelete = async () => {
-    try {
-      await deletePlan.mutateAsync({ filename, permanent: true });
-      addToast('Plan permanently deleted', 'success');
+      await deletePlan.mutateAsync({ filename });
+      addToast('Plan deleted', 'success');
       setShowDeleteDialog(false);
       onDeleted?.();
     } catch (err) {
@@ -224,9 +213,7 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
         onClose={() => setShowDeleteDialog(false)}
         filename={filename}
         title={title ?? filename}
-        onArchive={handleArchive}
-        onPermanentDelete={handlePermanentDelete}
-        isArchiving={deletePlan.isPending}
+        onDelete={handleDelete}
         isDeleting={deletePlan.isPending}
       />
 

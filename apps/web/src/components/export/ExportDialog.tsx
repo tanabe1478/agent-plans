@@ -45,13 +45,11 @@ const statusOptions: { value: PlanStatus | ''; label: string }[] = [
 
 export function ExportDialog({ open, onClose }: ExportDialogProps) {
   const [format, setFormat] = useState<BulkExportFormat>('json');
-  const [includeArchived, setIncludeArchived] = useState(false);
   const [filterStatus, setFilterStatus] = useState<PlanStatus | ''>('');
   const getExportUrl = useExportUrl();
 
   const handleExport = () => {
     const url = getExportUrl(format, {
-      includeArchived,
       filterStatus: filterStatus || undefined,
     });
     window.open(url, '_blank');
@@ -111,16 +109,6 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
             ))}
           </select>
         </div>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={includeArchived}
-            onChange={(e) => setIncludeArchived(e.target.checked)}
-            className="rounded"
-          />
-          Include archived plans
-        </label>
 
         <div className="flex justify-end gap-2 pt-2">
           <button

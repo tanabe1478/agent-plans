@@ -17,7 +17,6 @@ vi.mock('../config.js', () => ({
     corsOrigins: ['http://localhost:5173'],
     maxFileSize: 10 * 1024 * 1024,
     previewLength: 200,
-    archiveRetentionDays: 30,
   },
 }));
 

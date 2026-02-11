@@ -213,7 +213,6 @@ test.describe('Sort functionality', () => {
     const sortDropdown = page.getByRole('combobox').first();
     await expect(sortDropdown).toBeVisible();
 
-    await expect(sortDropdown.getByRole('option', { name: 'Date' })).toBeAttached();
     await expect(sortDropdown.getByRole('option', { name: 'Name' })).toBeAttached();
     await expect(sortDropdown.getByRole('option', { name: 'Size' })).toBeAttached();
   });

@@ -1,5 +1,4 @@
 import type {
-  ArchivedPlan,
   BackupInfo,
   DiffResult,
   ExportFormat,
@@ -11,8 +10,6 @@ import type {
   PlanPriority,
   PlanStatus,
   PlanVersion,
-  SavedView,
-  SavedViewFilters,
   SearchResult,
   Subtask,
 } from './plan.js';
@@ -122,33 +119,6 @@ export interface ExportQuery {
 }
 
 /**
- * GET /api/views response
- */
-export interface ViewsListResponse {
-  views: SavedView[];
-}
-
-/**
- * POST /api/views request body
- */
-export interface CreateViewRequest {
-  name: string;
-  filters: SavedViewFilters;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-/**
- * PUT /api/views/:id request body
- */
-export interface UpdateViewRequest {
-  name?: string;
-  filters?: SavedViewFilters;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-/**
  * PATCH /api/plans/:filename/subtasks request body
  */
 export type SubtaskActionRequest =
@@ -179,13 +149,6 @@ export interface BulkAssignRequest {
 export interface BulkPriorityRequest {
   filenames: string[];
   priority: PlanPriority;
-}
-
-/**
- * POST /api/plans/bulk-archive request body
- */
-export interface BulkArchiveRequest {
-  filenames: string[];
 }
 
 /**
@@ -222,14 +185,6 @@ export interface RollbackRequest {
 export interface NotificationsListResponse {
   notifications: Notification[];
   unreadCount: number;
-}
-
-/**
- * GET /api/archive response
- */
-export interface ArchiveListResponse {
-  archived: ArchivedPlan[];
-  total: number;
 }
 
 /**

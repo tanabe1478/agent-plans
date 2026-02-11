@@ -12,7 +12,6 @@ interface ExportPlan {
 }
 
 interface ExportFilterOptions {
-  includeArchived?: boolean;
   filterStatus?: PlanStatus;
   filterTags?: string[];
 }

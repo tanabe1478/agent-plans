@@ -205,6 +205,9 @@ export function DependencyPage() {
   const [isPanning, setIsPanning] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
+  if (settingsLoading) return null;
+  if (!frontmatterEnabled) return <Navigate to="/" replace />;
+
   const positions = useMemo(
     () => (graph ? layoutGraph(graph) : new Map<string, LayoutPosition>()),
     [graph]

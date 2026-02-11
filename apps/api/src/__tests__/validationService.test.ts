@@ -252,12 +252,6 @@ describe('autoCorrectFrontmatter', () => {
     expect(corrected.sessionId).toBe('sess-1');
   });
 
-  it('should correct invalid archivedAt to current date', () => {
-    const corrected = autoCorrectFrontmatter({ archivedAt: 'xyz' });
-    expect(corrected.archivedAt).toBeDefined();
-    expect(new Date(corrected.archivedAt as string).getTime()).not.toBeNaN();
-  });
-
   it('should parse schemaVersion from numeric-like values', () => {
     const corrected = autoCorrectFrontmatter({ schemaVersion: '3' });
     expect(corrected.schemaVersion).toBe(3);

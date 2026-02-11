@@ -28,7 +28,6 @@ const frontmatterSchema = z.object({
   modified: z.string().datetime().optional(),
   projectPath: z.string().optional(),
   sessionId: z.string().optional(),
-  archivedAt: z.string().datetime().optional(),
   schemaVersion: z.number().optional(),
   subtasks: z
     .array(
@@ -136,14 +135,6 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
   if (typeof data.modified === 'string') corrected.modified = data.modified;
   if (typeof data.projectPath === 'string') corrected.projectPath = data.projectPath;
   if (typeof data.sessionId === 'string') corrected.sessionId = data.sessionId;
-
-  // ArchivedAt
-  if (data.archivedAt !== undefined) {
-    const parsed = Date.parse(data.archivedAt as string);
-    corrected.archivedAt = Number.isNaN(parsed)
-      ? new Date().toISOString()
-      : (data.archivedAt as string);
-  }
 
   // Schema version
   if (data.schemaVersion !== undefined) {

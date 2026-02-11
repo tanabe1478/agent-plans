@@ -27,8 +27,8 @@ export function useDeletePlan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filename, permanent = false }: { filename: string; permanent?: boolean }) =>
-      api.plans.delete(filename, permanent),
+    mutationFn: ({ filename }: { filename: string }) =>
+      api.plans.delete(filename),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
@@ -39,8 +39,8 @@ export function useBulkDelete() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filenames, permanent = false }: { filenames: string[]; permanent?: boolean }) =>
-      api.plans.bulkDelete(filenames, permanent),
+    mutationFn: ({ filenames }: { filenames: string[] }) =>
+      api.plans.bulkDelete(filenames),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
@@ -153,13 +153,3 @@ export function useBulkUpdatePriority() {
   });
 }
 
-export function useBulkArchive() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ filenames }: { filenames: string[] }) => api.plans.bulkArchive(filenames),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
-    },
-  });
-}

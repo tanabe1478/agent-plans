@@ -12,9 +12,6 @@ export const config = {
   /** Directory containing plan files */
   plansDir: process.env.PLANS_DIR || join(homedir(), '.claude', 'plans'),
 
-  /** Archive directory for soft-deleted plans */
-  archiveDir: process.env.ARCHIVE_DIR || join(homedir(), '.claude', 'plans', 'archive'),
-
   /** Allowed CORS origins (auto-tracks web port) */
   corsOrigins: (process.env.CORS_ORIGINS || `http://localhost:${getWebPort()}`).split(','),
 
@@ -24,6 +21,4 @@ export const config = {
   /** Preview length in characters */
   previewLength: 200,
 
-  /** Archive retention period in days */
-  archiveRetentionDays: parseInt(process.env.ARCHIVE_RETENTION_DAYS || '30', 10),
 } as const;

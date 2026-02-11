@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type {
   PlanDetail,
@@ -9,7 +9,6 @@ import type {
   Subtask,
 } from '@ccplans/shared';
 import { config } from '../config.js';
-import { recordArchiveMeta } from './archiveService.js';
 import { log as auditLog } from './auditService.js';
 import { checkConflict, recordFileState } from './conflictService.js';
 import { saveVersion } from './historyService.js';
@@ -183,9 +182,6 @@ function parseFrontmatter(content: string): {
       case 'assignee':
         frontmatter.assignee = value;
         break;
-      case 'archivedAt':
-        frontmatter.archivedAt = value;
-        break;
       case 'subtasks': {
         const subtaskResult = parseSubtasks(lines, i);
         if (subtaskResult.subtasks.length > 0) {
@@ -251,7 +247,6 @@ function serializeFrontmatter(fm: PlanFrontmatter): string {
   if (fm.blockedBy && fm.blockedBy.length > 0)
     lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
   if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
-  if (fm.archivedAt) lines.push(`archivedAt: "${fm.archivedAt}"`);
   if (fm.subtasks && fm.subtasks.length > 0)
     lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
   if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);
@@ -308,11 +303,9 @@ function extractRelatedProject(content: string): string | undefined {
 
 export class PlanService {
   private plansDir: string;
-  private archiveDir: string;
 
-  constructor(plansDir = config.plansDir, archiveDir = config.archiveDir) {
+  constructor(plansDir = config.plansDir) {
     this.plansDir = plansDir;
-    this.archiveDir = archiveDir;
   }
 
   /**
@@ -454,34 +447,30 @@ export class PlanService {
   }
 
   /**
-   * Delete a plan (permanently by default)
+   * Delete a plan (soft-delete: moves to archive/ subdirectory)
    */
-  async deletePlan(filename: string, archive = false): Promise<void> {
+  async deletePlan(filename: string): Promise<void> {
     this.validateFilename(filename);
     const filePath = join(this.plansDir, filename);
+    const archiveDir = join(this.plansDir, 'archive');
 
-    if (archive) {
-      const content = await readFile(filePath, 'utf-8');
-      await mkdir(this.archiveDir, { recursive: true });
-      const archivePath = join(this.archiveDir, filename);
-      await rename(filePath, archivePath);
-      await recordArchiveMeta(filename, filePath, content);
-    } else {
-      await unlink(filePath);
-    }
+    // Soft-delete: move to archive/ subdirectory
+    await mkdir(archiveDir, { recursive: true });
+    const archivePath = join(archiveDir, filename);
+    await rename(filePath, archivePath);
 
     // Audit log (non-blocking)
     auditLog(
-      { action: 'delete', filename, details: { permanent: !archive, archived: archive } },
+      { action: 'delete', filename, details: { permanent: false, archived: true } },
       this.plansDir
     ).catch(() => {});
   }
 
   /**
-   * Bulk delete plans (permanently by default)
+   * Bulk delete plans permanently
    */
-  async bulkDelete(filenames: string[], archive = false): Promise<void> {
-    await Promise.all(filenames.map((f) => this.deletePlan(f, archive)));
+  async bulkDelete(filenames: string[]): Promise<void> {
+    await Promise.all(filenames.map((f) => this.deletePlan(f)));
   }
 
   /**

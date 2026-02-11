@@ -122,25 +122,6 @@ Test content for bulk operations.
     }
   });
 
-  test('should perform bulk archive via API', async ({ request, apiBaseUrl }) => {
-    // Archive all plans
-    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-archive`, {
-      data: {
-        filenames: BULK_TEST_FILES,
-      },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const result = await response.json();
-    expect(result.succeeded).toHaveLength(3);
-
-    // Verify plans were archived (should return 404)
-    for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
-      expect(planResponse.status()).toBe(404);
-    }
-  });
-
   test('should handle bulk tag removal via API', async ({ request, apiBaseUrl }) => {
     // First add some tags
     await request.post(`${apiBaseUrl}/api/plans/bulk-tags`, {
@@ -280,11 +261,9 @@ Test content for bulk operations.
     // Should have Assign button
     await expect(bulkBar.getByText('Assign')).toBeVisible();
 
-    // Should have Archive button
-    await expect(bulkBar.getByText('Archive')).toBeVisible();
   });
 
-  test('should handle bulk delete with permanent flag via API', async ({ request, apiBaseUrl }) => {
+  test('should handle bulk delete via API', async ({ request, apiBaseUrl }) => {
     const deleteTestFiles = ['bulk-perm-del-1.md', 'bulk-perm-del-2.md'];
 
     try {
@@ -298,14 +277,14 @@ status: todo
 ---
 # ${filename}
 
-Test content for permanent deletion.
+Test content for deletion.
 `,
           },
         });
       }
 
-      // Perform bulk delete with permanent flag
-      const response = await request.post(`${apiBaseUrl}/api/plans/bulk-delete?permanent=true`, {
+      // Perform bulk delete
+      const response = await request.post(`${apiBaseUrl}/api/plans/bulk-delete`, {
         data: {
           filenames: deleteTestFiles,
         },
@@ -316,7 +295,7 @@ Test content for permanent deletion.
       expect(result.success).toBe(true);
       expect(result.deleted).toBe(2);
 
-      // Verify plans are permanently deleted (404)
+      // Verify plans are deleted (404)
       for (const filename of deleteTestFiles) {
         const getResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
         expect(getResponse.status()).toBe(404);

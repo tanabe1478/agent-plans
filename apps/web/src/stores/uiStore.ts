@@ -13,10 +13,6 @@ interface UiStore {
   theme: Theme;
   setTheme: (theme: Theme) => void;
 
-  // Sidebar
-  sidebarOpen: boolean;
-  toggleSidebar: () => void;
-
   // Modal
   modalOpen: string | null;
   openModal: (id: string) => void;
@@ -41,10 +37,6 @@ export const useUiStore = create<UiStore>((set) => ({
     localStorage.setItem('theme', theme);
     set({ theme });
   },
-
-  // Sidebar
-  sidebarOpen: true,
-  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
   // Modal
   modalOpen: null,

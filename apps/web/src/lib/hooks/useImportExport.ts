@@ -5,7 +5,7 @@ import { api } from '../api/client';
 export function useExportUrl() {
   return (
     format: BulkExportFormat,
-    options?: { includeArchived?: boolean; filterStatus?: PlanStatus; filterTags?: string[] }
+    options?: { filterStatus?: PlanStatus; filterTags?: string[] }
   ) => api.importExport.exportUrl(format, options);
 }
 

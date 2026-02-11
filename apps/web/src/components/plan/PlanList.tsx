@@ -42,9 +42,6 @@ export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
         case 'name':
           comparison = a.title.localeCompare(b.title);
           break;
-        case 'date':
-          comparison = new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime();
-          break;
         case 'size':
           comparison = b.size - a.size;
           break;

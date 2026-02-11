@@ -1,9 +1,8 @@
 import type { PlanPriority, PlanStatus } from '@ccplans/shared';
-import { Archive, ArrowRightCircle, CheckSquare, Flag, Tags, User, XSquare } from 'lucide-react';
+import { ArrowRightCircle, CheckSquare, Flag, Tags, User, XSquare } from 'lucide-react';
 import { useState } from 'react';
 import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 import {
-  useBulkArchive,
   useBulkUpdateAssign,
   useBulkUpdatePriority,
   useBulkUpdateStatus,
@@ -26,7 +25,6 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
   const bulkTags = useBulkUpdateTags();
   const bulkAssign = useBulkUpdateAssign();
   const bulkPriority = useBulkUpdatePriority();
-  const bulkArchive = useBulkArchive();
 
   const [tagInput, setTagInput] = useState('');
   const [assigneeInput, setAssigneeInput] = useState('');
@@ -38,8 +36,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
     bulkStatus.isPending ||
     bulkTags.isPending ||
     bulkAssign.isPending ||
-    bulkPriority.isPending ||
-    bulkArchive.isPending;
+    bulkPriority.isPending;
 
   const handleBulkStatus = async (status: PlanStatus) => {
     try {
@@ -96,16 +93,6 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
       clearSelection();
     } catch {
       addToast('Bulk priority update failed', 'error');
-    }
-  };
-
-  const handleBulkArchive = async () => {
-    try {
-      const result = await bulkArchive.mutateAsync({ filenames });
-      addToast(`${result.succeeded.length} plans archived`, 'success');
-      clearSelection();
-    } catch {
-      addToast('Bulk archive failed', 'error');
     }
   };
 
@@ -283,16 +270,6 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
               </button>
             ))}
 
-          {/* Archive */}
-          <button
-            type="button"
-            onClick={handleBulkArchive}
-            disabled={isPending}
-            className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted text-orange-600 border-orange-300"
-          >
-            <Archive className="h-3.5 w-3.5" />
-            Archive
-          </button>
         </div>
       </div>
     </div>

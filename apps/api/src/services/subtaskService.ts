@@ -159,9 +159,6 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
       case 'assignee':
         frontmatter.assignee = value;
         break;
-      case 'archivedAt':
-        frontmatter.archivedAt = value;
-        break;
       case 'subtasks': {
         const subtaskResult = parseSubtasksFromYaml(lines, i);
         if (subtaskResult.subtasks.length > 0) {
@@ -217,7 +214,6 @@ function serializeFrontmatter(fm: PlanFrontmatter): string {
   if (fm.blockedBy && fm.blockedBy.length > 0)
     lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
   if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
-  if (fm.archivedAt) lines.push(`archivedAt: "${fm.archivedAt}"`);
   if (fm.subtasks && fm.subtasks.length > 0)
     lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
   if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);

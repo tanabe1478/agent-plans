@@ -1,10 +1,8 @@
 import type {
-  ArchiveListResponse,
   BackupInfo,
   BackupsListResponse,
   BulkExportFormat,
   BulkOperationResponse,
-  CreateViewRequest,
   DependencyGraphResponse,
   DiffResult,
   ExportFormat,
@@ -19,15 +17,12 @@ import type {
   PlanPriority,
   PlanStatus,
   PlansListResponse,
-  SavedView,
   SearchResponse,
   SubtaskActionRequest,
   SubtaskActionResponse,
   SuccessResponse,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
-  UpdateViewRequest,
-  ViewsListResponse,
 } from '@ccplans/shared';
 
 const API_BASE = '/api';
@@ -71,13 +66,13 @@ export const api = {
         body: JSON.stringify({ content }),
       }),
 
-    delete: (filename: string, permanent = false) =>
-      fetchApi<SuccessResponse>(`/plans/${encodeURIComponent(filename)}?permanent=${permanent}`, {
+    delete: (filename: string) =>
+      fetchApi<SuccessResponse>(`/plans/${encodeURIComponent(filename)}`, {
         method: 'DELETE',
       }),
 
-    bulkDelete: (filenames: string[], permanent = false) =>
-      fetchApi<SuccessResponse>(`/plans/bulk-delete?permanent=${permanent}`, {
+    bulkDelete: (filenames: string[]) =>
+      fetchApi<SuccessResponse>('/plans/bulk-delete', {
         method: 'POST',
         body: JSON.stringify({ filenames }),
       }),
@@ -133,11 +128,6 @@ export const api = {
         body: JSON.stringify({ filenames, priority }),
       }),
 
-    bulkArchive: (filenames: string[]) =>
-      fetchApi<BulkOperationResponse>('/plans/bulk-archive', {
-        method: 'POST',
-        body: JSON.stringify({ filenames }),
-      }),
   },
 
   // Search
@@ -147,28 +137,6 @@ export const api = {
       if (limit) params.set('limit', String(limit));
       return fetchApi<SearchResponse>(`/search?${params}`);
     },
-  },
-
-  // Views
-  views: {
-    list: () => fetchApi<ViewsListResponse>('/views'),
-
-    create: (data: CreateViewRequest) =>
-      fetchApi<SavedView>('/views', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-
-    update: (id: string, data: UpdateViewRequest) =>
-      fetchApi<SavedView>(`/views/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-
-    delete: (id: string) =>
-      fetchApi<SuccessResponse>(`/views/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      }),
   },
 
   // History
@@ -194,26 +162,6 @@ export const api = {
     },
   },
 
-  // Archive
-  archive: {
-    list: () => fetchApi<ArchiveListResponse>('/archive'),
-
-    restore: (filename: string) =>
-      fetchApi<SuccessResponse>(`/archive/${encodeURIComponent(filename)}/restore`, {
-        method: 'POST',
-      }),
-
-    permanentlyDelete: (filename: string) =>
-      fetchApi<SuccessResponse>(`/archive/${encodeURIComponent(filename)}`, {
-        method: 'DELETE',
-      }),
-
-    cleanup: () =>
-      fetchApi<{ success: boolean; deleted: number }>('/archive/cleanup', {
-        method: 'POST',
-      }),
-  },
-
   // Dependencies
   dependencies: {
     graph: () => fetchApi<DependencyGraphResponse>('/dependencies'),
@@ -226,10 +174,9 @@ export const api = {
   importExport: {
     exportUrl: (
       format: BulkExportFormat,
-      options?: { includeArchived?: boolean; filterStatus?: PlanStatus; filterTags?: string[] }
+      options?: { filterStatus?: PlanStatus; filterTags?: string[] }
     ) => {
       const params = new URLSearchParams({ format });
-      if (options?.includeArchived) params.set('includeArchived', 'true');
       if (options?.filterStatus) params.set('filterStatus', options.filterStatus);
       if (options?.filterTags?.length) params.set('filterTags', options.filterTags.join(','));
       return `${API_BASE}/export?${params}`;

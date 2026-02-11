@@ -52,8 +52,6 @@ test.describe('Delete functionality (from detail page)', () => {
   test.afterEach(async ({ request, apiBaseUrl }) => {
     // Clean up: try to delete the test plan if it still exists
     await request.delete(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
-    // Also try to delete from archive
-    await request.delete(`${apiBaseUrl}/api/archive/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
   test('should show delete confirmation dialog on detail page', async ({ page }) => {
@@ -91,19 +89,16 @@ test.describe('Delete functionality (from detail page)', () => {
     const dialogHeading = page.getByRole('heading', { name: 'Delete Plan' });
     await expect(dialogHeading).toBeVisible();
 
-    // Click "Permanently delete" to enter permanent delete mode
-    await page.getByRole('button', { name: 'Permanently delete' }).click();
-
     // Type filename to confirm
     const confirmInput = page.getByPlaceholder(TEST_PLAN_FILENAME);
     await confirmInput.fill(TEST_PLAN_FILENAME);
 
-    // Click the final "Permanently delete" button and wait for API response
+    // Click the "Delete" button and wait for API response
     await Promise.all([
       page.waitForResponse(
         (resp) => resp.url().includes('/api/plans/') && resp.request().method() === 'DELETE'
       ),
-      page.getByRole('button', { name: 'Permanently delete' }).click(),
+      page.getByRole('button', { name: 'Delete', exact: true }).click(),
     ]);
 
     // Wait for dialog to close

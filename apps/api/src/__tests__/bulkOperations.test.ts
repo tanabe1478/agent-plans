@@ -14,11 +14,6 @@ vi.mock('../services/historyService.js', () => ({
   }),
 }));
 
-// Mock archiveService to avoid writing to real ~/.claude/plans/archive
-vi.mock('../services/archiveService.js', () => ({
-  recordArchiveMeta: vi.fn().mockResolvedValue(undefined),
-}));
-
 // Mock auditService to avoid writing audit logs during tests
 vi.mock('../services/auditService.js', () => ({
   log: vi.fn().mockResolvedValue(undefined),
@@ -33,14 +28,12 @@ import { PlanService } from '../services/planService.js';
 
 describe('Bulk Operations', () => {
   let testDir: string;
-  let archiveDir: string;
   let service: PlanService;
 
   beforeEach(async () => {
     testDir = join(tmpdir(), `ccplans-bulk-test-${Date.now()}`);
-    archiveDir = join(testDir, 'archive');
     await mkdir(testDir, { recursive: true });
-    service = new PlanService(testDir, archiveDir);
+    service = new PlanService(testDir);
   });
 
   afterEach(async () => {
@@ -72,21 +65,6 @@ Content.`
       expect(files).not.toContain('plan-a.md');
       expect(files).not.toContain('plan-b.md');
       expect(files).toContain('plan-c.md');
-    });
-
-    it('should archive multiple plans when archive=true', async () => {
-      await writePlan('plan-a.md', 'todo');
-      await writePlan('plan-b.md', 'todo');
-
-      await service.bulkDelete(['plan-a.md', 'plan-b.md'], true);
-
-      const mainFiles = await readdir(testDir);
-      expect(mainFiles).not.toContain('plan-a.md');
-      expect(mainFiles).not.toContain('plan-b.md');
-
-      const archiveFiles = await readdir(archiveDir);
-      expect(archiveFiles).toContain('plan-a.md');
-      expect(archiveFiles).toContain('plan-b.md');
     });
 
     it('should handle partial failure when some files do not exist', async () => {

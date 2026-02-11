@@ -12,13 +12,11 @@ const testDir = join(
 vi.mock('../config.js', () => ({
   config: {
     plansDir: testDir,
-    archiveDir: join(testDir, 'archive'),
     port: 3001,
     host: '0.0.0.0',
     corsOrigins: ['http://localhost:5173'],
     maxFileSize: 10 * 1024 * 1024,
     previewLength: 200,
-    archiveRetentionDays: 30,
   },
 }));
 

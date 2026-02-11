@@ -1,5 +1,4 @@
 import {
-  Archive,
   Columns,
   DatabaseBackup,
   Download,
@@ -8,8 +7,6 @@ import {
   Monitor,
   Moon,
   MoreVertical,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
   Settings,
   Sun,
@@ -80,7 +77,7 @@ export function Header() {
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { theme, setTheme, sidebarOpen, toggleSidebar } = useUiStore();
+  const { theme, setTheme } = useUiStore();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -105,18 +102,6 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 items-center px-4 max-w-6xl">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className="p-2 hover:bg-accent rounded-md"
-            title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-          >
-            {sidebarOpen ? (
-              <PanelLeftClose className="h-4 w-4" />
-            ) : (
-              <PanelLeftOpen className="h-4 w-4" />
-            )}
-          </button>
           <Link to="/" className="flex items-center gap-2 font-semibold">
             <FileText className="h-5 w-5" />
             <span>Claude Plans</span>
@@ -140,13 +125,6 @@ export function Header() {
 
         <nav className="flex items-center gap-2">
           <ViewTabs />
-          <Link
-            to="/archive"
-            className="p-2 hover:bg-accent rounded-md text-muted-foreground hover:text-foreground transition-colors"
-            title="Archive"
-          >
-            <Archive className="h-5 w-5" />
-          </Link>
           {frontmatterEnabled && <NotificationBell />}
           <div className="relative" ref={menuRef}>
             <button

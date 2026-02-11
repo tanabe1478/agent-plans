@@ -13,11 +13,6 @@ vi.mock('../services/historyService.js', () => ({
   }),
 }));
 
-// Mock archiveService
-vi.mock('../services/archiveService.js', () => ({
-  recordArchiveMeta: vi.fn().mockResolvedValue(undefined),
-}));
-
 // Mock auditService
 vi.mock('../services/auditService.js', () => ({
   log: vi.fn().mockResolvedValue(undefined),
@@ -33,7 +28,6 @@ const testDir = vi.hoisted(() => {
 vi.mock('../config.js', () => ({
   config: {
     plansDir: testDir,
-    archiveDir: require('node:path').join(testDir, 'archive'),
     previewLength: 200,
   },
 }));
@@ -63,7 +57,7 @@ describe('Frontmatter gating', () => {
     resetSettingsCache();
     await mkdir(testDir, { recursive: true });
     await writeFile(join(testDir, 'test-plan.md'), PLAN_WITH_FRONTMATTER, 'utf-8');
-    service = new PlanService(testDir, join(testDir, 'archive'));
+    service = new PlanService(testDir);
   });
 
   afterEach(async () => {

@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { SettingsProvider } from './contexts/SettingsContext';
-import { ArchivePage } from './pages/ArchivePage';
 import { BackupPage } from './pages/BackupPage';
 import { DependencyPage } from './pages/DependencyPage';
 import { HomePage } from './pages/HomePage';
@@ -41,6 +41,7 @@ function App() {
 
   return (
     <SettingsProvider>
+      <ErrorBoundary>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -48,12 +49,13 @@ function App() {
           <Route path="plan/:filename/review" element={<ReviewPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="kanban" element={<KanbanPage />} />
-          <Route path="archive" element={<ArchivePage />} />
+
           <Route path="dependencies" element={<DependencyPage />} />
           <Route path="backups" element={<BackupPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
+      </ErrorBoundary>
     </SettingsProvider>
   );
 }

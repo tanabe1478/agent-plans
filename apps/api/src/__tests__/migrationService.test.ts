@@ -14,11 +14,6 @@ vi.mock('../services/historyService.js', () => ({
   }),
 }));
 
-// Mock archiveService
-vi.mock('../services/archiveService.js', () => ({
-  recordArchiveMeta: vi.fn().mockResolvedValue(undefined),
-}));
-
 import type { PlanFrontmatter } from '@ccplans/shared';
 import {
   getCurrentSchemaVersion,
