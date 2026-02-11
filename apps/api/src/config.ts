@@ -1,9 +1,10 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { getApiPort, getWebPort } from '@ccplans/shared/ports';
 
 export const config = {
-  /** Port for API server */
-  port: parseInt(process.env.PORT || '3001', 10),
+  /** Port for API server (auto-derived in worktrees) */
+  port: getApiPort(),
 
   /** Host for API server */
   host: process.env.HOST || '0.0.0.0',
@@ -14,10 +15,8 @@ export const config = {
   /** Archive directory for soft-deleted plans */
   archiveDir: process.env.ARCHIVE_DIR || join(homedir(), '.claude', 'plans', 'archive'),
 
-  /** Allowed CORS origins */
-  corsOrigins: (
-    process.env.CORS_ORIGINS || `http://localhost:${process.env.WEB_PORT || '5173'}`
-  ).split(','),
+  /** Allowed CORS origins (auto-tracks web port) */
+  corsOrigins: (process.env.CORS_ORIGINS || `http://localhost:${getWebPort()}`).split(','),
 
   /** Maximum file size for plans (10MB) */
   maxFileSize: 10 * 1024 * 1024,

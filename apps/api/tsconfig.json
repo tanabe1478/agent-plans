@@ -6,7 +6,8 @@
     "moduleResolution": "bundler",
     "noEmit": true,
     "paths": {
-      "@ccplans/shared": ["../../packages/shared/src/index.ts"]
+      "@ccplans/shared": ["../../packages/shared/src/index.ts"],
+      "@ccplans/shared/ports": ["../../packages/shared/src/ports.ts"]
     }
   },
   "include": ["src/**/*", "../../packages/shared/src/**/*"]
