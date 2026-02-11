@@ -16,21 +16,15 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/settings\.spec\.ts/, /status-filtering\.spec\.ts/, /status-transitions\.spec\.ts/],
+      testIgnore: /settings\.spec\.ts/,
     },
     {
-      // status-filtering and status-transitions share fixture state (blue-running-fox.md)
-      // so they must run serially with respect to each other
-      name: 'status-tests',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: [/status-filtering\.spec\.ts/, /status-transitions\.spec\.ts/],
-      fullyParallel: false,
-    },
-    {
+      // Settings tests toggle frontmatterEnabled which affects other tests,
+      // so they run after all other tests complete.
       name: 'settings',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /settings\.spec\.ts/,
-      dependencies: ['chromium', 'status-tests'],
+      dependencies: ['chromium'],
     },
   ],
 });

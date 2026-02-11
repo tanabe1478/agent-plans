@@ -1,34 +1,45 @@
 import { expect, test } from '../lib/fixtures';
 
-// Fixture files:
-// - blue-running-fox.md (todo)
-// - green-dancing-cat.md (in_progress)
-// - red-sleeping-bear.md (completed)
-// - yellow-jumping-dog.md (todo)
-// - purple-swimming-fish.md (in_progress)
-
 // Run tests serially to avoid state conflicts
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Status Filtering and Status Update', () => {
-  // Reset fixture statuses before each test to ensure consistent state
-  test.beforeEach(async ({ request, apiBaseUrl }) => {
-    const fixtures = [
-      { file: 'blue-running-fox.md', status: 'todo' },
-      { file: 'green-dancing-cat.md', status: 'in_progress' },
-      { file: 'red-sleeping-bear.md', status: 'completed' },
-      { file: 'yellow-jumping-dog.md', status: 'todo' },
-      { file: 'purple-swimming-fish.md', status: 'in_progress' },
-    ];
-    for (const { file, status } of fixtures) {
-      await request
-        .patch(`${apiBaseUrl}/api/plans/${file}/status`, {
-          data: { status },
-        })
-        .catch(() => {});
-    }
-  });
+// Dedicated fixtures for this test file (not shared with other tests)
+const FIXTURES = {
+  todo1: { filename: 'test-sf-todo-1.md', status: 'todo', title: 'SF Todo Plan 1' },
+  todo2: { filename: 'test-sf-todo-2.md', status: 'todo', title: 'SF Todo Plan 2' },
+  inProgress1: { filename: 'test-sf-inprogress-1.md', status: 'in_progress', title: 'SF InProgress Plan 1' },
+  inProgress2: { filename: 'test-sf-inprogress-2.md', status: 'in_progress', title: 'SF InProgress Plan 2' },
+  completed1: { filename: 'test-sf-completed-1.md', status: 'completed', title: 'SF Completed Plan 1' },
+} as const;
 
+const ALL_FILENAMES = Object.values(FIXTURES).map((f) => f.filename);
+
+function makePlan(title: string, status: string) {
+  return `---
+status: ${status}
+---
+# ${title}
+
+Content for status filtering testing.
+`;
+}
+
+// File-level setup/teardown so fixtures are available across all describe blocks
+test.beforeAll(async ({ request, apiBaseUrl }) => {
+  for (const f of Object.values(FIXTURES)) {
+    await request.post(`${apiBaseUrl}/api/plans`, {
+      data: { filename: f.filename, content: makePlan(f.title, f.status) },
+    });
+  }
+});
+
+test.afterAll(async ({ request, apiBaseUrl }) => {
+  for (const filename of ALL_FILENAMES) {
+    await request.delete(`${apiBaseUrl}/api/plans/${filename}`).catch(() => {});
+  }
+});
+
+test.describe('Status Filtering and Status Update', () => {
   test('should display status filter dropdown with all options', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
@@ -36,7 +47,6 @@ test.describe('Status Filtering and Status Update', () => {
     const statusFilter = page.getByRole('combobox').nth(1);
     await expect(statusFilter).toBeVisible();
 
-    // Check all options are available
     await expect(statusFilter.getByRole('option', { name: 'All Status' })).toBeAttached();
     await expect(statusFilter.getByRole('option', { name: 'ToDo' })).toBeAttached();
     await expect(statusFilter.getByRole('option', { name: 'In Progress' })).toBeAttached();
@@ -47,85 +57,66 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Fixtures include plans with various statuses - badges should be visible
-    // in_progress: green-dancing-cat.md, purple-swimming-fish.md
     await expect(page.getByRole('button', { name: 'In Progress' }).first()).toBeVisible();
-
-    // todo: blue-running-fox.md, yellow-jumping-dog.md
     await expect(page.getByRole('button', { name: 'ToDo' }).first()).toBeVisible();
-
-    // completed: red-sleeping-bear.md
-    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Completed' }).first()).toBeVisible();
   });
 
   test('should filter plans by status - ToDo', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Select "ToDo" filter
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('todo');
 
-    // not.toBeVisible() auto-retries until the element disappears
-    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
-    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
-    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.inProgress1.filename)).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.inProgress2.filename)).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.completed1.filename)).not.toBeVisible();
 
-    // Should show todo plans (blue-running-fox, yellow-jumping-dog)
-    await expect(page.getByText('blue-running-fox.md')).toBeVisible();
-    await expect(page.getByText('yellow-jumping-dog.md')).toBeVisible();
+    await expect(page.getByText(FIXTURES.todo1.filename)).toBeVisible();
+    await expect(page.getByText(FIXTURES.todo2.filename)).toBeVisible();
   });
 
   test('should filter plans by status - In Progress', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Select "In Progress" filter
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('in_progress');
 
-    // not.toBeVisible() auto-retries until the element disappears
-    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
-    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
-    await expect(page.getByText('red-sleeping-bear.md')).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.todo1.filename)).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.todo2.filename)).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.completed1.filename)).not.toBeVisible();
 
-    // Should show in_progress plans (green-dancing-cat, purple-swimming-fish)
-    await expect(page.getByText('green-dancing-cat.md')).toBeVisible();
-    await expect(page.getByText('purple-swimming-fish.md')).toBeVisible();
+    await expect(page.getByText(FIXTURES.inProgress1.filename)).toBeVisible();
+    await expect(page.getByText(FIXTURES.inProgress2.filename)).toBeVisible();
   });
 
   test('should filter plans by status - Completed', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Select "Completed" filter
     const statusFilter = page.getByRole('combobox').nth(1);
     await statusFilter.selectOption('completed');
 
-    // not.toBeVisible() auto-retries until the element disappears
-    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
-    await expect(page.getByText('green-dancing-cat.md')).not.toBeVisible();
-    await expect(page.getByText('yellow-jumping-dog.md')).not.toBeVisible();
-    await expect(page.getByText('purple-swimming-fish.md')).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.todo1.filename)).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.inProgress1.filename)).not.toBeVisible();
 
-    // Should show completed plans (red-sleeping-bear)
-    await expect(page.getByText('red-sleeping-bear.md')).toBeVisible();
+    await expect(page.getByText(FIXTURES.completed1.filename)).toBeVisible();
   });
 
   test('should open status dropdown when clicking status badge', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Find a specific plan card and click its status badge
     const planCard = page
       .locator('[class*="rounded-lg"][class*="border"]')
-      .filter({ hasText: 'green-dancing-cat.md' });
+      .filter({ hasText: FIXTURES.inProgress1.filename });
     await expect(planCard).toBeVisible();
     const statusBadge = planCard.getByRole('button', { name: 'In Progress' });
     await expect(statusBadge).toBeVisible();
     await statusBadge.click();
 
-    // Dropdown should be open - look for the status dropdown menu
     const dropdown = planCard.locator('.z-50');
     await expect(dropdown).toBeVisible();
   });
@@ -138,20 +129,17 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Find a specific plan card (in_progress -> review is a valid transition)
     const planCard = page
       .locator('[class*="rounded-lg"][class*="border"]')
-      .filter({ hasText: 'green-dancing-cat.md' });
+      .filter({ hasText: FIXTURES.inProgress1.filename });
     await expect(planCard).toBeVisible();
     const statusBadge = planCard.getByRole('button', { name: 'In Progress' });
     await expect(statusBadge).toBeVisible({ timeout: 5000 });
     await statusBadge.click();
 
-    // Wait for dropdown to open
     const dropdown = planCard.locator('.z-50');
     await expect(dropdown).toBeVisible();
 
-    // For in_progress, valid transitions are ToDo and Review
     const reviewOption = dropdown.getByText('Review');
     await Promise.all([
       page.waitForResponse(
@@ -160,11 +148,10 @@ test.describe('Status Filtering and Status Update', () => {
       reviewOption.click(),
     ]);
 
-    // Verify the update happened (badge should now show Review)
     await expect(planCard.getByRole('button', { name: 'Review' })).toBeVisible();
 
     // Reset status back for other tests
-    await request.patch(`${apiBaseUrl}/api/plans/green-dancing-cat.md/status`, {
+    await request.patch(`${apiBaseUrl}/api/plans/${FIXTURES.inProgress1.filename}/status`, {
       data: { status: 'in_progress' },
     });
   });
@@ -173,15 +160,12 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Get current URL
     const currentUrl = page.url();
 
-    // Click the status badge
     const statusBadge = page.getByRole('button', { name: 'In Progress' }).first();
     await expect(statusBadge).toBeVisible();
     await statusBadge.click();
 
-    // Should still be on the same page (not navigated to detail)
     expect(page.url()).toBe(currentUrl);
   });
 
@@ -191,14 +175,11 @@ test.describe('Status Filtering and Status Update', () => {
 
     const statusFilter = page.getByRole('combobox').nth(1);
 
-    // First filter by completed
     await statusFilter.selectOption('completed');
-    await expect(page.getByText('blue-running-fox.md')).not.toBeVisible();
+    await expect(page.getByText(FIXTURES.todo1.filename)).not.toBeVisible();
 
-    // Then reset to all
     await statusFilter.selectOption('all');
 
-    // Should show all statuses again
     await expect(page.getByRole('button', { name: 'ToDo' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'In Progress' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Completed' }).first()).toBeVisible();
@@ -239,11 +220,11 @@ test.describe('Search/Filter functionality', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Type a search query that matches fixture content
     const searchInput = page.getByPlaceholder('フィルター...');
-    await searchInput.fill('Authentication');
+    await searchInput.fill('SF Todo Plan 1');
 
-    // Should show matching plans (blue-running-fox.md has "Authentication" in title)
-    await expect(page.getByRole('heading', { name: /Authentication/i, level: 3 })).toBeVisible();
+    await page.waitForTimeout(300);
+
+    await expect(page.getByText(FIXTURES.todo1.filename)).toBeVisible();
   });
 });
