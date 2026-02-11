@@ -12,6 +12,24 @@ import { API_BASE_URL } from '../lib/test-helpers';
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Status Filtering and Status Update', () => {
+  // Reset fixture statuses before tests to handle parallel test interference
+  test.beforeAll(async ({ request }) => {
+    const fixtures = [
+      { file: 'blue-running-fox.md', status: 'todo' },
+      { file: 'green-dancing-cat.md', status: 'in_progress' },
+      { file: 'red-sleeping-bear.md', status: 'completed' },
+      { file: 'yellow-jumping-dog.md', status: 'todo' },
+      { file: 'purple-swimming-fish.md', status: 'in_progress' },
+    ];
+    for (const { file, status } of fixtures) {
+      await request
+        .patch(`${API_BASE_URL}/api/plans/${file}/status`, {
+          data: { status },
+        })
+        .catch(() => {});
+    }
+  });
+
   test('should display status filter dropdown with all options', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();

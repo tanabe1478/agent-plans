@@ -12,13 +12,19 @@
     "lint": "pnpm -r run lint",
     "check": "biome check .",
     "check:fix": "biome check . --write",
-    "format": "biome format . --write"
+    "format": "biome format . --write",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
     "@types/node": "^20.11.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,css,md}": "biome check --write --no-errors-on-unmatched"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
