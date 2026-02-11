@@ -4,7 +4,6 @@ import {
   Loader2,
   AlertCircle,
   Columns,
-  Calendar,
   GitBranch,
   CheckSquare,
   Tag,
@@ -16,7 +15,6 @@ import {
 const FRONTMATTER_FEATURES = [
   { icon: CheckSquare, label: 'Status management (ToDo, In Progress, Review, Completed)' },
   { icon: Columns, label: 'Kanban board view' },
-  { icon: Calendar, label: 'Calendar view with due dates' },
   { icon: GitBranch, label: 'Dependency graph between plans' },
   { icon: Signal, label: 'Priority levels (Low, Medium, High, Critical)' },
   { icon: Tag, label: 'Tags and bulk tag operations' },

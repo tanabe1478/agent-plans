@@ -238,16 +238,15 @@ test.describe('Notifications (Feature 9)', () => {
     expect(completedPlanNotification).toBeUndefined();
   });
 
-  // Skip: green-dancing-cat's modified date gets updated by other tests (status changes),
-  // so it may not be stale (3+ days old) when this test runs.
-  test.skip('API: blocked_stale notification for stale blocked plans', async ({ request }) => {
+  test('API: blocked_stale notification for stale blocked plans', async ({ request }) => {
     const response = await request.get(`${API_BASE_URL}/api/notifications`);
 
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
 
+    // gray-waiting-owl.md has blockedBy and modified 30+ days ago — always stale
     const blockedStaleNotification = data.notifications.find(
-      (n: any) => n.type === 'blocked_stale' && n.planFilename === 'green-dancing-cat.md'
+      (n: any) => n.type === 'blocked_stale' && n.planFilename === 'gray-waiting-owl.md'
     );
 
     expect(blockedStaleNotification).toBeDefined();

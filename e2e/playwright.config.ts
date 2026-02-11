@@ -42,6 +42,7 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 120 * 1000,
       env: {
+        TZ: 'UTC',
         PLANS_DIR: fixturesDir,
         PORT: String(apiPort),
         CORS_ORIGINS: `http://localhost:${webPort}`,
@@ -54,6 +55,7 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 120 * 1000,
       env: {
+        TZ: 'UTC',
         WEB_PORT: String(webPort),
         API_PORT: String(apiPort),
       },
