@@ -20,5 +20,4 @@ export const config = {
 
   /** Preview length in characters */
   previewLength: 200,
-
 } as const;

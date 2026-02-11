@@ -1,4 +1,4 @@
-# Session Log - Optout Sidebar Cleanup
+# Session Log - Opt-out Sidebar Cleanup
 
 ## 2026-02-12
 

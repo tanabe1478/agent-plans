@@ -127,7 +127,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ filenames, priority }),
       }),
-
   },
 
   // Search

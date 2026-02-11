@@ -33,10 +33,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
 
   const filenames = Array.from(selectedPlans);
   const isPending =
-    bulkStatus.isPending ||
-    bulkTags.isPending ||
-    bulkAssign.isPending ||
-    bulkPriority.isPending;
+    bulkStatus.isPending || bulkTags.isPending || bulkAssign.isPending || bulkPriority.isPending;
 
   const handleBulkStatus = async (status: PlanStatus) => {
     try {
@@ -269,7 +266,6 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
                 Assign
               </button>
             ))}
-
         </div>
       </div>
     </div>

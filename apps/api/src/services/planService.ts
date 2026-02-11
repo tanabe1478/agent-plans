@@ -467,7 +467,7 @@ export class PlanService {
   }
 
   /**
-   * Bulk delete plans permanently
+   * Bulk delete plans (soft-delete: moves to archive/)
    */
   async bulkDelete(filenames: string[]): Promise<void> {
     await Promise.all(filenames.map((f) => this.deletePlan(f)));

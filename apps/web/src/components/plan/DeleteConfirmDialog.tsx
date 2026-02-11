@@ -50,10 +50,11 @@ export function DeleteConfirmDialog({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label htmlFor="delete-confirm-input" className="block text-sm font-medium mb-1">
             Type <span className="font-mono text-destructive">{filename}</span> to confirm:
           </label>
           <input
+            id="delete-confirm-input"
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}

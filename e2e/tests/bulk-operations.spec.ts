@@ -260,7 +260,6 @@ Test content for bulk operations.
 
     // Should have Assign button
     await expect(bulkBar.getByText('Assign')).toBeVisible();
-
   });
 
   test('should handle bulk delete via API', async ({ request, apiBaseUrl }) => {

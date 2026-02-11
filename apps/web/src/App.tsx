@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { Layout } from './components/layout/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Layout } from './components/layout/Layout';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { BackupPage } from './pages/BackupPage';
 import { DependencyPage } from './pages/DependencyPage';
@@ -42,19 +42,19 @@ function App() {
   return (
     <SettingsProvider>
       <ErrorBoundary>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="plan/:filename" element={<ViewPage />} />
-          <Route path="plan/:filename/review" element={<ReviewPage />} />
-          <Route path="search" element={<SearchPage />} />
-          <Route path="kanban" element={<KanbanPage />} />
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="plan/:filename" element={<ViewPage />} />
+            <Route path="plan/:filename/review" element={<ReviewPage />} />
+            <Route path="search" element={<SearchPage />} />
+            <Route path="kanban" element={<KanbanPage />} />
 
-          <Route path="dependencies" element={<DependencyPage />} />
-          <Route path="backups" element={<BackupPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
-      </Routes>
+            <Route path="dependencies" element={<DependencyPage />} />
+            <Route path="backups" element={<BackupPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+        </Routes>
       </ErrorBoundary>
     </SettingsProvider>
   );

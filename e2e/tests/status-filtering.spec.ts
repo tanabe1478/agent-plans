@@ -7,9 +7,21 @@ test.describe.configure({ mode: 'serial' });
 const FIXTURES = {
   todo1: { filename: 'test-sf-todo-1.md', status: 'todo', title: 'SF Todo Plan 1' },
   todo2: { filename: 'test-sf-todo-2.md', status: 'todo', title: 'SF Todo Plan 2' },
-  inProgress1: { filename: 'test-sf-inprogress-1.md', status: 'in_progress', title: 'SF InProgress Plan 1' },
-  inProgress2: { filename: 'test-sf-inprogress-2.md', status: 'in_progress', title: 'SF InProgress Plan 2' },
-  completed1: { filename: 'test-sf-completed-1.md', status: 'completed', title: 'SF Completed Plan 1' },
+  inProgress1: {
+    filename: 'test-sf-inprogress-1.md',
+    status: 'in_progress',
+    title: 'SF InProgress Plan 1',
+  },
+  inProgress2: {
+    filename: 'test-sf-inprogress-2.md',
+    status: 'in_progress',
+    title: 'SF InProgress Plan 2',
+  },
+  completed1: {
+    filename: 'test-sf-completed-1.md',
+    status: 'completed',
+    title: 'SF Completed Plan 1',
+  },
 } as const;
 
 const ALL_FILENAMES = Object.values(FIXTURES).map((f) => f.filename);

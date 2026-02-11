@@ -27,8 +27,7 @@ export function useDeletePlan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filename }: { filename: string }) =>
-      api.plans.delete(filename),
+    mutationFn: ({ filename }: { filename: string }) => api.plans.delete(filename),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
@@ -39,8 +38,7 @@ export function useBulkDelete() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filenames }: { filenames: string[] }) =>
-      api.plans.bulkDelete(filenames),
+    mutationFn: ({ filenames }: { filenames: string[] }) => api.plans.bulkDelete(filenames),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
@@ -152,4 +150,3 @@ export function useBulkUpdatePriority() {
     },
   });
 }
-
