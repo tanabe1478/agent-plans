@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, AlertCircle, Info, CheckCheck } from 'lucide-react';
 import type { Notification } from '@ccplans/shared';
-import { useMarkAsRead, useMarkAllAsRead } from '@/lib/hooks/useNotifications';
+import { AlertCircle, AlertTriangle, CheckCheck, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useMarkAllAsRead, useMarkAsRead } from '@/lib/hooks/useNotifications';
 
 const severityStyles: Record<string, string> = {
   critical: 'border-l-red-500 bg-red-50 dark:bg-red-950/20',
@@ -93,7 +93,9 @@ export function NotificationPanel({ notifications, onClose }: NotificationPanelP
                     } ${notification.read ? 'opacity-60' : ''}`}
                   >
                     <div className="flex items-start gap-3">
-                      <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${severityIconColors[notification.severity]}`} />
+                      <Icon
+                        className={`h-4 w-4 mt-0.5 shrink-0 ${severityIconColors[notification.severity]}`}
+                      />
                       <div className="min-w-0 flex-1">
                         <p className={`text-sm ${notification.read ? '' : 'font-medium'}`}>
                           {notification.message}

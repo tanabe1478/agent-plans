@@ -1,9 +1,9 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createGzip } from 'node:zlib';
 import { Readable } from 'node:stream';
-import { config } from '../config.js';
+import { createGzip } from 'node:zlib';
 import type { PlanFrontmatter, PlanStatus } from '@ccplans/shared';
+import { config } from '../config.js';
 
 interface ExportPlan {
   filename: string;
@@ -20,7 +20,10 @@ interface ExportFilterOptions {
 /**
  * Parse frontmatter from markdown content (simplified version for export)
  */
-function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | undefined; body: string } {
+function parseFrontmatter(content: string): {
+  frontmatter: PlanFrontmatter | undefined;
+  body: string;
+} {
   const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
   const match = content.match(pattern);
 
@@ -39,15 +42,26 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | und
 
     const key = line.slice(0, colonIndex).trim();
     let value = line.slice(colonIndex + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
 
     switch (key) {
-      case 'created': frontmatter.created = value; break;
-      case 'modified': frontmatter.modified = value; break;
-      case 'project_path': frontmatter.projectPath = value; break;
-      case 'session_id': frontmatter.sessionId = value; break;
+      case 'created':
+        frontmatter.created = value;
+        break;
+      case 'modified':
+        frontmatter.modified = value;
+        break;
+      case 'project_path':
+        frontmatter.projectPath = value;
+        break;
+      case 'session_id':
+        frontmatter.sessionId = value;
+        break;
       case 'status':
         if (['todo', 'in_progress', 'review', 'completed'].includes(value)) {
           frontmatter.status = value as PlanStatus;
@@ -58,11 +72,19 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter | und
           frontmatter.priority = value as PlanFrontmatter['priority'];
         }
         break;
-      case 'dueDate': frontmatter.dueDate = value; break;
-      case 'assignee': frontmatter.assignee = value; break;
+      case 'dueDate':
+        frontmatter.dueDate = value;
+        break;
+      case 'assignee':
+        frontmatter.assignee = value;
+        break;
       case 'tags':
         if (value.startsWith('[') && value.endsWith(']')) {
-          frontmatter.tags = value.slice(1, -1).split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+          frontmatter.tags = value
+            .slice(1, -1)
+            .split(',')
+            .map((s) => s.trim().replace(/^["']|["']$/g, ''))
+            .filter(Boolean);
         }
         break;
     }
@@ -84,7 +106,7 @@ function extractTitle(body: string): string {
  */
 async function getPlans(options?: ExportFilterOptions): Promise<ExportPlan[]> {
   const files = await readdir(config.plansDir);
-  const mdFiles = files.filter(f => f.endsWith('.md'));
+  const mdFiles = files.filter((f) => f.endsWith('.md'));
 
   const plans: ExportPlan[] = [];
 
@@ -99,7 +121,7 @@ async function getPlans(options?: ExportFilterOptions): Promise<ExportPlan[]> {
 
       if (options?.filterTags && options.filterTags.length > 0) {
         const planTags = frontmatter?.tags || [];
-        const hasMatchingTag = options.filterTags.some(t => planTags.includes(t));
+        const hasMatchingTag = options.filterTags.some((t) => planTags.includes(t));
         if (!hasMatchingTag) continue;
       }
 
@@ -122,7 +144,7 @@ export async function exportAsJson(options?: ExportFilterOptions): Promise<strin
     exportedAt: new Date().toISOString(),
     version: 1,
     planCount: plans.length,
-    plans: plans.map(p => ({
+    plans: plans.map((p) => ({
       filename: p.filename,
       frontmatter: p.frontmatter || {},
       content: p.content,
@@ -139,7 +161,7 @@ export async function exportAsCsv(options?: ExportFilterOptions): Promise<string
   const plans = await getPlans(options);
 
   const header = 'filename,title,status,priority,dueDate,assignee,tags,created,modified';
-  const rows = plans.map(p => {
+  const rows = plans.map((p) => {
     const { frontmatter, content } = { frontmatter: p.frontmatter, content: p.content };
     const { body } = parseFrontmatter(content);
     const title = extractTitle(body);
@@ -227,11 +249,11 @@ function createTarHeader(filename: string, size: number): Buffer {
   header.write('0001000\0', 116, 8, 'utf-8');
 
   // File size in octal (12 bytes)
-  header.write(size.toString(8).padStart(11, '0') + '\0', 124, 12, 'utf-8');
+  header.write(`${size.toString(8).padStart(11, '0')}\0`, 124, 12, 'utf-8');
 
   // Modification time (12 bytes)
   const mtime = Math.floor(Date.now() / 1000);
-  header.write(mtime.toString(8).padStart(11, '0') + '\0', 136, 12, 'utf-8');
+  header.write(`${mtime.toString(8).padStart(11, '0')}\0`, 136, 12, 'utf-8');
 
   // Checksum placeholder (8 bytes of spaces)
   header.write('        ', 148, 8, 'utf-8');
@@ -248,7 +270,7 @@ function createTarHeader(filename: string, size: number): Buffer {
   for (let i = 0; i < 512; i++) {
     checksum += header[i];
   }
-  header.write(checksum.toString(8).padStart(6, '0') + '\0 ', 148, 8, 'utf-8');
+  header.write(`${checksum.toString(8).padStart(6, '0')}\0 `, 148, 8, 'utf-8');
 
   return header;
 }

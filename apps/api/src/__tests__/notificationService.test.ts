@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdir, rm, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { PlanMeta } from '@ccplans/shared';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const testDir = join(
   tmpdir(),
@@ -161,9 +161,9 @@ describe('NotificationService', () => {
 
       const staleNotif = notifications.find((n) => n.type === 'blocked_stale');
       expect(staleNotif).toBeDefined();
-      expect(staleNotif!.severity).toBe('warning');
-      expect(staleNotif!.message).toContain('blocked');
-      expect(staleNotif!.message).toContain('3+ days');
+      expect(staleNotif?.severity).toBe('warning');
+      expect(staleNotif?.message).toContain('blocked');
+      expect(staleNotif?.message).toContain('3+ days');
     });
 
     it('should NOT generate blocked_stale when modified recently', async () => {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -73,7 +73,7 @@ test.describe('History & Rollback (Feature 10)', () => {
     });
 
     await request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
-      data: { content: UPDATED_CONTENT + '\n\n## Another Update\nMore changes.' },
+      data: { content: `${UPDATED_CONTENT}\n\n## Another Update\nMore changes.` },
     });
 
     // Get history
@@ -235,7 +235,7 @@ test.describe('History & Rollback (Feature 10)', () => {
     });
 
     await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
-      data: { content: UPDATED_CONTENT + '\n\n## Update 2\nMore changes.' },
+      data: { content: `${UPDATED_CONTENT}\n\n## Update 2\nMore changes.` },
     });
 
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
@@ -244,14 +244,18 @@ test.describe('History & Rollback (Feature 10)', () => {
     await page.getByRole('button', { name: '履歴' }).click();
 
     // Wait for rollback buttons to appear (indicates version items loaded)
-    const rollbackButtons = page.locator('button').filter({ has: page.locator('svg.lucide-rotate-ccw') });
+    const rollbackButtons = page
+      .locator('button')
+      .filter({ has: page.locator('svg.lucide-rotate-ccw') });
     await expect(rollbackButtons.first()).toBeVisible({ timeout: 5000 });
 
     const count = await rollbackButtons.count();
     expect(count).toBeGreaterThan(0);
   });
 
-  test('should show rollback confirmation dialog when clicking rollback button', async ({ page }) => {
+  test('should show rollback confirmation dialog when clicking rollback button', async ({
+    page,
+  }) => {
     // Update plan to create a version
     await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
       data: { content: UPDATED_CONTENT },
@@ -278,7 +282,9 @@ test.describe('History & Rollback (Feature 10)', () => {
     await expect(confirmDialog.getByText('このバージョンにロールバックしますか')).toBeVisible();
 
     // The dialog has "ロールバック" and "キャンセル" buttons
-    await expect(confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first()).toBeVisible();
+    await expect(
+      confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first()
+    ).toBeVisible();
     await expect(confirmDialog.locator('button').filter({ hasText: 'キャンセル' })).toBeVisible();
   });
 
@@ -290,9 +296,12 @@ test.describe('History & Rollback (Feature 10)', () => {
     const beforeChange = Date.now();
 
     // Change status (todo -> in_progress)
-    const statusResponse = await request.patch(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`, {
-      data: { status: 'in_progress' },
-    });
+    const statusResponse = await request.patch(
+      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}/status`,
+      {
+        data: { status: 'in_progress' },
+      }
+    );
     expect(statusResponse.ok()).toBeTruthy();
 
     // Wait briefly for file operations to complete
@@ -357,9 +366,12 @@ test.describe('History & Rollback (Feature 10)', () => {
     await page.request.get(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
 
     // Update plan to create a version
-    const updateResponse = await page.request.put(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`, {
-      data: { content: UPDATED_CONTENT },
-    });
+    const updateResponse = await page.request.put(
+      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`,
+      {
+        data: { content: UPDATED_CONTENT },
+      }
+    );
     expect(updateResponse.ok()).toBeTruthy();
 
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
@@ -384,9 +396,14 @@ test.describe('History & Rollback (Feature 10)', () => {
     await expect(confirmDialog.getByText('このバージョンにロールバックしますか')).toBeVisible();
 
     // Click the rollback confirm button (inside the dialog, not the icon button)
-    const confirmButton = confirmDialog.locator('button').filter({ hasText: 'ロールバック' }).first();
+    const confirmButton = confirmDialog
+      .locator('button')
+      .filter({ hasText: 'ロールバック' })
+      .first();
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/rollback') && resp.request().method() === 'POST'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/rollback') && resp.request().method() === 'POST'
+      ),
       confirmButton.click(),
     ]);
 

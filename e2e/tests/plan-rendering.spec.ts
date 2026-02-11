@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 test.describe.configure({ mode: 'serial' });

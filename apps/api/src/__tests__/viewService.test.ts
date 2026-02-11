@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdir, rm, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { ViewService, getDefaultViews } from '../services/viewService.js';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { getDefaultViews, ViewService } from '../services/viewService.js';
 
 describe('ViewService', () => {
   let testDir: string;
@@ -201,9 +201,9 @@ describe('ViewService', () => {
     });
 
     it('should throw for non-existent view', async () => {
-      await expect(
-        service.updateView('non-existent-uuid', { name: 'X' })
-      ).rejects.toThrow('View not found');
+      await expect(service.updateView('non-existent-uuid', { name: 'X' })).rejects.toThrow(
+        'View not found'
+      );
     });
   });
 

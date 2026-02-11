@@ -1,15 +1,12 @@
-import { Link } from 'react-router-dom';
 import { GitBranch } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface DependencyBadgeProps {
   blockedByCount: number;
   blocksCount: number;
 }
 
-export function DependencyBadge({
-  blockedByCount,
-  blocksCount,
-}: DependencyBadgeProps) {
+export function DependencyBadge({ blockedByCount, blocksCount }: DependencyBadgeProps) {
   if (blockedByCount === 0 && blocksCount === 0) return null;
 
   const parts: string[] = [];

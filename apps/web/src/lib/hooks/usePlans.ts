@@ -1,6 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type {
+  ExportFormat,
+  ExternalApp,
+  PlanPriority,
+  PlanStatus,
+  SubtaskActionRequest,
+} from '@ccplans/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
-import type { ExternalApp, ExportFormat, PlanStatus, PlanPriority, SubtaskActionRequest } from '@ccplans/shared';
 
 export function usePlans() {
   return useQuery({
@@ -75,8 +81,7 @@ export function useUpdateStatus() {
 
 export function useExportPlan() {
   return {
-    getExportUrl: (filename: string, format: ExportFormat) =>
-      api.plans.exportUrl(filename, format),
+    getExportUrl: (filename: string, format: ExportFormat) => api.plans.exportUrl(filename, format),
   };
 }
 
@@ -109,8 +114,15 @@ export function useBulkUpdateTags() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filenames, action, tags }: { filenames: string[]; action: 'add' | 'remove'; tags: string[] }) =>
-      api.plans.bulkUpdateTags(filenames, action, tags),
+    mutationFn: ({
+      filenames,
+      action,
+      tags,
+    }: {
+      filenames: string[];
+      action: 'add' | 'remove';
+      tags: string[];
+    }) => api.plans.bulkUpdateTags(filenames, action, tags),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
@@ -145,8 +157,7 @@ export function useBulkArchive() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filenames }: { filenames: string[] }) =>
-      api.plans.bulkArchive(filenames),
+    mutationFn: ({ filenames }: { filenames: string[] }) => api.plans.bulkArchive(filenames),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },

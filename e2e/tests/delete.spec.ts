@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -97,7 +97,9 @@ test.describe('Delete functionality (from detail page)', () => {
 
     // Click the final "Permanently delete" button and wait for API response
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/api/plans/') && resp.request().method() === 'DELETE'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/api/plans/') && resp.request().method() === 'DELETE'
+      ),
       page.getByRole('button', { name: 'Permanently delete' }).click(),
     ]);
 
@@ -190,7 +192,10 @@ test.describe('Bulk delete functionality', () => {
 
     // Click and wait for the bulk delete API response (uses POST /plans/bulk-delete)
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/api/plans/bulk-delete') && resp.request().method() === 'POST'),
+      page.waitForResponse(
+        (resp) =>
+          resp.url().includes('/api/plans/bulk-delete') && resp.request().method() === 'POST'
+      ),
       bulkConfirmButton.click(),
     ]);
 

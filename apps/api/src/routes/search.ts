@@ -1,7 +1,7 @@
+import type { SearchQuery, SearchResponse } from '@ccplans/shared';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { searchService } from '../services/searchService.js';
-import type { SearchResponse, SearchQuery } from '@ccplans/shared';
 
 const searchQuerySchema = z.object({
   q: z.string().min(1),

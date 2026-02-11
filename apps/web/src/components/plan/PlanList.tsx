@@ -1,7 +1,7 @@
 import type { PlanMeta } from '@ccplans/shared';
-import { PlanCard } from './PlanCard';
-import { usePlanStore } from '@/stores/planStore';
 import { useMemo } from 'react';
+import { usePlanStore } from '@/stores/planStore';
+import { PlanCard } from './PlanCard';
 
 interface PlanListProps {
   plans: PlanMeta[];

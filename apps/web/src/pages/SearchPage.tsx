@@ -1,8 +1,8 @@
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { useSearch } from '@/lib/hooks/useSearch';
+import { AlertCircle, FileText, Loader2, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { SearchBar } from '@/components/search/SearchBar';
-import { Loader2, AlertCircle, Search, FileText } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useSearch } from '@/lib/hooks/useSearch';
 
 export function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -65,7 +65,9 @@ export function SearchPage() {
                     <p className="text-xs text-muted-foreground">{result.filename}</p>
                   </div>
                   {result.matches.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{result.matches.length} matches</span>
+                    <span className="text-xs text-muted-foreground">
+                      {result.matches.length} matches
+                    </span>
                   )}
                 </div>
               </Link>
@@ -107,7 +109,10 @@ function highlightMatch(text: string, query: string): string {
     .join(' ');
   if (!textPart) return text;
   const regex = new RegExp(`(${escapeRegExp(textPart)})`, 'gi');
-  return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded">$1</mark>');
+  return text.replace(
+    regex,
+    '<mark class="bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded">$1</mark>'
+  );
 }
 
 function escapeRegExp(string: string): string {

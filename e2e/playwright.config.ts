@@ -1,6 +1,6 @@
-import { defineConfig, devices } from '@playwright/test';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { defineConfig, devices } from '@playwright/test';
 import { getApiPort, getWebPort } from './lib/ports.js';
 
 // Use fixtures directory for tests
@@ -11,10 +11,11 @@ const apiPort = getApiPort();
 const webPort = getWebPort();
 
 export default defineConfig({
+  globalSetup: './global-setup.ts',
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 interface CommentFormProps {
   line: number | [number, number];
@@ -15,7 +15,13 @@ function formatLineBadge(line: number | [number, number]): string {
   return `L${line}`;
 }
 
-export function CommentForm({ line, quotedContent, initialBody = '', onSubmit, onCancel }: CommentFormProps) {
+export function CommentForm({
+  line,
+  quotedContent,
+  initialBody = '',
+  onSubmit,
+  onCancel,
+}: CommentFormProps) {
   const [body, setBody] = useState(initialBody);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -52,7 +58,9 @@ export function CommentForm({ line, quotedContent, initialBody = '', onSubmit, o
       {/* Quoted content preview */}
       {quotedContent && (
         <div className="border-b border-border bg-muted/30 px-3 py-2">
-          <pre className="whitespace-pre-wrap text-xs font-mono text-muted-foreground">{quotedContent}</pre>
+          <pre className="whitespace-pre-wrap text-xs font-mono text-muted-foreground">
+            {quotedContent}
+          </pre>
         </div>
       )}
       {/* Form body */}

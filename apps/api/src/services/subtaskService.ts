@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
-import type { Subtask, PlanFrontmatter } from '@ccplans/shared';
+import type { PlanFrontmatter, Subtask } from '@ccplans/shared';
 import { config } from '../config.js';
 
 // Re-use the parsing/serialization from planService via a shared approach
@@ -15,7 +15,10 @@ function parseFrontmatterRaw(content: string): { frontmatterStr: string; body: s
   return { frontmatterStr: match[1], body: match[2] };
 }
 
-function parseSubtasksFromYaml(lines: string[], startIndex: number): { subtasks: Subtask[]; consumed: number } {
+function parseSubtasksFromYaml(
+  lines: string[],
+  startIndex: number
+): { subtasks: Subtask[]; consumed: number } {
   const subtasks: Subtask[] = [];
   let consumed = 0;
   let current: Partial<Subtask> | null = null;
@@ -26,7 +29,7 @@ function parseSubtasksFromYaml(lines: string[], startIndex: number): { subtasks:
     const propMatch = line.match(/^\s{4,}(\w+):\s*(.*)$/);
 
     if (itemMatch) {
-      if (current && current.id && current.title) {
+      if (current?.id && current.title) {
         subtasks.push({ status: 'todo', ...current } as Subtask);
       }
       current = {};
@@ -52,17 +55,24 @@ function parseSubtasksFromYaml(lines: string[], startIndex: number): { subtasks:
     }
   }
 
-  if (current && current.id && current.title) {
+  if (current?.id && current.title) {
     subtasks.push({ status: 'todo', ...current } as Subtask);
   }
 
   return { subtasks, consumed };
 }
 
-function parseYamlArray(value: string, lines: string[], startIndex: number): { items: string[]; consumed: number } {
+function parseYamlArray(
+  value: string,
+  lines: string[],
+  startIndex: number
+): { items: string[]; consumed: number } {
   if (value.startsWith('[') && value.endsWith(']')) {
     const inner = value.slice(1, -1);
-    const items = inner.split(',').map((s) => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    const items = inner
+      .split(',')
+      .map((s) => s.trim().replace(/^["']|["']$/g, ''))
+      .filter(Boolean);
     return { items, consumed: 0 };
   }
   const items: string[] = [];
@@ -91,19 +101,33 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
   while (i < lines.length) {
     const line = lines[i];
     const colonIndex = line.indexOf(':');
-    if (colonIndex === -1 || line.match(/^\s/)) { i++; continue; }
+    if (colonIndex === -1 || line.match(/^\s/)) {
+      i++;
+      continue;
+    }
 
     const key = line.slice(0, colonIndex).trim();
     let value = line.slice(colonIndex + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
 
     switch (key) {
-      case 'created': frontmatter.created = value; break;
-      case 'modified': frontmatter.modified = value; break;
-      case 'project_path': frontmatter.projectPath = value; break;
-      case 'session_id': frontmatter.sessionId = value; break;
+      case 'created':
+        frontmatter.created = value;
+        break;
+      case 'modified':
+        frontmatter.modified = value;
+        break;
+      case 'project_path':
+        frontmatter.projectPath = value;
+        break;
+      case 'session_id':
+        frontmatter.sessionId = value;
+        break;
       case 'status':
         if (['todo', 'in_progress', 'review', 'completed'].includes(value)) {
           frontmatter.status = value as PlanFrontmatter['status'];
@@ -114,22 +138,30 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
           frontmatter.priority = value as PlanFrontmatter['priority'];
         }
         break;
-      case 'dueDate': frontmatter.dueDate = value; break;
+      case 'dueDate':
+        frontmatter.dueDate = value;
+        break;
       case 'tags': {
         const tagResult = parseYamlArray(value, lines, i);
         frontmatter.tags = tagResult.items;
         i += tagResult.consumed;
         break;
       }
-      case 'estimate': frontmatter.estimate = value; break;
+      case 'estimate':
+        frontmatter.estimate = value;
+        break;
       case 'blockedBy': {
         const blockedResult = parseYamlArray(value, lines, i);
         frontmatter.blockedBy = blockedResult.items;
         i += blockedResult.consumed;
         break;
       }
-      case 'assignee': frontmatter.assignee = value; break;
-      case 'archivedAt': frontmatter.archivedAt = value; break;
+      case 'assignee':
+        frontmatter.assignee = value;
+        break;
+      case 'archivedAt':
+        frontmatter.archivedAt = value;
+        break;
       case 'subtasks': {
         const subtaskResult = parseSubtasksFromYaml(lines, i);
         if (subtaskResult.subtasks.length > 0) {
@@ -150,20 +182,25 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
 
 function serializeYamlArray(items: string[]): string {
   if (items.length === 0) return '[]';
-  return '\n' + items.map((item) => `  - "${item}"`).join('\n');
+  return `\n${items.map((item) => `  - "${item}"`).join('\n')}`;
 }
 
 function serializeSubtasks(subtasks: Subtask[]): string {
   if (subtasks.length === 0) return '[]';
-  return '\n' + subtasks.map((st) => {
-    const props: string[] = [];
-    props.push(`  - id: "${st.id}"`);
-    props.push(`    title: "${st.title}"`);
-    props.push(`    status: ${st.status}`);
-    if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
-    if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
-    return props.join('\n');
-  }).join('\n');
+  return (
+    '\n' +
+    subtasks
+      .map((st) => {
+        const props: string[] = [];
+        props.push(`  - id: "${st.id}"`);
+        props.push(`    title: "${st.title}"`);
+        props.push(`    status: ${st.status}`);
+        if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
+        if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
+        return props.join('\n');
+      })
+      .join('\n')
+  );
 }
 
 function serializeFrontmatter(fm: PlanFrontmatter): string {
@@ -177,10 +214,12 @@ function serializeFrontmatter(fm: PlanFrontmatter): string {
   if (fm.dueDate) lines.push(`dueDate: "${fm.dueDate}"`);
   if (fm.tags && fm.tags.length > 0) lines.push(`tags:${serializeYamlArray(fm.tags)}`);
   if (fm.estimate) lines.push(`estimate: "${fm.estimate}"`);
-  if (fm.blockedBy && fm.blockedBy.length > 0) lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
+  if (fm.blockedBy && fm.blockedBy.length > 0)
+    lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
   if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
   if (fm.archivedAt) lines.push(`archivedAt: "${fm.archivedAt}"`);
-  if (fm.subtasks && fm.subtasks.length > 0) lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
+  if (fm.subtasks && fm.subtasks.length > 0)
+    lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
   if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);
   return lines.join('\n');
 }
@@ -192,7 +231,10 @@ function validateFilename(filename: string): void {
   }
 }
 
-async function readPlanFile(filename: string, plansDir: string): Promise<{ frontmatter: PlanFrontmatter; body: string; filePath: string }> {
+async function readPlanFile(
+  filename: string,
+  plansDir: string
+): Promise<{ frontmatter: PlanFrontmatter; body: string; filePath: string }> {
   validateFilename(filename);
   const filePath = join(plansDir, filename);
   const content = await readFile(filePath, 'utf-8');
@@ -200,12 +242,20 @@ async function readPlanFile(filename: string, plansDir: string): Promise<{ front
   return { frontmatter, body, filePath };
 }
 
-async function writePlanFile(filePath: string, frontmatter: PlanFrontmatter, body: string): Promise<void> {
+async function writePlanFile(
+  filePath: string,
+  frontmatter: PlanFrontmatter,
+  body: string
+): Promise<void> {
   const newContent = `---\n${serializeFrontmatter(frontmatter)}\n---\n${body}`;
   await writeFile(filePath, newContent, 'utf-8');
 }
 
-export function getSubtaskProgress(subtasks: Subtask[]): { done: number; total: number; percentage: number } {
+export function getSubtaskProgress(subtasks: Subtask[]): {
+  done: number;
+  total: number;
+  percentage: number;
+} {
   const total = subtasks.length;
   if (total === 0) return { done: 0, total: 0, percentage: 0 };
   const done = subtasks.filter((s) => s.status === 'done').length;

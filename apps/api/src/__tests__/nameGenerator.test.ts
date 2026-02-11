@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { generatePlanName } from '../services/nameGenerator.js';
 
 describe('generatePlanName', () => {

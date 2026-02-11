@@ -1,0 +1,162 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "en-US"
+early_access: false
+enable_free_tier: true
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+
+  # Summaries
+  high_level_summary: true
+  high_level_summary_in_walkthrough: false
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  poem: false
+
+  # Status
+  review_status: true
+  commit_status: true
+  fail_commit_status: false
+  abort_on_close: true
+
+  # Related
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+
+  # Labels
+  suggested_labels: true
+  auto_apply_labels: false
+  labeling_instructions:
+    - label: "api"
+      instructions: "Apply when changes are primarily in apps/api/"
+    - label: "web"
+      instructions: "Apply when changes are primarily in apps/web/"
+    - label: "shared"
+      instructions: "Apply when changes affect packages/shared/"
+    - label: "e2e"
+      instructions: "Apply when changes affect e2e/ tests"
+    - label: "breaking-change"
+      instructions: "Apply when shared type definitions are modified in a backward-incompatible way"
+
+  # Reviewers
+  suggested_reviewers: false
+
+  # Path filters - exclude generated/non-reviewable files
+  path_filters:
+    - "!dist/**"
+    - "!**/node_modules/**"
+    - "!pnpm-lock.yaml"
+    - "!**/*.map"
+    - "!**/coverage/**"
+    - "!**/playwright-report/**"
+    - "!**/test-results/**"
+
+  # Path-specific review instructions
+  path_instructions:
+    - path: "apps/api/**/*.ts"
+      instructions: |
+        Fastify REST API backend. Review for:
+        - Proper error handling with meaningful HTTP status codes
+        - Input validation using Zod schemas
+        - Path traversal prevention in file operations (~/.claude/plans/)
+        - Consistent async/await patterns
+        - No console.log (use Fastify logger instead)
+
+    - path: "apps/web/**/*.tsx"
+      instructions: |
+        React SPA (Vite + Tailwind CSS). Review for:
+        - React hooks correctness (dependency arrays, cleanup functions)
+        - Immutable state updates (Zustand stores, React state)
+        - TanStack Query usage (query keys, error/loading states)
+        - Accessibility (ARIA attributes, keyboard navigation)
+        - No unnecessary re-renders
+
+    - path: "apps/web/**/*.ts"
+      instructions: |
+        TypeScript utility code for React frontend. Review for:
+        - Strict typing (avoid 'any')
+        - Zustand stores must use immutable update patterns
+        - TanStack Query hooks should have proper query keys and error handling
+
+    - path: "packages/shared/**/*.ts"
+      instructions: |
+        Shared type definitions package (@ccplans/shared).
+        This package contains ONLY type definitions, no runtime code.
+        Review for:
+        - Backward compatibility of type changes
+        - Proper use of discriminated unions
+        - No runtime code (types and interfaces only)
+
+    - path: "e2e/**/*.ts"
+      instructions: |
+        Playwright E2E tests. Review for:
+        - Prefer data-testid selectors over CSS classes
+        - Avoid hardcoded timeouts (use Playwright auto-waiting)
+        - Test isolation (no shared state between tests)
+        - Proper assertions with meaningful error messages
+
+  # Auto review settings
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+      - "DRAFT"
+    drafts: false
+    base_branches:
+      - "main"
+
+  # Finishing touches
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+
+  # Tools - enable only relevant ones for this project
+  tools:
+    # TypeScript/JavaScript
+    eslint:
+      enabled: false  # Not used in this project (lint = tsc --noEmit)
+    biome:
+      enabled: true
+
+    # Markdown
+    markdownlint:
+      enabled: true
+
+    # YAML
+    yamllint:
+      enabled: true
+
+    # Security
+    gitleaks:
+      enabled: true
+
+    # GitHub Actions
+    actionlint:
+      enabled: true
+
+    # Language/Writing
+    languagetool:
+      enabled: true
+      level: "default"
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: "auto"
+  issues:
+    scope: "auto"
+  pull_requests:
+    scope: "auto"

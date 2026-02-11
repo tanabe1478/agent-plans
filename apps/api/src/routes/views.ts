@@ -1,7 +1,12 @@
+import type {
+  CreateViewRequest,
+  SavedView,
+  UpdateViewRequest,
+  ViewsListResponse,
+} from '@ccplans/shared';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { viewService } from '../services/viewService.js';
-import type { ViewsListResponse, CreateViewRequest, UpdateViewRequest, SavedView } from '@ccplans/shared';
 
 const createViewSchema = z.object({
   name: z.string().min(1).max(100),
@@ -52,7 +57,9 @@ export const viewsRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(201).send(view);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Invalid request', details: err.errors } as unknown as SavedView);
+        return reply
+          .status(400)
+          .send({ error: 'Invalid request', details: err.errors } as unknown as SavedView);
       }
       throw err;
     }
@@ -71,14 +78,16 @@ export const viewsRoutes: FastifyPluginAsync = async (fastify) => {
         return view;
       } catch (err) {
         if (err instanceof z.ZodError) {
-          return reply.status(400).send({ error: 'Invalid request', details: err.errors } as unknown as SavedView);
+          return reply
+            .status(400)
+            .send({ error: 'Invalid request', details: err.errors } as unknown as SavedView);
         }
         if (err instanceof Error && err.message.startsWith('View not found')) {
           return reply.status(404).send({ error: 'View not found' } as unknown as SavedView);
         }
         throw err;
       }
-    },
+    }
   );
 
   // DELETE /api/views/:id - Delete a view

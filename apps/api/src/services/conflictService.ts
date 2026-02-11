@@ -11,17 +11,13 @@ interface FileState {
 
 const fileStateCache = new Map<string, FileState>();
 
-export function recordFileState(
-  filename: string,
-  mtime: number,
-  size: number,
-): void {
+export function recordFileState(filename: string, mtime: number, size: number): void {
   fileStateCache.set(filename, { filename, mtime, size });
 }
 
 export async function checkConflict(
   filename: string,
-  plansDir: string = config.plansDir,
+  plansDir: string = config.plansDir
 ): Promise<ConflictInfo> {
   const cached = fileStateCache.get(filename);
   if (!cached) {

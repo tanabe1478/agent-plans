@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdir, rm, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { log, getAuditLog } from '../services/auditService.js';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { getAuditLog, log } from '../services/auditService.js';
 
 describe('auditService', () => {
   let testDir: string;
@@ -18,10 +18,7 @@ describe('auditService', () => {
 
   describe('log', () => {
     it('should write an audit entry to the audit file', async () => {
-      await log(
-        { action: 'create', filename: 'test.md', details: {} },
-        testDir,
-      );
+      await log({ action: 'create', filename: 'test.md', details: {} }, testDir);
 
       const content = await readFile(join(testDir, '.audit.jsonl'), 'utf-8');
       const entry = JSON.parse(content.trim());
@@ -31,14 +28,8 @@ describe('auditService', () => {
     });
 
     it('should append entries (not overwrite)', async () => {
-      await log(
-        { action: 'create', filename: 'a.md', details: {} },
-        testDir,
-      );
-      await log(
-        { action: 'update', filename: 'b.md', details: { contentLength: 500 } },
-        testDir,
-      );
+      await log({ action: 'create', filename: 'a.md', details: {} }, testDir);
+      await log({ action: 'update', filename: 'b.md', details: { contentLength: 500 } }, testDir);
 
       const content = await readFile(join(testDir, '.audit.jsonl'), 'utf-8');
       const lines = content.trim().split('\n');
@@ -52,10 +43,7 @@ describe('auditService', () => {
     });
 
     it('should include timestamp in ISO format', async () => {
-      await log(
-        { action: 'delete', filename: 'gone.md', details: { permanent: true } },
-        testDir,
-      );
+      await log({ action: 'delete', filename: 'gone.md', details: { permanent: true } }, testDir);
 
       const content = await readFile(join(testDir, '.audit.jsonl'), 'utf-8');
       const entry = JSON.parse(content.trim());
@@ -70,7 +58,7 @@ describe('auditService', () => {
           filename: 'status.md',
           details: { from: 'todo', to: 'in_progress' },
         },
-        testDir,
+        testDir
       );
 
       const content = await readFile(join(testDir, '.audit.jsonl'), 'utf-8');
@@ -133,10 +121,7 @@ describe('auditService', () => {
       await log({ action: 'update', filename: 'a.md', details: {} }, testDir);
       await log({ action: 'create', filename: 'b.md', details: {} }, testDir);
 
-      const entries = await getAuditLog(
-        { filename: 'a.md', action: 'create' },
-        testDir,
-      );
+      const entries = await getAuditLog({ filename: 'a.md', action: 'create' }, testDir);
       expect(entries).toHaveLength(1);
       expect(entries[0].filename).toBe('a.md');
       expect(entries[0].action).toBe('create');

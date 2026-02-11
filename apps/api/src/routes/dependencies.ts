@@ -1,9 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import {
-  buildDependencyGraph,
-  getPlanDependencies,
-} from '../services/dependencyService.js';
+import { buildDependencyGraph, getPlanDependencies } from '../services/dependencyService.js';
 import { isFrontmatterEnabled } from '../services/settingsService.js';
 
 const filenameSchema = z.string().regex(/^[a-zA-Z0-9_-]+\.md$/);

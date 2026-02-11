@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 
@@ -57,9 +57,7 @@ export function DeleteConfirmDialog({
 
         {!showPermanentConfirm ? (
           <>
-            <p className="text-sm text-muted-foreground">
-              Choose how to delete this plan:
-            </p>
+            <p className="text-sm text-muted-foreground">Choose how to delete this plan:</p>
             <div className="flex flex-col gap-2">
               <Button
                 variant="outline"

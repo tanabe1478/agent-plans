@@ -1,41 +1,38 @@
 import type {
-  PlansListResponse,
+  ArchiveListResponse,
+  BackupInfo,
+  BackupsListResponse,
+  BulkExportFormat,
+  BulkOperationResponse,
+  CreateViewRequest,
+  DependencyGraphResponse,
+  DiffResult,
+  ExportFormat,
+  ExternalApp,
+  GetSettingsResponse,
+  HistoryListResponse,
+  ImportResult,
+  NotificationsListResponse,
+  PlanDependenciesResponse,
   PlanDetailResponse,
   PlanMeta,
-  PlanStatus,
   PlanPriority,
+  PlanStatus,
+  PlansListResponse,
+  SavedView,
   SearchResponse,
-  SuccessResponse,
-  ExternalApp,
-  ExportFormat,
-  BulkExportFormat,
-  ImportResult,
-  BackupInfo,
   SubtaskActionRequest,
   SubtaskActionResponse,
-  BulkOperationResponse,
-  ViewsListResponse,
-  SavedView,
-  CreateViewRequest,
-  UpdateViewRequest,
-  NotificationsListResponse,
-  HistoryListResponse,
-  DiffResult,
-  ArchiveListResponse,
-  DependencyGraphResponse,
-  PlanDependenciesResponse,
-  BackupsListResponse,
-  GetSettingsResponse,
+  SuccessResponse,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
+  UpdateViewRequest,
+  ViewsListResponse,
 } from '@ccplans/shared';
 
 const API_BASE = '/api';
 
-async function fetchApi<T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> {
+async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   // Only set Content-Type for requests with a body
   const headers: HeadersInit = options?.body
     ? { 'Content-Type': 'application/json', ...options?.headers }
@@ -59,7 +56,8 @@ export const api = {
   plans: {
     list: () => fetchApi<PlansListResponse>('/plans'),
 
-    get: (filename: string) => fetchApi<PlanDetailResponse>(`/plans/${encodeURIComponent(filename)}`),
+    get: (filename: string) =>
+      fetchApi<PlanDetailResponse>(`/plans/${encodeURIComponent(filename)}`),
 
     create: (content: string, filename?: string) =>
       fetchApi<PlanDetailResponse>('/plans', {
@@ -192,9 +190,7 @@ export const api = {
     diff: (filename: string, from: string, to?: string) => {
       const params = new URLSearchParams({ from });
       if (to) params.set('to', to);
-      return fetchApi<DiffResult>(
-        `/plans/${encodeURIComponent(filename)}/diff?${params}`
-      );
+      return fetchApi<DiffResult>(`/plans/${encodeURIComponent(filename)}/diff?${params}`);
     },
   },
 
@@ -228,7 +224,10 @@ export const api = {
 
   // Import/Export
   importExport: {
-    exportUrl: (format: BulkExportFormat, options?: { includeArchived?: boolean; filterStatus?: PlanStatus; filterTags?: string[] }) => {
+    exportUrl: (
+      format: BulkExportFormat,
+      options?: { includeArchived?: boolean; filterStatus?: PlanStatus; filterTags?: string[] }
+    ) => {
       const params = new URLSearchParams({ format });
       if (options?.includeArchived) params.set('includeArchived', 'true');
       if (options?.filterStatus) params.set('filterStatus', options.filterStatus);

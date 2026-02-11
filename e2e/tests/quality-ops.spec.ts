@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -223,9 +223,7 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     expect(data.entries).toBeDefined();
 
     // Find a status_change entry
-    const statusEntry = data.entries.find(
-      (e: any) => e.action === 'status_change'
-    );
+    const statusEntry = data.entries.find((e: any) => e.action === 'status_change');
     expect(statusEntry).toBeDefined();
     expect(statusEntry.filename).toBe(TEST_PLAN_FILENAME);
     expect(statusEntry.details).toBeDefined();
@@ -343,7 +341,9 @@ Bulk audit test.
       const data = await auditResponse.json();
       // Should have audit entries for the bulk operation
       const bulkEntries = data.entries.filter(
-        (e: any) => bulkFiles.includes(e.filename) && (e.action === 'status_change' || e.action === 'bulk_operation' || e.action === 'update')
+        (e: any) =>
+          bulkFiles.includes(e.filename) &&
+          (e.action === 'status_change' || e.action === 'bulk_operation' || e.action === 'update')
       );
       expect(bulkEntries.length).toBeGreaterThan(0);
     } finally {

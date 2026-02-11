@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -191,7 +191,9 @@ test.describe('Archive functionality (Feature 11)', () => {
     await confirmButton.click();
 
     // Wait for the plan card to disappear from archive list
-    const planCardAfterDelete = page.locator('.rounded-lg.border').filter({ hasText: TEST_PLAN_FILENAME });
+    const planCardAfterDelete = page
+      .locator('.rounded-lg.border')
+      .filter({ hasText: TEST_PLAN_FILENAME });
     await expect(planCardAfterDelete).not.toBeVisible({ timeout: 5000 });
 
     // Verify plan is gone from archive via API
@@ -210,7 +212,9 @@ test.describe('Archive functionality (Feature 11)', () => {
     expect(typeof data.deleted).toBe('number');
   });
 
-  test('should include metadata in archive (archivedAt, expiresAt, title, preview)', async ({ request }) => {
+  test('should include metadata in archive (archivedAt, expiresAt, title, preview)', async ({
+    request,
+  }) => {
     // Archive the plan
     await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}?archive=true`);
 
@@ -230,9 +234,7 @@ test.describe('Archive functionality (Feature 11)', () => {
 
   test('default delete should archive (soft delete)', async ({ request }) => {
     // Delete without permanent flag (default behavior should archive)
-    const deleteResponse = await request.delete(
-      `${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`
-    );
+    const deleteResponse = await request.delete(`${API_BASE_URL}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(deleteResponse.ok()).toBeTruthy();
 
     // Verify plan is no longer in active list

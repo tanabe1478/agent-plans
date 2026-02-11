@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -58,9 +58,7 @@ test.describe('Dependencies functionality (Feature 13)', () => {
   });
 
   test('should retrieve dependencies for specific plan via API', async ({ request }) => {
-    const response = await request.get(
-      `${API_BASE_URL}/api/dependencies/green-dancing-cat.md`
-    );
+    const response = await request.get(`${API_BASE_URL}/api/dependencies/green-dancing-cat.md`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -175,9 +173,7 @@ Depends on Plan A.
 
   test('should show empty blockedBy/blocks for independent plan', async ({ request }) => {
     // red-sleeping-bear has no blockedBy in its frontmatter
-    const response = await request.get(
-      `${API_BASE_URL}/api/dependencies/red-sleeping-bear.md`
-    );
+    const response = await request.get(`${API_BASE_URL}/api/dependencies/red-sleeping-bear.md`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -253,7 +249,9 @@ Now depends on blue-running-fox.
     await page.goto('/plan/green-dancing-cat.md');
 
     // Wait for the page to load
-    await expect(page.getByRole('heading', { name: 'Mobile App Performance Optimization' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Mobile App Performance Optimization' }).first()
+    ).toBeVisible();
 
     // Check for dependency-related info on the page
     // The plan detail should show that it is blocked by blue-running-fox

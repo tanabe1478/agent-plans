@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { API_BASE_URL } from '../lib/test-helpers';
 
 // Run tests serially to avoid state conflicts
@@ -18,13 +18,17 @@ test.describe('Status Transitions (Feature 3)', () => {
   test.afterEach(async ({ request }) => {
     // Restore original status
     if (originalStatus) {
-      await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
-        data: { status: originalStatus },
-      }).catch(() => {});
+      await request
+        .patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
+          data: { status: originalStatus },
+        })
+        .catch(() => {});
     }
   });
 
-  test('should show only valid transitions in status dropdown for todo status', async ({ page }) => {
+  test('should show only valid transitions in status dropdown for todo status', async ({
+    page,
+  }) => {
     // Ensure fixture is in todo status
     await page.request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
@@ -34,7 +38,9 @@ test.describe('Status Transitions (Feature 3)', () => {
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find the plan card for the fixture (uses border-2 class)
-    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: FIXTURE_FILE });
+    const planCard = page
+      .locator('[class*="rounded-lg"][class*="border"]')
+      .filter({ hasText: FIXTURE_FILE });
     await expect(planCard).toBeVisible();
 
     // Click status badge to open dropdown
@@ -65,7 +71,9 @@ test.describe('Status Transitions (Feature 3)', () => {
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find the plan with in_progress status
-    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: FIXTURE_FILE });
+    const planCard = page
+      .locator('[class*="rounded-lg"][class*="border"]')
+      .filter({ hasText: FIXTURE_FILE });
     await expect(planCard).toBeVisible();
 
     // Click status badge
@@ -85,7 +93,10 @@ test.describe('Status Transitions (Feature 3)', () => {
     await expect(dropdown.getByText('Completed')).not.toBeVisible();
   });
 
-  test('should successfully transition status from todo to in_progress', async ({ page, request }) => {
+  test('should successfully transition status from todo to in_progress', async ({
+    page,
+    request,
+  }) => {
     // Set fixture to todo
     await request.patch(`${API_BASE_URL}/api/plans/${FIXTURE_FILE}/status`, {
       data: { status: 'todo' },
@@ -95,7 +106,9 @@ test.describe('Status Transitions (Feature 3)', () => {
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find and click status badge
-    const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: FIXTURE_FILE });
+    const planCard = page
+      .locator('[class*="rounded-lg"][class*="border"]')
+      .filter({ hasText: FIXTURE_FILE });
     const statusBadge = planCard.getByRole('button', { name: 'ToDo' });
     await statusBadge.click();
 
@@ -106,7 +119,9 @@ test.describe('Status Transitions (Feature 3)', () => {
 
     // Click and wait for the PATCH response
     await Promise.all([
-      page.waitForResponse((resp) => resp.url().includes('/status') && resp.request().method() === 'PATCH'),
+      page.waitForResponse(
+        (resp) => resp.url().includes('/status') && resp.request().method() === 'PATCH'
+      ),
       inProgressOption.click(),
     ]);
 
@@ -155,7 +170,9 @@ Content.
       await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
       // Find the plan and check badge
-      const planCard = page.locator('[class*="rounded-lg"][class*="border"]').filter({ hasText: testFilename });
+      const planCard = page
+        .locator('[class*="rounded-lg"][class*="border"]')
+        .filter({ hasText: testFilename });
       await expect(planCard).toBeVisible();
 
       // Review badge should be visible with purple color
