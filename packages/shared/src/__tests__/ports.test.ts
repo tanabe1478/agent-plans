@@ -10,6 +10,7 @@ import {
   getApiPort,
   getWebPort,
   isWorktree,
+  parseEnvPort,
 } from '../ports.js';
 
 describe('derivePort', () => {
@@ -100,6 +101,36 @@ describe('findMonorepoRoot', () => {
   });
 });
 
+describe('parseEnvPort', () => {
+  it('returns number for valid port string', () => {
+    expect(parseEnvPort('3000')).toBe(3000);
+    expect(parseEnvPort('1')).toBe(1);
+    expect(parseEnvPort('65535')).toBe(65535);
+  });
+
+  it('returns undefined for empty or missing values', () => {
+    expect(parseEnvPort(undefined)).toBeUndefined();
+    expect(parseEnvPort('')).toBeUndefined();
+  });
+
+  it('returns undefined for non-numeric strings', () => {
+    expect(parseEnvPort('abc')).toBeUndefined();
+    expect(parseEnvPort('NaN')).toBeUndefined();
+    expect(parseEnvPort('not-a-port')).toBeUndefined();
+  });
+
+  it('returns undefined for out-of-range values', () => {
+    expect(parseEnvPort('0')).toBeUndefined();
+    expect(parseEnvPort('-1')).toBeUndefined();
+    expect(parseEnvPort('65536')).toBeUndefined();
+    expect(parseEnvPort('99999')).toBeUndefined();
+  });
+
+  it('returns undefined for Infinity', () => {
+    expect(parseEnvPort('Infinity')).toBeUndefined();
+  });
+});
+
 describe('getApiPort / getWebPort', () => {
   const originalEnv = { ...process.env };
   let worktreeDir: string;
@@ -167,5 +198,17 @@ describe('getApiPort / getWebPort', () => {
   it('is deterministic across calls', () => {
     expect(getApiPort(worktreeDir)).toBe(getApiPort(worktreeDir));
     expect(getWebPort(worktreeDir)).toBe(getWebPort(worktreeDir));
+  });
+
+  it('ignores invalid PORT env and falls back to derived port', () => {
+    process.env.PORT = 'not-a-number';
+    const port = getApiPort(worktreeDir);
+    expect(port).toBeGreaterThanOrEqual(10000);
+  });
+
+  it('ignores invalid WEB_PORT env and falls back to derived port', () => {
+    process.env.WEB_PORT = 'abc';
+    const port = getWebPort(worktreeDir);
+    expect(port).toBeGreaterThanOrEqual(10000);
   });
 });

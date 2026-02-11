@@ -49,16 +49,26 @@ function findMonorepoRoot(startDir: string): string {
   }
 }
 
+function parseEnvPort(value?: string): number | undefined {
+  if (!value) return undefined;
+  const num = Number.parseInt(value, 10);
+  if (!Number.isFinite(num) || num <= 0 || num > 65535) return undefined;
+  return num;
+}
+
 function getApiPort(): number {
-  if (process.env.PORT) return parseInt(process.env.PORT, 10);
-  if (process.env.API_PORT) return parseInt(process.env.API_PORT, 10);
+  const envPort = parseEnvPort(process.env.PORT);
+  if (envPort !== undefined) return envPort;
+  const apiPort = parseEnvPort(process.env.API_PORT);
+  if (apiPort !== undefined) return apiPort;
   const root = findMonorepoRoot(process.cwd());
   if (isWorktree(root)) return derivePort(root, 0);
   return DEFAULT_API_PORT;
 }
 
 function getWebPort(): number {
-  if (process.env.WEB_PORT) return parseInt(process.env.WEB_PORT, 10);
+  const webPort = parseEnvPort(process.env.WEB_PORT);
+  if (webPort !== undefined) return webPort;
   const root = findMonorepoRoot(process.cwd());
   if (isWorktree(root)) return derivePort(root, 1);
   return DEFAULT_WEB_PORT;

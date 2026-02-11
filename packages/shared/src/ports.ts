@@ -52,11 +52,24 @@ export function findMonorepoRoot(startDir: string): string {
 }
 
 /**
+ * Parse and validate a port from an environment variable string.
+ * Returns the port number if valid (1-65535), otherwise undefined.
+ */
+export function parseEnvPort(value?: string): number | undefined {
+  if (!value) return undefined;
+  const num = Number.parseInt(value, 10);
+  if (!Number.isFinite(num) || num <= 0 || num > 65535) return undefined;
+  return num;
+}
+
+/**
  * Get API port. Priority: PORT env > API_PORT env > worktree-derived > 3001.
  */
 export function getApiPort(rootDir?: string): number {
-  if (process.env.PORT) return parseInt(process.env.PORT, 10);
-  if (process.env.API_PORT) return parseInt(process.env.API_PORT, 10);
+  const envPort = parseEnvPort(process.env.PORT);
+  if (envPort !== undefined) return envPort;
+  const apiPort = parseEnvPort(process.env.API_PORT);
+  if (apiPort !== undefined) return apiPort;
   const root = rootDir ?? findMonorepoRoot(process.cwd());
   if (isWorktree(root)) return derivePort(root, 0);
   return DEFAULT_API_PORT;
@@ -66,7 +79,8 @@ export function getApiPort(rootDir?: string): number {
  * Get Web port. Priority: WEB_PORT env > worktree-derived > 5173.
  */
 export function getWebPort(rootDir?: string): number {
-  if (process.env.WEB_PORT) return parseInt(process.env.WEB_PORT, 10);
+  const webPort = parseEnvPort(process.env.WEB_PORT);
+  if (webPort !== undefined) return webPort;
   const root = rootDir ?? findMonorepoRoot(process.cwd());
   if (isWorktree(root)) return derivePort(root, 1);
   return DEFAULT_WEB_PORT;
