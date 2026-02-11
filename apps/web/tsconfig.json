@@ -6,7 +6,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@ccplans/shared": ["../../packages/shared/src/index.ts"]
+      "@ccplans/shared": ["../../packages/shared/src/index.ts"],
+      "@ccplans/shared/ports": ["../../packages/shared/src/ports.ts"]
     },
     "noEmit": true
   },

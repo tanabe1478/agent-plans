@@ -9,6 +9,7 @@
     "test:headed": "playwright test --headed"
   },
   "devDependencies": {
+    "@ccplans/shared": "workspace:*",
     "@playwright/test": "^1.42.0"
   }
 }
