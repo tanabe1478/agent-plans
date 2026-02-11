@@ -127,14 +127,6 @@ test.describe('Settings - Frontmatter opt-out', () => {
     await expect(page).toHaveURL('/');
   });
 
-  test('calendar redirects to home when frontmatter disabled', async ({ page, request }) => {
-    await request.put(`${API_BASE_URL}/api/settings`, {
-      data: { frontmatterEnabled: false },
-    });
-    await page.goto('/calendar');
-    await expect(page).toHaveURL('/');
-  });
-
   test('dependencies redirects to home when frontmatter disabled', async ({ page, request }) => {
     await request.put(`${API_BASE_URL}/api/settings`, {
       data: { frontmatterEnabled: false },

@@ -9,7 +9,6 @@ import {
   rollback as rollbackVersion,
   computeDiff,
 } from '../services/historyService.js';
-import { createPlanFromTemplate } from '../services/templateService.js';
 import {
   addSubtask,
   updateSubtask,
@@ -159,31 +158,6 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
     } catch (err) {
       if (err instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Invalid request', details: err.errors });
-      }
-      throw err;
-    }
-  });
-
-  // POST /api/plans/from-template - Create plan from template
-  fastify.post<{
-    Body: { templateName: string; title?: string; filename?: string };
-  }>('/from-template', async (request, reply) => {
-    const fromTemplateSchema = z.object({
-      templateName: z.string().min(1),
-      title: z.string().optional(),
-      filename: z.string().regex(/^[a-zA-Z0-9_-]+\.md$/).optional(),
-    });
-
-    try {
-      const { templateName, title, filename } = fromTemplateSchema.parse(request.body);
-      const plan = await createPlanFromTemplate(templateName, title, filename);
-      return reply.status(201).send(plan);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
-      }
-      if (err instanceof Error && err.message.includes('Template not found')) {
-        return reply.status(404).send({ error: err.message });
       }
       throw err;
     }

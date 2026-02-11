@@ -7,7 +7,6 @@ import { usePlanStore } from '@/stores/planStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useState, useMemo } from 'react';
 import type { PlanStatus } from '@ccplans/shared';
-import { TemplateSelectDialog } from '@/components/templates/TemplateSelectDialog';
 import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 import {
   Loader2,
@@ -16,7 +15,6 @@ import {
   CheckSquare,
   XSquare,
   ArrowUpDown,
-  Plus,
 } from 'lucide-react';
 
 export function HomePage() {
@@ -42,8 +40,6 @@ export function HomePage() {
   const fmEnabled = useFrontmatterEnabled();
   const [selectionMode, setSelectionMode] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-
   const plans = data?.plans || [];
 
   // Extract unique project paths for filter dropdown
@@ -97,10 +93,6 @@ export function HomePage() {
             {plans.length}件のプラン
           </p>
         </div>
-        <Button onClick={() => setShowTemplateDialog(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          New from Template
-        </Button>
       </div>
 
       {/* Toolbar */}
@@ -249,11 +241,6 @@ export function HomePage() {
         </div>
       </Dialog>
 
-      {/* Template select dialog */}
-      <TemplateSelectDialog
-        open={showTemplateDialog}
-        onClose={() => setShowTemplateDialog(false)}
-      />
     </div>
   );
 }

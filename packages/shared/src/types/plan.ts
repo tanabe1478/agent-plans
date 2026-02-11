@@ -350,27 +350,3 @@ export interface SavedView {
   isPreset?: boolean;
 }
 
-/**
- * Template category types
- */
-export type TemplateCategory = 'research' | 'implementation' | 'refactor' | 'incident' | 'custom';
-
-/**
- * A plan template
- */
-export interface PlanTemplate {
-  /** Filename without extension */
-  name: string;
-  /** Display name */
-  displayName: string;
-  /** Template description */
-  description: string;
-  /** Template category */
-  category: TemplateCategory;
-  /** Template body content */
-  content: string;
-  /** Default frontmatter values */
-  frontmatter: Partial<PlanFrontmatter>;
-  /** Whether this is a built-in preset */
-  isBuiltIn: boolean;
-}

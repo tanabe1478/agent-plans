@@ -4,9 +4,6 @@ import type {
   PlanMeta,
   PlanStatus,
   PlanPriority,
-  PlanTemplate,
-  TemplatesListResponse,
-  CreateTemplateRequest,
   SearchResponse,
   SuccessResponse,
   ExternalApp,
@@ -227,30 +224,6 @@ export const api = {
 
     forPlan: (filename: string) =>
       fetchApi<PlanDependenciesResponse>(`/dependencies/${encodeURIComponent(filename)}`),
-  },
-
-  // Templates
-  templates: {
-    list: () => fetchApi<TemplatesListResponse>('/templates'),
-
-    get: (name: string) => fetchApi<PlanTemplate>(`/templates/${encodeURIComponent(name)}`),
-
-    create: (data: CreateTemplateRequest) =>
-      fetchApi<PlanTemplate>('/templates', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-
-    delete: (name: string) =>
-      fetchApi<SuccessResponse>(`/templates/${encodeURIComponent(name)}`, {
-        method: 'DELETE',
-      }),
-
-    createFromTemplate: (templateName: string, title?: string, filename?: string) =>
-      fetchApi<PlanMeta>('/plans/from-template', {
-        method: 'POST',
-        body: JSON.stringify({ templateName, title, filename }),
-      }),
   },
 
   // Import/Export
