@@ -85,6 +85,7 @@ export const test = base.extend<{}, WorkerFixtures>({
         detached: true,
         env: {
           ...process.env,
+          TZ: 'UTC',
           PLANS_DIR: tempDir,
           PORT: String(apiPort),
           CORS_ORIGINS: `http://localhost:${webPort}`,
@@ -102,6 +103,7 @@ export const test = base.extend<{}, WorkerFixtures>({
         detached: true,
         env: {
           ...process.env,
+          TZ: 'UTC',
           WEB_PORT: String(webPort),
           API_PORT: String(apiPort),
         },

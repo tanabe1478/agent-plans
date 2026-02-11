@@ -1,3 +1,5 @@
+process.env.TZ = 'UTC';
+
 /// <reference types="vitest" />
 
 import { resolve } from 'node:path';

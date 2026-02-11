@@ -67,10 +67,6 @@ test.describe('Settings - Frontmatter opt-out', () => {
 
     const plansResponse = await request.get(`${apiBaseUrl}/api/plans`);
     const plansData = await plansResponse.json();
-    if (plansData.plans.length === 0) {
-      test.skip();
-      return;
-    }
     const filename = plansData.plans[0].filename;
 
     const response = await request.patch(`${apiBaseUrl}/api/plans/${filename}/status`, {

@@ -122,7 +122,7 @@ export interface SearchResult {
 /**
  * View mode options
  */
-export type ViewMode = 'list' | 'kanban' | 'calendar';
+export type ViewMode = 'list' | 'kanban';
 
 /**
  * Plans categorized by deadline proximity
