@@ -49,10 +49,7 @@ function parseFrontmatter(content: string): {
 
     switch (key) {
       case 'created':
-        frontmatter.created = value;
-        break;
       case 'modified':
-        frontmatter.modified = value;
         break;
       case 'project_path':
         frontmatter.projectPath = value;
@@ -135,7 +132,7 @@ export async function exportAsJson(options?: ExportFilterOptions): Promise<strin
 export async function exportAsCsv(options?: ExportFilterOptions): Promise<string> {
   const plans = await getPlans(options);
 
-  const header = 'filename,title,status,dueDate,estimate,created,modified';
+  const header = 'filename,title,status,dueDate,estimate';
   const rows = plans.map((p) => {
     const { frontmatter, content } = { frontmatter: p.frontmatter, content: p.content };
     const { body } = parseFrontmatter(content);
@@ -155,8 +152,6 @@ export async function exportAsCsv(options?: ExportFilterOptions): Promise<string
       escapeCsv(frontmatter?.status),
       escapeCsv(frontmatter?.dueDate),
       escapeCsv(frontmatter?.estimate),
-      escapeCsv(frontmatter?.created),
-      escapeCsv(frontmatter?.modified),
     ].join(',');
   });
 

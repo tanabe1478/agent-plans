@@ -135,10 +135,8 @@ function parseFrontmatter(content: string): {
 
     switch (key) {
       case 'created':
-        frontmatter.created = value;
-        break;
       case 'modified':
-        frontmatter.modified = value;
+        // Ignored: use file system timestamps (PlanMeta.createdAt / modifiedAt)
         break;
       case 'project_path':
         frontmatter.projectPath = value;
@@ -213,8 +211,6 @@ function serializeSubtasks(subtasks: Subtask[]): string {
  */
 function serializeFrontmatter(fm: PlanFrontmatter): string {
   const lines: string[] = [];
-  if (fm.created) lines.push(`created: "${fm.created}"`);
-  if (fm.modified) lines.push(`modified: "${fm.modified}"`);
   if (fm.projectPath) lines.push(`project_path: "${fm.projectPath}"`);
   if (fm.sessionId) lines.push(`session_id: "${fm.sessionId}"`);
   if (fm.status) lines.push(`status: ${fm.status}`);
@@ -478,7 +474,6 @@ export class PlanService {
     const newFrontmatter: PlanFrontmatter = {
       ...frontmatter,
       status,
-      modified: new Date().toISOString(),
     };
 
     const newContent = `---\n${serializeFrontmatter(newFrontmatter)}\n---\n${body}`;
@@ -509,7 +504,6 @@ export class PlanService {
     const newFrontmatter: PlanFrontmatter = {
       ...frontmatter,
       [field]: value,
-      modified: new Date().toISOString(),
     };
 
     const newContent = `---\n${serializeFrontmatter(newFrontmatter)}\n---\n${body}`;

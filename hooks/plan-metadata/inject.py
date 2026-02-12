@@ -3,18 +3,16 @@
 PostToolUse hook script for injecting YAML frontmatter into plan files.
 
 This script is triggered after Write or Edit tools modify files in ~/.claude/plans/.
-It injects/updates metadata including created, modified, project_path, session_id, and status.
+It injects/updates metadata including project_path, session_id, and status.
 
 Preservation rules:
-- created: preserved if exists, otherwise set to current time
 - status: preserved if exists, otherwise set to 'todo'
-- modified, project_path, session_id: always overwritten with current values
+- project_path, session_id: always overwritten with current values
 """
 
 import json
 import sys
 import re
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Tuple
 
@@ -53,8 +51,8 @@ def build_frontmatter(metadata: Dict[str, str]) -> str:
     """Build YAML frontmatter string from metadata dict."""
     lines = ['---']
 
-    # Order: created, modified, project_path, session_id, status
-    ordered_keys = ['created', 'modified', 'project_path', 'session_id', 'status']
+    # Order: project_path, session_id, status
+    ordered_keys = ['project_path', 'session_id', 'status']
 
     for key in ordered_keys:
         if key in metadata and metadata[key]:
@@ -87,12 +85,9 @@ def inject_metadata(file_path: Path, cwd: str, session_id: str) -> bool:
         return False
 
     existing_fm, body = parse_frontmatter(content)
-    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    # Build new metadata, preserving created and status
+    # Build new metadata, preserving status
     metadata = {
-        'created': existing_fm.get('created', now) if existing_fm else now,
-        'modified': now,
         'project_path': cwd,
         'session_id': session_id,
         'status': existing_fm.get('status', 'todo') if existing_fm else 'todo',

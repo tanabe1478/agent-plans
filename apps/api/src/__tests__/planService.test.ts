@@ -152,8 +152,6 @@ describe('PlanService', () => {
       await writeFile(
         join(testDir, 'with-frontmatter.md'),
         `---
-created: "2025-01-15T10:00:00Z"
-modified: "2025-01-16T12:00:00Z"
 project_path: /path/to/project
 session_id: abc123
 status: in_progress
@@ -170,8 +168,6 @@ Content here.`
       expect(plan.title).toBe('Plan With Frontmatter');
       expect(plan.sections).toContain('Section One');
       expect(plan.frontmatter).toBeDefined();
-      expect(plan.frontmatter?.created).toBe('2025-01-15T10:00:00Z');
-      expect(plan.frontmatter?.modified).toBe('2025-01-16T12:00:00Z');
       expect(plan.frontmatter?.projectPath).toBe('/path/to/project');
       expect(plan.frontmatter?.sessionId).toBe('abc123');
       expect(plan.frontmatter?.status).toBe('in_progress');
@@ -464,24 +460,6 @@ Content here.`
       const plan = await service.updateStatus('test-plan.md', 'in_progress');
 
       expect(plan.frontmatter?.status).toBe('in_progress');
-      expect(plan.frontmatter?.modified).toBeDefined();
-    });
-
-    it('should update modified timestamp', async () => {
-      await writeFile(
-        join(testDir, 'timestamp-plan.md'),
-        `---
-status: todo
-modified: "2020-01-01T00:00:00Z"
----
-# Timestamp Plan
-
-Content.`
-      );
-
-      const plan = await service.updateStatus('timestamp-plan.md', 'completed');
-
-      expect(plan.frontmatter?.modified).not.toBe('2020-01-01T00:00:00Z');
     });
   });
 });

@@ -98,8 +98,7 @@ export async function generateNotifications(): Promise<Notification[]> {
     // Blocked and stale check
     const blockedBy = plan.frontmatter?.blockedBy;
     if (blockedBy && blockedBy.length > 0 && status === 'in_progress') {
-      const modified = plan.frontmatter?.modified || plan.modifiedAt;
-      const modifiedDate = new Date(modified);
+      const modifiedDate = new Date(plan.modifiedAt);
       if (modifiedDate < threeDaysAgo) {
         const dateStr = modifiedDate.toISOString().split('T')[0];
         const id = generateId('blocked_stale', plan.filename, dateStr);

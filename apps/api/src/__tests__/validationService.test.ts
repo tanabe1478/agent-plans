@@ -87,10 +87,10 @@ describe('validateFrontmatter', () => {
       expect(result.corrected).toBeDefined();
     });
 
-    it('should detect invalid created date format', () => {
-      const result = validateFrontmatter({ created: 'invalid' });
-      expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.field === 'created')).toBe(true);
+    it('should ignore unknown fields like created/modified', () => {
+      const result = validateFrontmatter({ created: 'invalid', modified: 'invalid' });
+      // created/modified are no longer in the schema, so unknown fields are ignored
+      expect(result.valid).toBe(true);
     });
   });
 
@@ -181,13 +181,9 @@ describe('autoCorrectFrontmatter', () => {
 
   it('should preserve simple string fields', () => {
     const corrected = autoCorrectFrontmatter({
-      created: '2025-01-01T00:00:00Z',
-      modified: '2025-01-02T00:00:00Z',
       projectPath: '/proj',
       sessionId: 'sess-1',
     });
-    expect(corrected.created).toBe('2025-01-01T00:00:00Z');
-    expect(corrected.modified).toBe('2025-01-02T00:00:00Z');
     expect(corrected.projectPath).toBe('/proj');
     expect(corrected.sessionId).toBe('sess-1');
   });

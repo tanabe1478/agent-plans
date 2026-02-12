@@ -227,14 +227,15 @@ test.describe('Sort functionality', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    // Sort dropdown is the first Radix Select trigger, showing "Name" by default
-    const sortTrigger = page.locator('button[role="combobox"]').filter({ hasText: 'Name' });
+    // Sort dropdown is the first Radix Select trigger, showing "Date" by default
+    const sortTrigger = page.locator('button[role="combobox"]').filter({ hasText: 'Date' });
     await expect(sortTrigger).toBeVisible();
 
     // Open to verify options
     await sortTrigger.click();
     await expect(page.getByRole('option', { name: 'Name' })).toBeVisible();
     await expect(page.getByRole('option', { name: 'Size' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Date' })).toBeVisible();
     await page.keyboard.press('Escape');
   });
 
@@ -242,7 +243,7 @@ test.describe('Sort functionality', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const sortOrderButton = page.getByRole('button', { name: /ascending|descending/i });
+    const sortOrderButton = page.getByRole('button', { name: /Ascending|Descending/i });
     await expect(sortOrderButton).toBeVisible();
   });
 });

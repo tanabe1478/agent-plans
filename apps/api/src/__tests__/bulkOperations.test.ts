@@ -85,15 +85,6 @@ Content.`
       expect(plan.frontmatter?.estimate).toBe('3d');
     });
 
-    it('should update modified timestamp', async () => {
-      await writePlan('modified-plan.md', 'todo', 'modified: "2020-01-01T00:00:00Z"');
-
-      await service.updateFrontmatterField('modified-plan.md', 'estimate', '2h');
-
-      const plan = await service.getPlan('modified-plan.md');
-      expect(plan.frontmatter?.modified).not.toBe('2020-01-01T00:00:00Z');
-    });
-
     it('should preserve existing frontmatter fields', async () => {
       await writePlan('preserve-plan.md', 'in_progress', 'estimate: "2h"');
 

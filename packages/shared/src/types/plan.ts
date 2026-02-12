@@ -27,10 +27,6 @@ export const STATUS_TRANSITIONS: Record<PlanStatus, PlanStatus[]> = {
  * Metadata extracted from YAML frontmatter
  */
 export interface PlanFrontmatter {
-  /** Creation timestamp from frontmatter (ISO 8601) */
-  created?: string;
-  /** Modification timestamp from frontmatter (ISO 8601) */
-  modified?: string;
   /** Project path where plan was created */
   projectPath?: string;
   /** Claude Code session ID */

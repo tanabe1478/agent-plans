@@ -114,13 +114,14 @@ export function HomePage() {
 
         {/* Sort */}
         <div className="flex items-center gap-1">
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'size')}>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'size' | 'date')}>
             <SelectTrigger className="w-[100px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="name">Name</SelectItem>
               <SelectItem value="size">Size</SelectItem>
+              <SelectItem value="date">Date</SelectItem>
             </SelectContent>
           </Select>
           <Button

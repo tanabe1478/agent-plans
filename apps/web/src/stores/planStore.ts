@@ -14,9 +14,9 @@ interface PlanStore {
   setViewMode: (mode: ViewMode) => void;
 
   // Sort state
-  sortBy: 'name' | 'size';
+  sortBy: 'name' | 'size' | 'date';
   sortOrder: 'asc' | 'desc';
-  setSortBy: (sortBy: 'name' | 'size') => void;
+  setSortBy: (sortBy: 'name' | 'size' | 'date') => void;
   toggleSortOrder: () => void;
 
   // Filter state
@@ -50,8 +50,8 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
   setViewMode: (mode) => set({ viewMode: mode }),
 
   // Sort
-  sortBy: 'name',
-  sortOrder: 'asc',
+  sortBy: 'date',
+  sortOrder: 'desc',
   setSortBy: (sortBy) => set({ sortBy }),
   toggleSortOrder: () =>
     set((state) => ({ sortOrder: state.sortOrder === 'asc' ? 'desc' : 'asc' })),

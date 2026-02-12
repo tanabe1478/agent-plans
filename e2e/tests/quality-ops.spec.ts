@@ -71,24 +71,23 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     request,
     apiBaseUrl,
   }) => {
-    // Use status update to set the modified field in frontmatter
-    // (updateStatus sets modified automatically)
+    // Use status update to change the file (triggers fs mtime change)
     await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'in_progress' },
     });
 
-    // Get current plan details (now has modified in frontmatter from the status change)
+    // Get current plan details (modifiedAt = file system mtime)
     const getResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(getResponse.ok()).toBeTruthy();
     const plan = await getResponse.json();
-    const originalMtime = plan.frontmatter?.modified;
+    const originalMtime = plan.modifiedAt;
     expect(originalMtime).toBeDefined();
 
     // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
     // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
-    // Use another status update to trigger modified change
+    // Use another status update to trigger file write (mtime changes)
     await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'review' },
     });
@@ -97,9 +96,9 @@ test.describe('Quality & Operations functionality (Feature 15)', () => {
     const updatedResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(updatedResponse.ok()).toBeTruthy();
     const updatedPlan = await updatedResponse.json();
-    const newMtime = updatedPlan.frontmatter?.modified;
+    const newMtime = updatedPlan.modifiedAt;
 
-    // Verify mtime changed (both should be defined now)
+    // Verify mtime changed
     expect(newMtime).toBeDefined();
     expect(newMtime).not.toBe(originalMtime);
   });
@@ -359,23 +358,23 @@ Bulk audit test.
     request,
     apiBaseUrl,
   }) => {
-    // Use status update to set modified field
+    // Use status update to trigger file write
     await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'in_progress' },
     });
 
-    // Get plan with modified timestamp set
+    // Get plan with file system mtime
     const getResponse = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
     expect(getResponse.ok()).toBeTruthy();
     const plan = await getResponse.json();
-    const originalModified = plan.frontmatter?.modified;
+    const originalModified = plan.modifiedAt;
     expect(originalModified).toBeDefined();
 
     // Intentional: wall-clock delay so ISO timestamps differ at second resolution.
     // Cannot be replaced with polling because time must pass BEFORE the next write.
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
-    // Another status update to change modified
+    // Another status update to trigger file write
     await request.patch(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}/status`, {
       data: { status: 'review' },
     });
@@ -394,9 +393,9 @@ Bulk audit test.
     expect(finalResponse.ok()).toBeTruthy();
     const finalPlan = await finalResponse.json();
 
-    // Verify the mtime has been updated (conflict detection relies on this)
-    expect(finalPlan.frontmatter?.modified).toBeDefined();
+    // Verify the file mtime has been updated (conflict detection relies on this)
+    expect(finalPlan.modifiedAt).toBeDefined();
     // The modified timestamp should be different from the original
-    expect(finalPlan.frontmatter?.modified).not.toBe(originalModified);
+    expect(finalPlan.modifiedAt).not.toBe(originalModified);
   });
 });

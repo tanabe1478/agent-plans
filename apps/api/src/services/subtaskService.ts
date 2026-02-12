@@ -115,10 +115,7 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
 
     switch (key) {
       case 'created':
-        frontmatter.created = value;
-        break;
       case 'modified':
-        frontmatter.modified = value;
         break;
       case 'project_path':
         frontmatter.projectPath = value;
@@ -185,8 +182,6 @@ function serializeSubtasks(subtasks: Subtask[]): string {
 
 function serializeFrontmatter(fm: PlanFrontmatter): string {
   const lines: string[] = [];
-  if (fm.created) lines.push(`created: "${fm.created}"`);
-  if (fm.modified) lines.push(`modified: "${fm.modified}"`);
   if (fm.projectPath) lines.push(`project_path: "${fm.projectPath}"`);
   if (fm.sessionId) lines.push(`session_id: "${fm.sessionId}"`);
   if (fm.status) lines.push(`status: ${fm.status}`);
@@ -258,7 +253,6 @@ export async function addSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);
@@ -286,7 +280,6 @@ export async function updateSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks: newSubtasks,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);
@@ -311,7 +304,6 @@ export async function deleteSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks: newSubtasks.length > 0 ? newSubtasks : undefined,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);
@@ -341,7 +333,6 @@ export async function toggleSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks: newSubtasks,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);

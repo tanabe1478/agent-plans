@@ -21,8 +21,6 @@ const frontmatterSchema = z.object({
     .regex(/^\d+[hdwm]$/)
     .optional(),
   blockedBy: z.array(z.string()).optional(),
-  created: z.string().datetime().optional(),
-  modified: z.string().datetime().optional(),
   projectPath: z.string().optional(),
   sessionId: z.string().optional(),
   schemaVersion: z.number().optional(),
@@ -106,8 +104,6 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
   }
 
   // Simple string fields
-  if (typeof data.created === 'string') corrected.created = data.created;
-  if (typeof data.modified === 'string') corrected.modified = data.modified;
   if (typeof data.projectPath === 'string') corrected.projectPath = data.projectPath;
   if (typeof data.sessionId === 'string') corrected.sessionId = data.sessionId;
 

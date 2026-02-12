@@ -45,6 +45,9 @@ export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
         case 'size':
           comparison = b.size - a.size;
           break;
+        case 'date':
+          comparison = new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime();
+          break;
       }
       return sortOrder === 'asc' ? -comparison : comparison;
     });
