@@ -2,6 +2,7 @@ import type { BulkExportFormat, PlanStatus } from '@ccplans/shared';
 import { Archive, Download, FileJson, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { useExportCsv, useExportJson, useExportTarball } from '../../lib/hooks';
+import { downloadFile } from '../../lib/utils';
 import { useUiStore } from '../../stores/uiStore';
 import { Dialog } from '../ui/Dialog';
 
@@ -55,23 +56,35 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
 
   const handleExport = async () => {
     const options = {
+      includeArchived,
       filterStatus: filterStatus || undefined,
     };
 
     try {
-      let result: string | Buffer;
+      let content: string | Uint8Array;
+      let filename: string;
+      let mimeType: string;
+
       switch (format) {
         case 'json':
-          result = await exportJson.mutateAsync(options);
+          content = await exportJson.mutateAsync(options);
+          filename = `ccplans-export-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+          mimeType = 'application/json; charset=utf-8';
           break;
         case 'csv':
-          result = await exportCsv.mutateAsync(options);
+          content = await exportCsv.mutateAsync(options);
+          filename = `ccplans-export-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+          mimeType = 'text/csv; charset=utf-8';
           break;
         case 'zip':
-          result = await exportTarball.mutateAsync(options);
+          content = await exportTarball.mutateAsync(options);
+          filename = `ccplans-export-${new Date().toISOString().replace(/[:.]/g, '-')}.tar.gz`;
+          mimeType = 'application/gzip';
           break;
       }
-      addToast(`Export completed: ${result}`, 'success');
+
+      downloadFile(filename, content, mimeType);
+      addToast('Export completed', 'success');
       onClose();
     } catch (err) {
       addToast(`Export failed: ${err}`, 'error');

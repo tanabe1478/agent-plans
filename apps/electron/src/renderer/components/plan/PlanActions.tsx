@@ -1,7 +1,8 @@
 import type { ExportFormat, ExternalApp } from '@ccplans/shared';
 import { Code, Download, Edit3, ExternalLink, MoreVertical, Terminal, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useDeletePlan, useOpenPlan, useRenamePlan } from '../../lib/hooks';
+import { useDeletePlan, useExportPlan, useOpenPlan, useRenamePlan } from '../../lib/hooks';
+import { downloadFile } from '../../lib/utils';
 import { useUiStore } from '../../stores/uiStore';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
@@ -23,6 +24,7 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   const deletePlan = useDeletePlan();
   const renamePlan = useRenamePlan();
   const openPlan = useOpenPlan();
+  const { export: exportPlan } = useExportPlan();
   const { addToast } = useUiStore();
 
   const handleOpen = async (app: ExternalApp) => {
@@ -74,12 +76,17 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
     }
   };
 
-  const handleExport = (format: ExportFormat) => {
-    // In Electron, we'll use IPC to handle export
-    // For now, we'll use a placeholder that can be implemented later
-    addToast(`Export as ${format} - coming soon`, 'info');
-    setShowExportMenu(false);
-    setShowMenu(false);
+  const handleExport = async (format: ExportFormat) => {
+    try {
+      const file = await exportPlan(filename, format);
+      downloadFile(file.filename, file.content, file.mimeType);
+      addToast(`Exported ${file.filename}`, 'success');
+    } catch (err) {
+      addToast(`Export failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    } finally {
+      setShowExportMenu(false);
+      setShowMenu(false);
+    }
   };
 
   return (
@@ -151,14 +158,14 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
                       <button
                         type="button"
                         className="flex w-full px-4 py-2 text-sm hover:bg-accent"
-                        onClick={() => handleExport('md')}
+                        onClick={() => void handleExport('md')}
                       >
                         Markdown
                       </button>
                       <button
                         type="button"
                         className="flex w-full px-4 py-2 text-sm hover:bg-accent"
-                        onClick={() => handleExport('html')}
+                        onClick={() => void handleExport('html')}
                       >
                         HTML
                       </button>

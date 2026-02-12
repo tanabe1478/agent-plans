@@ -2,9 +2,13 @@ import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
+const externalizeDeps = externalizeDepsPlugin({
+  exclude: ['@ccplans/shared'],
+});
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDeps].filter(Boolean),
     resolve: {
       alias: {
         '@services': resolve('src/main/services'),
@@ -20,7 +24,7 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDeps].filter(Boolean),
     build: {
       rollupOptions: {
         input: {

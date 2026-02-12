@@ -190,7 +190,7 @@ export function HomePage() {
       <PlanList plans={plans} showCheckbox={selectionMode} />
 
       {/* Bulk action bar */}
-      {selectionMode && selectedPlans.size > 0 && <BulkActionBar totalCount={plans.length} />}
+      {selectionMode && selectedPlans.size > 0 && <BulkActionBar />}
 
       {/* Bulk delete dialog */}
       <Dialog

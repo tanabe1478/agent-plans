@@ -1,8 +1,10 @@
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { registerAllHandlers } from './ipc/index.js';
 
 let mainWindow: BrowserWindow | null = null;
+const currentDir = dirname(fileURLToPath(import.meta.url));
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -13,20 +15,26 @@ function createWindow() {
     titleBarStyle: 'hidden', // macOS native title bar
     trafficLightPosition: { x: 15, y: 15 },
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(currentDir, '../preload/index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // Preload must expose ipc bridge to renderer APIs.
+      // On this app/runtime combination, sandboxed preload fails to expose the bridge.
+      sandbox: false,
     },
   });
 
-  // Development: load from dev server
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
+  const rendererUrl = process.env.ELECTRON_RENDERER_URL;
+
+  // Development/preview: load from renderer dev server URL when provided.
+  if (rendererUrl) {
+    mainWindow.loadURL(rendererUrl);
+    if (process.env.OPEN_DEVTOOLS === 'true') {
+      mainWindow.webContents.openDevTools();
+    }
   } else {
     // Production: load built files
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(join(currentDir, '../renderer/index.html'));
   }
 
   mainWindow.on('closed', () => {

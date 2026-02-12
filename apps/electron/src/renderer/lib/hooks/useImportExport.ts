@@ -2,6 +2,7 @@
  * React Query hooks for import/export operations via IPC
  */
 
+import type { PlanStatus } from '@ccplans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ipcClient } from '../api/ipcClient';
 
@@ -49,21 +50,30 @@ export function useRestoreBackup() {
 
 export function useExportJson() {
   return useMutation({
-    mutationFn: (options?: { filterStatus?: string; filterTags?: string[] }) =>
-      ipcClient.importExport.exportJson(options),
+    mutationFn: (options?: {
+      includeArchived?: boolean;
+      filterStatus?: PlanStatus;
+      filterTags?: string[];
+    }) => ipcClient.importExport.exportJson(options),
   });
 }
 
 export function useExportCsv() {
   return useMutation({
-    mutationFn: (options?: { filterStatus?: string; filterTags?: string[] }) =>
-      ipcClient.importExport.exportCsv(options),
+    mutationFn: (options?: {
+      includeArchived?: boolean;
+      filterStatus?: PlanStatus;
+      filterTags?: string[];
+    }) => ipcClient.importExport.exportCsv(options),
   });
 }
 
 export function useExportTarball() {
   return useMutation({
-    mutationFn: (options?: { filterStatus?: string; filterTags?: string[] }) =>
-      ipcClient.importExport.exportTarball(options),
+    mutationFn: (options?: {
+      includeArchived?: boolean;
+      filterStatus?: PlanStatus;
+      filterTags?: string[];
+    }) => ipcClient.importExport.exportTarball(options),
   });
 }

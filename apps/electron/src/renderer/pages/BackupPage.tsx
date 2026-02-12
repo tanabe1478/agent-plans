@@ -2,7 +2,7 @@ import { AlertTriangle, DatabaseBackup, Plus, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { Dialog } from '@/components/ui/Dialog';
 import { useBackups, useCreateBackup, useRestoreBackup } from '@/lib/hooks/useImportExport';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatFileSize } from '@/lib/utils';
 
 export function BackupPage() {
   const { data, isLoading, error } = useBackups();
@@ -67,9 +67,11 @@ export function BackupPage() {
               className="flex items-center justify-between p-4 rounded-lg border bg-card"
             >
               <div>
-                <div className="font-medium text-sm">{backup.path}</div>
+                <div className="font-medium text-sm">{backup.filename}</div>
                 <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                   <span>Created: {formatDate(backup.createdAt)}</span>
+                  <span>{backup.planCount} plans</span>
+                  <span>{formatFileSize(backup.size)}</span>
                 </div>
               </div>
               <button

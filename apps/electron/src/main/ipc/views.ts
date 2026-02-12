@@ -1,18 +1,25 @@
-// @ts-nocheck
-import type { CreateViewRequest, SavedView, UpdateViewRequest } from '@ccplans/shared';
-import type { IpcMainInvokeEvent } from 'electron';
+import type {
+  CreateViewRequest,
+  SavedView,
+  UpdateViewRequest,
+  ViewsListResponse,
+} from '@ccplans/shared';
+import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { viewService } from '../services/viewService.js';
+
+interface UpdateViewRequestWithId extends UpdateViewRequest {
+  id: string;
+}
 
 /**
  * Register views-related IPC handlers
  */
-export function registerViewsHandlers(ipcMain: Electron.IpcMain): void {
-  // List all views (presets + custom)
-  ipcMain.handle('views:list', async (_event: IpcMainInvokeEvent): Promise<SavedView[]> => {
-    return viewService.listViews();
+export function registerViewsHandlers(ipcMain: IpcMain): void {
+  ipcMain.handle('views:list', async (_event: IpcMainInvokeEvent): Promise<ViewsListResponse> => {
+    const views = await viewService.listViews();
+    return { views };
   });
 
-  // Get a single view by ID
   ipcMain.handle(
     'views:get',
     async (_event: IpcMainInvokeEvent, id: string): Promise<SavedView | null> => {
@@ -20,7 +27,6 @@ export function registerViewsHandlers(ipcMain: Electron.IpcMain): void {
     }
   );
 
-  // Create a new custom view
   ipcMain.handle(
     'views:create',
     async (_event: IpcMainInvokeEvent, request: CreateViewRequest): Promise<SavedView> => {
@@ -28,15 +34,13 @@ export function registerViewsHandlers(ipcMain: Electron.IpcMain): void {
     }
   );
 
-  // Update an existing custom view
   ipcMain.handle(
     'views:update',
-    async (_event: IpcMainInvokeEvent, request: UpdateViewRequest): Promise<SavedView> => {
+    async (_event: IpcMainInvokeEvent, request: UpdateViewRequestWithId): Promise<SavedView> => {
       return viewService.updateView(request.id, request);
     }
   );
 
-  // Delete a custom view
   ipcMain.handle('views:delete', async (_event: IpcMainInvokeEvent, id: string): Promise<void> => {
     return viewService.deleteView(id);
   });

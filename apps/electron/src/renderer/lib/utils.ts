@@ -116,3 +116,26 @@ export function categorizeByDeadline(plans: PlanMeta[]): DeadlineCategory {
 
   return result;
 }
+
+export function downloadFile(
+  filename: string,
+  content: string | Uint8Array | ArrayBuffer,
+  mimeType: string
+): void {
+  const normalizedContent =
+    typeof content === 'string'
+      ? content
+      : content instanceof ArrayBuffer
+        ? content
+        : Uint8Array.from(content);
+  const blob = new Blob([normalizedContent], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

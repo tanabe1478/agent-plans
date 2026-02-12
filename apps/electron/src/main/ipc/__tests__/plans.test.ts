@@ -109,6 +109,8 @@ describe('Plans IPC Handlers', () => {
     expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:bulkStatus', expect.any(Function));
     expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:bulkTags', expect.any(Function));
     expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:bulkAssign', expect.any(Function));
+    expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:bulkPriority', expect.any(Function));
+    expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:bulkArchive', expect.any(Function));
   });
 
   it('should register history handlers', () => {
@@ -133,6 +135,6 @@ describe('Plans IPC Handlers', () => {
   });
 
   it('should register all handlers exactly once', () => {
-    expect(mockIpcMain.handle).toHaveBeenCalledTimes(22);
+    expect(mockIpcMain.handle).toHaveBeenCalledTimes(24);
   });
 });

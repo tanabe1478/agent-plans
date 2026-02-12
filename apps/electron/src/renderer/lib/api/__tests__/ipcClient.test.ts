@@ -69,11 +69,24 @@ describe('ipcClient', () => {
       const { ipcClient } = await import('../ipcClient');
       mockInvoke.mockResolvedValueOnce({ filename: 'test.md' });
 
-      await ipcClient.plans.updateStatus('test.md', 'in-progress');
+      await ipcClient.plans.updateStatus('test.md', 'in_progress');
 
       expect(mockInvoke).toHaveBeenCalledWith('plans:updateStatus', {
         filename: 'test.md',
-        status: 'in-progress',
+        status: 'in_progress',
+      });
+    });
+
+    it('should call plans:bulkTags channel with action', async () => {
+      const { ipcClient } = await import('../ipcClient');
+      mockInvoke.mockResolvedValueOnce({ succeeded: ['test.md'], failed: [] });
+
+      await ipcClient.plans.bulkTags(['test.md'], 'remove', ['api']);
+
+      expect(mockInvoke).toHaveBeenCalledWith('plans:bulkTags', {
+        filenames: ['test.md'],
+        action: 'remove',
+        tags: ['api'],
       });
     });
   });

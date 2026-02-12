@@ -1,23 +1,18 @@
-// @ts-nocheck
 import type { PlanPriority, PlanStatus } from '@ccplans/shared';
 import { Archive, ArrowRightCircle, CheckSquare, Flag, Tags, User, XSquare } from 'lucide-react';
 import { useState } from 'react';
 import { useFrontmatterEnabled } from '../../contexts/SettingsContext';
 import {
+  useBulkArchive,
   useBulkUpdateAssign,
   useBulkUpdatePriority,
   useBulkUpdateStatus,
   useBulkUpdateTags,
-  useDeletePlan,
 } from '../../lib/hooks';
 import { usePlanStore } from '../../stores/planStore';
 import { useUiStore } from '../../stores/uiStore';
 
-interface BulkActionBarProps {
-  totalCount: number;
-}
-
-export function BulkActionBar({ totalCount }: BulkActionBarProps) {
+export function BulkActionBar() {
   const { selectedPlans, clearSelection } = usePlanStore();
   const { addToast } = useUiStore();
   const fmEnabled = useFrontmatterEnabled();
@@ -27,7 +22,7 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
   const bulkTags = useBulkUpdateTags();
   const bulkAssign = useBulkUpdateAssign();
   const bulkPriority = useBulkUpdatePriority();
-  const bulkArchive = useDeletePlan();
+  const bulkArchive = useBulkArchive();
 
   const [tagInput, setTagInput] = useState('');
   const [assigneeInput, setAssigneeInput] = useState('');
@@ -64,11 +59,13 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
       .filter(Boolean);
     if (tags.length === 0) return;
     try {
-      const result = await bulkTags.mutateAsync({ filenames, tags });
-      addToast(
-        `Tags ${action === 'add' ? 'added to' : 'removed from'} ${result.succeeded.length} plans`,
-        'success'
-      );
+      const result = await bulkTags.mutateAsync({ filenames, action, tags });
+      const msg = `Tags ${action === 'add' ? 'added to' : 'removed from'} ${result.succeeded.length} plans`;
+      if (result.failed.length > 0) {
+        addToast(`${msg}, ${result.failed.length} failed`, 'info');
+      } else {
+        addToast(msg, 'success');
+      }
       setTagInput('');
       setShowTagInput(false);
       clearSelection();
@@ -92,11 +89,13 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
 
   const handleBulkPriority = async (priority: PlanPriority) => {
     try {
-      // Note: This uses single update for now, should be bulk in the future
-      for (const filename of filenames) {
-        await bulkPriority.mutateAsync({ filename, priority });
+      const result = await bulkPriority.mutateAsync({ filenames, priority });
+      const msg = `Priority set for ${result.succeeded.length} plans`;
+      if (result.failed.length > 0) {
+        addToast(`${msg}, ${result.failed.length} failed`, 'info');
+      } else {
+        addToast(msg, 'success');
       }
-      addToast(`Priority set for ${filenames.length} plans`, 'success');
       clearSelection();
     } catch {
       addToast('Bulk priority update failed', 'error');
@@ -105,10 +104,13 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
 
   const handleBulkArchive = async () => {
     try {
-      for (const filename of filenames) {
-        await bulkArchive.mutateAsync({ filename, archive: true });
+      const result = await bulkArchive.mutateAsync({ filenames });
+      const msg = `${result.succeeded.length} plans archived`;
+      if (result.failed.length > 0) {
+        addToast(`${msg}, ${result.failed.length} failed`, 'info');
+      } else {
+        addToast(msg, 'success');
       }
-      addToast(`${filenames.length} plans archived`, 'success');
       clearSelection();
     } catch {
       addToast('Bulk archive failed', 'error');

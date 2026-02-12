@@ -8,8 +8,12 @@
 
 import type {
   ArchiveListResponse,
+  BackupInfo,
+  BulkArchiveRequest,
   BulkAssignRequest,
   BulkDeleteRequest,
+  BulkOperationResponse,
+  BulkPriorityRequest,
   BulkStatusRequest,
   BulkTagsRequest,
   CreatePlanRequest,
@@ -25,6 +29,7 @@ import type {
   PlanDependencies,
   PlanDetail,
   PlanMeta,
+  PlanPriority,
   PlanStatus,
   RenamePlanRequest,
   RollbackRequest,
@@ -36,6 +41,7 @@ import type {
   UpdateSettingsResponse,
   UpdateStatusRequest,
   UpdateViewRequest,
+  ViewsListResponse,
 } from '@ccplans/shared';
 
 // Type definition for the electron API exposed by preload script
@@ -49,6 +55,14 @@ declare global {
     electronAPI: ElectronAPI;
   }
 }
+
+export interface ExportedPlanFile {
+  filename: string;
+  content: string;
+  mimeType: string;
+}
+
+type SubtaskActionRequestWithFilename = SubtaskActionRequest & { filename: string };
 
 /**
  * Invoke an IPC channel and return the typed result
@@ -89,34 +103,51 @@ export const ipcClient = {
     updateFrontmatter: (filename: string, field: string, value: unknown): Promise<PlanMeta> =>
       invoke<PlanMeta>('plans:updateFrontmatter', { filename, field, value }),
 
-    export: (filename: string, format: ExportFormat): Promise<string> =>
-      invoke<string>('plans:export', filename, format),
+    export: (filename: string, format: ExportFormat): Promise<ExportedPlanFile> =>
+      invoke<ExportedPlanFile>('plans:export', filename, format),
 
     // Subtasks
-    addSubtask: (request: SubtaskActionRequest): Promise<void> =>
+    addSubtask: (request: SubtaskActionRequestWithFilename): Promise<void> =>
       invoke<void>('plans:addSubtask', request),
 
-    updateSubtask: (request: SubtaskActionRequest): Promise<void> =>
+    updateSubtask: (request: SubtaskActionRequestWithFilename): Promise<void> =>
       invoke<void>('plans:updateSubtask', request),
 
-    deleteSubtask: (request: SubtaskActionRequest): Promise<void> =>
+    deleteSubtask: (request: SubtaskActionRequestWithFilename): Promise<void> =>
       invoke<void>('plans:deleteSubtask', request),
 
-    toggleSubtask: (request: SubtaskActionRequest): Promise<void> =>
+    toggleSubtask: (request: SubtaskActionRequestWithFilename): Promise<void> =>
       invoke<void>('plans:toggleSubtask', request),
 
     // Bulk operations
-    bulkStatus: (
+    bulkStatus: (filenames: string[], status: PlanStatus): Promise<BulkOperationResponse> =>
+      invoke<BulkOperationResponse>('plans:bulkStatus', { filenames, status } as BulkStatusRequest),
+
+    bulkTags: (
       filenames: string[],
-      status: PlanStatus
-    ): Promise<{ success: string[]; failed: { filename: string; error: string }[] }> =>
-      invoke('plans:bulkStatus', { filenames, status } as BulkStatusRequest),
+      action: 'add' | 'remove' | 'set',
+      tags: string[]
+    ): Promise<BulkOperationResponse> =>
+      invoke<BulkOperationResponse>('plans:bulkTags', {
+        filenames,
+        action,
+        tags,
+      } as BulkTagsRequest),
 
-    bulkTags: (filenames: string[], tags: string[]): Promise<void> =>
-      invoke<void>('plans:bulkTags', { filenames, tags } as BulkTagsRequest),
+    bulkAssign: (filenames: string[], assignee: string): Promise<BulkOperationResponse> =>
+      invoke<BulkOperationResponse>('plans:bulkAssign', {
+        filenames,
+        assignee,
+      } as BulkAssignRequest),
 
-    bulkAssign: (filenames: string[], assignee: string): Promise<void> =>
-      invoke<void>('plans:bulkAssign', { filenames, assignee } as BulkAssignRequest),
+    bulkPriority: (filenames: string[], priority: PlanPriority): Promise<BulkOperationResponse> =>
+      invoke<BulkOperationResponse>('plans:bulkPriority', {
+        filenames,
+        priority,
+      } as BulkPriorityRequest),
+
+    bulkArchive: (filenames: string[]): Promise<BulkOperationResponse> =>
+      invoke<BulkOperationResponse>('plans:bulkArchive', { filenames } as BulkArchiveRequest),
 
     // History
     history: (filename: string): Promise<HistoryListResponse> =>
@@ -141,7 +172,7 @@ export const ipcClient = {
 
   // Views
   views: {
-    list: (): Promise<SavedView[]> => invoke<SavedView[]>('views:list'),
+    list: (): Promise<ViewsListResponse> => invoke<ViewsListResponse>('views:list'),
 
     get: (id: string): Promise<SavedView | null> => invoke<SavedView | null>('views:get', id),
 
@@ -193,22 +224,30 @@ export const ipcClient = {
     ): Promise<ImportMarkdownResponse> =>
       invoke<ImportMarkdownResponse>('import:markdown', { files } as ImportMarkdownRequest),
 
-    backup: (): Promise<{ id: string; path: string; createdAt: string }> => invoke('export:backup'),
+    backup: (): Promise<BackupInfo> => invoke<BackupInfo>('export:backup'),
 
-    listBackups: (): Promise<{ id: string; path: string; createdAt: string }[]> =>
-      invoke('export:listBackups'),
+    listBackups: (): Promise<BackupInfo[]> => invoke<BackupInfo[]>('export:listBackups'),
 
     restoreBackup: (backupId: string): Promise<ImportMarkdownResponse> =>
       invoke('export:restoreBackup', backupId),
 
-    exportJson: (options?: { filterStatus?: string; filterTags?: string[] }): Promise<string> =>
-      invoke('export:json', options),
+    exportJson: (options?: {
+      includeArchived?: boolean;
+      filterStatus?: PlanStatus;
+      filterTags?: string[];
+    }): Promise<string> => invoke<string>('export:json', options),
 
-    exportCsv: (options?: { filterStatus?: string; filterTags?: string[] }): Promise<string> =>
-      invoke('export:csv', options),
+    exportCsv: (options?: {
+      includeArchived?: boolean;
+      filterStatus?: PlanStatus;
+      filterTags?: string[];
+    }): Promise<string> => invoke<string>('export:csv', options),
 
-    exportTarball: (options?: { filterStatus?: string; filterTags?: string[] }): Promise<Buffer> =>
-      invoke('export:tarball', options),
+    exportTarball: (options?: {
+      includeArchived?: boolean;
+      filterStatus?: PlanStatus;
+      filterTags?: string[];
+    }): Promise<Uint8Array> => invoke<Uint8Array>('export:tarball', options),
   },
 
   // Settings

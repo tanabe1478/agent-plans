@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * React Query hooks for plans operations via IPC
  */
@@ -6,19 +5,27 @@
 import type { ExportFormat, PlanPriority, PlanStatus, SubtaskActionRequest } from '@ccplans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ipcClient } from '../api/ipcClient';
+import { useSettings } from './useSettings';
 
 export function usePlans() {
+  const { data: settings, isLoading: isSettingsLoading } = useSettings();
+  const frontmatterEnabled = settings?.frontmatterEnabled ?? false;
+
   return useQuery({
-    queryKey: ['plans'],
+    queryKey: ['plans', frontmatterEnabled],
     queryFn: ipcClient.plans.list,
+    enabled: !isSettingsLoading,
   });
 }
 
 export function usePlan(filename: string) {
+  const { data: settings, isLoading: isSettingsLoading } = useSettings();
+  const frontmatterEnabled = settings?.frontmatterEnabled ?? false;
+
   return useQuery({
-    queryKey: ['plan', filename],
+    queryKey: ['plan', filename, frontmatterEnabled],
     queryFn: () => ipcClient.plans.get(filename),
-    enabled: !!filename,
+    enabled: !!filename && !isSettingsLoading,
   });
 }
 
@@ -122,7 +129,13 @@ export function useAddSubtask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: SubtaskActionRequest) => ipcClient.plans.addSubtask(request),
+    mutationFn: ({
+      filename,
+      body,
+    }: {
+      filename: string;
+      body: Extract<SubtaskActionRequest, { action: 'add' }>;
+    }) => ipcClient.plans.addSubtask({ ...body, filename }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
       queryClient.invalidateQueries({ queryKey: ['plan', variables.filename] });
@@ -134,7 +147,18 @@ export function useUpdateSubtask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: SubtaskActionRequest) => ipcClient.plans.updateSubtask(request),
+    mutationFn: async ({ filename, body }: { filename: string; body: SubtaskActionRequest }) => {
+      switch (body.action) {
+        case 'add':
+          return ipcClient.plans.addSubtask({ ...body, filename });
+        case 'update':
+          return ipcClient.plans.updateSubtask({ ...body, filename });
+        case 'delete':
+          return ipcClient.plans.deleteSubtask({ ...body, filename });
+        case 'toggle':
+          return ipcClient.plans.toggleSubtask({ ...body, filename });
+      }
+    },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
       queryClient.invalidateQueries({ queryKey: ['plan', variables.filename] });
@@ -146,7 +170,13 @@ export function useDeleteSubtask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: SubtaskActionRequest) => ipcClient.plans.deleteSubtask(request),
+    mutationFn: ({
+      filename,
+      body,
+    }: {
+      filename: string;
+      body: Extract<SubtaskActionRequest, { action: 'delete' }>;
+    }) => ipcClient.plans.deleteSubtask({ ...body, filename }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
       queryClient.invalidateQueries({ queryKey: ['plan', variables.filename] });
@@ -158,7 +188,13 @@ export function useToggleSubtask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: SubtaskActionRequest) => ipcClient.plans.toggleSubtask(request),
+    mutationFn: ({
+      filename,
+      body,
+    }: {
+      filename: string;
+      body: Extract<SubtaskActionRequest, { action: 'toggle' }>;
+    }) => ipcClient.plans.toggleSubtask({ ...body, filename }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
       queryClient.invalidateQueries({ queryKey: ['plan', variables.filename] });
@@ -183,8 +219,15 @@ export function useBulkUpdateTags() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filenames, tags }: { filenames: string[]; tags: string[] }) =>
-      ipcClient.plans.bulkTags(filenames, tags),
+    mutationFn: ({
+      filenames,
+      action,
+      tags,
+    }: {
+      filenames: string[];
+      action: 'add' | 'remove' | 'set';
+      tags: string[];
+    }) => ipcClient.plans.bulkTags(filenames, action, tags),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },
@@ -207,8 +250,19 @@ export function useBulkUpdatePriority() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filename, priority }: { filename: string; priority: PlanPriority }) =>
-      ipcClient.plans.updateFrontmatter(filename, 'priority', priority),
+    mutationFn: ({ filenames, priority }: { filenames: string[]; priority: PlanPriority }) =>
+      ipcClient.plans.bulkPriority(filenames, priority),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+    },
+  });
+}
+
+export function useBulkArchive() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ filenames }: { filenames: string[] }) => ipcClient.plans.bulkArchive(filenames),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },

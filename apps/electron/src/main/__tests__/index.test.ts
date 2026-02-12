@@ -5,6 +5,10 @@ vi.mock('../ipc/index.js', () => ({
   registerAllHandlers: vi.fn(),
 }));
 
+vi.mock('node:url', () => ({
+  fileURLToPath: vi.fn(() => '/mock/out/main/index.js'),
+}));
+
 // Mock electron module
 vi.mock('electron', () => ({
   app: {
@@ -80,14 +84,14 @@ describe('Main Process', () => {
     );
   });
 
-  it('should set sandbox to true for security', async () => {
+  it('should disable sandbox so preload can expose IPC bridge', async () => {
     const { BrowserWindow } = await import('electron');
     await import('../index');
 
     expect(BrowserWindow).toHaveBeenCalledWith(
       expect.objectContaining({
         webPreferences: expect.objectContaining({
-          sandbox: true,
+          sandbox: false,
         }),
       })
     );
@@ -112,6 +116,19 @@ describe('Main Process', () => {
     expect(BrowserWindow).toHaveBeenCalledWith(
       expect.objectContaining({
         trafficLightPosition: { x: 15, y: 15 },
+      })
+    );
+  });
+
+  it('should load preload index.mjs file', async () => {
+    const { BrowserWindow } = await import('electron');
+    await import('../index');
+
+    expect(BrowserWindow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        webPreferences: expect.objectContaining({
+          preload: expect.stringContaining('/mock/out/preload/index.mjs'),
+        }),
       })
     );
   });

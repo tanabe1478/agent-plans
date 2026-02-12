@@ -1,6 +1,10 @@
-// @ts-nocheck
-import type { ImportMarkdownRequest, ImportMarkdownResponse } from '@ccplans/shared';
-import type { IpcMainInvokeEvent } from 'electron';
+import type {
+  BackupInfo,
+  ImportMarkdownRequest,
+  ImportMarkdownResponse,
+  PlanStatus,
+} from '@ccplans/shared';
+import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { exportAsCsv, exportAsJson, exportAsTarGz } from '../services/exportService.js';
 import {
   createBackup,
@@ -9,66 +13,61 @@ import {
   restoreBackup,
 } from '../services/importService.js';
 
+interface ExportOptions {
+  includeArchived?: boolean;
+  filterStatus?: PlanStatus;
+  filterTags?: string[];
+}
+
 /**
  * Register import/export-related IPC handlers
  */
-export function registerImportExportHandlers(ipcMain: Electron.IpcMain): void {
-  // Import markdown files
+export function registerImportExportHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     'import:markdown',
     async (
       _event: IpcMainInvokeEvent,
       request: ImportMarkdownRequest
     ): Promise<ImportMarkdownResponse> => {
-      const result = await importMarkdownFiles(request.files);
-      return result;
+      return importMarkdownFiles(request.files);
     }
   );
 
-  // Create a backup
-  ipcMain.handle('export:backup', async (_event: IpcMainInvokeEvent) => {
+  ipcMain.handle('export:backup', async (_event: IpcMainInvokeEvent): Promise<BackupInfo> => {
     return createBackup();
   });
 
-  // List available backups
-  ipcMain.handle('export:listBackups', async (_event: IpcMainInvokeEvent) => {
-    return listBackups();
-  });
+  ipcMain.handle(
+    'export:listBackups',
+    async (_event: IpcMainInvokeEvent): Promise<BackupInfo[]> => {
+      return listBackups();
+    }
+  );
 
-  // Restore from backup
-  ipcMain.handle('export:restoreBackup', async (_event: IpcMainInvokeEvent, backupId: string) => {
-    return restoreBackup(backupId);
-  });
+  ipcMain.handle(
+    'export:restoreBackup',
+    async (_event: IpcMainInvokeEvent, backupId: string): Promise<ImportMarkdownResponse> => {
+      return restoreBackup(backupId);
+    }
+  );
 
-  // Export as JSON
   ipcMain.handle(
     'export:json',
-    async (
-      _event: IpcMainInvokeEvent,
-      options?: { filterStatus?: string; filterTags?: string[] }
-    ): Promise<string> => {
+    async (_event: IpcMainInvokeEvent, options?: ExportOptions): Promise<string> => {
       return exportAsJson(options);
     }
   );
 
-  // Export as CSV
   ipcMain.handle(
     'export:csv',
-    async (
-      _event: IpcMainInvokeEvent,
-      options?: { filterStatus?: string; filterTags?: string[] }
-    ): Promise<string> => {
+    async (_event: IpcMainInvokeEvent, options?: ExportOptions): Promise<string> => {
       return exportAsCsv(options);
     }
   );
 
-  // Export as tar.gz
   ipcMain.handle(
     'export:tarball',
-    async (
-      _event: IpcMainInvokeEvent,
-      options?: { filterStatus?: string; filterTags?: string[] }
-    ): Promise<Buffer> => {
+    async (_event: IpcMainInvokeEvent, options?: ExportOptions): Promise<Buffer> => {
       return exportAsTarGz(options);
     }
   );
