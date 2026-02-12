@@ -1,7 +1,16 @@
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface DeleteConfirmDialogProps {
   open: boolean;
@@ -35,35 +44,37 @@ export function DeleteConfirmDialog({
   const isDeleteEnabled = confirmText === filename;
 
   return (
-    <Dialog open={open} onClose={handleClose} title="Delete Plan">
-      <div className="space-y-4">
-        <div className="rounded-md border p-3">
-          <p className="text-sm font-medium">{title}</p>
-          <p className="text-xs text-muted-foreground font-mono mt-1">{filename}</p>
-        </div>
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Plan</DialogTitle>
+          <DialogDescription>This will delete the plan (moved to archive).</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="rounded-md border p-3">
+            <p className="text-sm font-medium">{title}</p>
+            <p className="text-xs text-muted-foreground font-mono mt-1">{filename}</p>
+          </div>
 
-        <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3">
-          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-          <p className="text-sm text-destructive">
-            This will delete the plan (moved to archive). Type the filename to confirm.
-          </p>
-        </div>
+          <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-destructive">Type the filename to confirm deletion.</p>
+          </div>
 
-        <div>
-          <label htmlFor="delete-confirm-input" className="block text-sm font-medium mb-1">
-            Type <span className="font-mono text-destructive">{filename}</span> to confirm:
-          </label>
-          <input
-            id="delete-confirm-input"
-            type="text"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm font-mono bg-background"
-            placeholder={filename}
-          />
+          <div>
+            <Label htmlFor="delete-confirm-input">
+              Type <span className="font-mono text-destructive">{filename}</span> to confirm:
+            </Label>
+            <Input
+              id="delete-confirm-input"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              className="mt-1 font-mono"
+              placeholder={filename}
+            />
+          </div>
         </div>
-
-        <div className="flex justify-end gap-2">
+        <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
@@ -74,8 +85,8 @@ export function DeleteConfirmDialog({
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
-        </div>
-      </div>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }

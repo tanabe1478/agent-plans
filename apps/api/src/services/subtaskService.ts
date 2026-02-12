@@ -38,7 +38,6 @@ function parseSubtasksFromYaml(
       if (key === 'id') current.id = val;
       else if (key === 'title') current.title = val;
       else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
       else if (key === 'dueDate') current.dueDate = val;
       consumed++;
     } else if (propMatch && current) {
@@ -47,7 +46,6 @@ function parseSubtasksFromYaml(
       if (key === 'id') current.id = val;
       else if (key === 'title') current.title = val;
       else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
       else if (key === 'dueDate') current.dueDate = val;
       consumed++;
     } else {
@@ -117,10 +115,7 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
 
     switch (key) {
       case 'created':
-        frontmatter.created = value;
-        break;
       case 'modified':
-        frontmatter.modified = value;
         break;
       case 'project_path':
         frontmatter.projectPath = value;
@@ -133,20 +128,9 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
           frontmatter.status = value as PlanFrontmatter['status'];
         }
         break;
-      case 'priority':
-        if (['low', 'medium', 'high', 'critical'].includes(value)) {
-          frontmatter.priority = value as PlanFrontmatter['priority'];
-        }
-        break;
       case 'dueDate':
         frontmatter.dueDate = value;
         break;
-      case 'tags': {
-        const tagResult = parseYamlArray(value, lines, i);
-        frontmatter.tags = tagResult.items;
-        i += tagResult.consumed;
-        break;
-      }
       case 'estimate':
         frontmatter.estimate = value;
         break;
@@ -156,9 +140,6 @@ function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body
         i += blockedResult.consumed;
         break;
       }
-      case 'assignee':
-        frontmatter.assignee = value;
-        break;
       case 'subtasks': {
         const subtaskResult = parseSubtasksFromYaml(lines, i);
         if (subtaskResult.subtasks.length > 0) {
@@ -192,7 +173,6 @@ function serializeSubtasks(subtasks: Subtask[]): string {
         props.push(`  - id: "${st.id}"`);
         props.push(`    title: "${st.title}"`);
         props.push(`    status: ${st.status}`);
-        if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
         if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
         return props.join('\n');
       })
@@ -202,18 +182,13 @@ function serializeSubtasks(subtasks: Subtask[]): string {
 
 function serializeFrontmatter(fm: PlanFrontmatter): string {
   const lines: string[] = [];
-  if (fm.created) lines.push(`created: "${fm.created}"`);
-  if (fm.modified) lines.push(`modified: "${fm.modified}"`);
   if (fm.projectPath) lines.push(`project_path: "${fm.projectPath}"`);
   if (fm.sessionId) lines.push(`session_id: "${fm.sessionId}"`);
   if (fm.status) lines.push(`status: ${fm.status}`);
-  if (fm.priority) lines.push(`priority: ${fm.priority}`);
   if (fm.dueDate) lines.push(`dueDate: "${fm.dueDate}"`);
-  if (fm.tags && fm.tags.length > 0) lines.push(`tags:${serializeYamlArray(fm.tags)}`);
   if (fm.estimate) lines.push(`estimate: "${fm.estimate}"`);
   if (fm.blockedBy && fm.blockedBy.length > 0)
     lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
-  if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
   if (fm.subtasks && fm.subtasks.length > 0)
     lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
   if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);
@@ -269,7 +244,6 @@ export async function addSubtask(
     id: randomUUID(),
     title: subtask.title,
     status: subtask.status || 'todo',
-    ...(subtask.assignee ? { assignee: subtask.assignee } : {}),
     ...(subtask.dueDate ? { dueDate: subtask.dueDate } : {}),
   };
 
@@ -279,7 +253,6 @@ export async function addSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);
@@ -307,7 +280,6 @@ export async function updateSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks: newSubtasks,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);
@@ -332,7 +304,6 @@ export async function deleteSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks: newSubtasks.length > 0 ? newSubtasks : undefined,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);
@@ -362,7 +333,6 @@ export async function toggleSubtask(
   const updatedFrontmatter: PlanFrontmatter = {
     ...frontmatter,
     subtasks: newSubtasks,
-    modified: new Date().toISOString(),
   };
 
   await writePlanFile(filePath, updatedFrontmatter, body);

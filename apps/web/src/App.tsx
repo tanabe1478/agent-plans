@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/layout/Layout';
+import { Toaster } from './components/ui/sonner';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { BackupPage } from './pages/BackupPage';
 import { DependencyPage } from './pages/DependencyPage';
@@ -55,6 +56,7 @@ function App() {
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
+        <Toaster />
       </ErrorBoundary>
     </SettingsProvider>
   );

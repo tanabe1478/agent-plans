@@ -1,15 +1,17 @@
-import type { PlanPriority, PlanStatus } from '@ccplans/shared';
-import { ArrowRightCircle, CheckSquare, Flag, Tags, User, XSquare } from 'lucide-react';
+import type { PlanStatus } from '@ccplans/shared';
+import { ArrowRightCircle, CheckSquare, XSquare } from 'lucide-react';
 import { useState } from 'react';
-import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
+import { toast } from 'sonner';
 import {
-  useBulkUpdateAssign,
-  useBulkUpdatePriority,
-  useBulkUpdateStatus,
-  useBulkUpdateTags,
-} from '@/lib/hooks/usePlans';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
+import { useBulkUpdateStatus } from '@/lib/hooks/usePlans';
 import { usePlanStore } from '@/stores/planStore';
-import { useUiStore } from '@/stores/uiStore';
 
 interface BulkActionBarProps {
   totalCount: number;
@@ -17,80 +19,31 @@ interface BulkActionBarProps {
 
 export function BulkActionBar({ totalCount }: BulkActionBarProps) {
   const { selectedPlans, selectAll, clearSelection } = usePlanStore();
-  const { addToast } = useUiStore();
   const fmEnabled = useFrontmatterEnabled();
   const count = selectedPlans.size;
 
   const bulkStatus = useBulkUpdateStatus();
-  const bulkTags = useBulkUpdateTags();
-  const bulkAssign = useBulkUpdateAssign();
-  const bulkPriority = useBulkUpdatePriority();
 
-  const [tagInput, setTagInput] = useState('');
-  const [assigneeInput, setAssigneeInput] = useState('');
-  const [showTagInput, setShowTagInput] = useState(false);
-  const [showAssignInput, setShowAssignInput] = useState(false);
+  // Reset key to force Select to re-render after selection (acts as "action" select)
+  const [statusKey, setStatusKey] = useState(0);
 
   const filenames = Array.from(selectedPlans);
-  const isPending =
-    bulkStatus.isPending || bulkTags.isPending || bulkAssign.isPending || bulkPriority.isPending;
+  const isPending = bulkStatus.isPending;
 
   const handleBulkStatus = async (status: PlanStatus) => {
     try {
       const result = await bulkStatus.mutateAsync({ filenames, status });
       const msg = `${result.succeeded.length} plans updated`;
       if (result.failed.length > 0) {
-        addToast(`${msg}, ${result.failed.length} failed`, 'info');
+        toast.info(`${msg}, ${result.failed.length} failed`);
       } else {
-        addToast(msg, 'success');
+        toast.success(msg);
       }
       clearSelection();
     } catch {
-      addToast('Bulk status update failed', 'error');
+      toast.error('Bulk status update failed');
     }
-  };
-
-  const handleBulkTags = async (action: 'add' | 'remove') => {
-    const tags = tagInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-    if (tags.length === 0) return;
-    try {
-      const result = await bulkTags.mutateAsync({ filenames, action, tags });
-      addToast(
-        `Tags ${action === 'add' ? 'added to' : 'removed from'} ${result.succeeded.length} plans`,
-        'success'
-      );
-      setTagInput('');
-      setShowTagInput(false);
-      clearSelection();
-    } catch {
-      addToast('Bulk tag update failed', 'error');
-    }
-  };
-
-  const handleBulkAssign = async () => {
-    if (!assigneeInput.trim()) return;
-    try {
-      const result = await bulkAssign.mutateAsync({ filenames, assignee: assigneeInput.trim() });
-      addToast(`Assigned ${result.succeeded.length} plans`, 'success');
-      setAssigneeInput('');
-      setShowAssignInput(false);
-      clearSelection();
-    } catch {
-      addToast('Bulk assign failed', 'error');
-    }
-  };
-
-  const handleBulkPriority = async (priority: PlanPriority) => {
-    try {
-      const result = await bulkPriority.mutateAsync({ filenames, priority });
-      addToast(`Priority set for ${result.succeeded.length} plans`, 'success');
-      clearSelection();
-    } catch {
-      addToast('Bulk priority update failed', 'error');
-    }
+    setStatusKey((k) => k + 1);
   };
 
   if (count === 0) return null;
@@ -131,141 +84,23 @@ export function BulkActionBar({ totalCount }: BulkActionBarProps) {
           {fmEnabled && (
             <div className="flex items-center gap-1">
               <ArrowRightCircle className="h-3.5 w-3.5 text-muted-foreground" />
-              <select
-                onChange={(e) => {
-                  if (e.target.value) handleBulkStatus(e.target.value as PlanStatus);
-                  e.target.value = '';
-                }}
+              <Select
+                key={`status-${statusKey}`}
+                onValueChange={(v) => handleBulkStatus(v as PlanStatus)}
                 disabled={isPending}
-                className="rounded-md border px-2 py-1 text-xs"
-                defaultValue=""
               >
-                <option value="" disabled>
-                  Status...
-                </option>
-                <option value="todo">ToDo</option>
-                <option value="in_progress">In Progress</option>
-                <option value="review">Review</option>
-                <option value="completed">Completed</option>
-              </select>
+                <SelectTrigger className="h-7 w-[110px] text-xs">
+                  <SelectValue placeholder="Status..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todo">ToDo</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="review">Review</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
-
-          {/* Priority change */}
-          {fmEnabled && (
-            <div className="flex items-center gap-1">
-              <Flag className="h-3.5 w-3.5 text-muted-foreground" />
-              <select
-                onChange={(e) => {
-                  if (e.target.value) handleBulkPriority(e.target.value as PlanPriority);
-                  e.target.value = '';
-                }}
-                disabled={isPending}
-                className="rounded-md border px-2 py-1 text-xs"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Priority...
-                </option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
-          )}
-
-          {/* Tags */}
-          {fmEnabled &&
-            (showTagInput ? (
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="tag1, tag2..."
-                  className="rounded-md border px-2 py-1 text-xs w-32"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleBulkTags('add');
-                    if (e.key === 'Escape') setShowTagInput(false);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleBulkTags('add')}
-                  disabled={isPending || !tagInput.trim()}
-                  className="rounded-md border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBulkTags('remove')}
-                  disabled={isPending || !tagInput.trim()}
-                  className="rounded-md border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
-                >
-                  Remove
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowTagInput(false)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowTagInput(true)}
-                className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
-              >
-                <Tags className="h-3.5 w-3.5" />
-                Tags
-              </button>
-            ))}
-
-          {/* Assign */}
-          {fmEnabled &&
-            (showAssignInput ? (
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={assigneeInput}
-                  onChange={(e) => setAssigneeInput(e.target.value)}
-                  placeholder="Assignee..."
-                  className="rounded-md border px-2 py-1 text-xs w-28"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleBulkAssign();
-                    if (e.key === 'Escape') setShowAssignInput(false);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleBulkAssign}
-                  disabled={isPending || !assigneeInput.trim()}
-                  className="rounded-md border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
-                >
-                  Assign
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAssignInput(false)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowAssignInput(true)}
-                className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
-              >
-                <User className="h-3.5 w-3.5" />
-                Assign
-              </button>
-            ))}
         </div>
       </div>
     </div>

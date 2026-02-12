@@ -16,24 +16,25 @@ Testing the delete functionality.
 /**
  * Helper: Open the PlanActions "more" menu by finding the MoreVertical button
  * next to the VSCode/Terminal buttons (not the Header's "More actions" button).
+ * The dropdown is now a Radix DropdownMenu with a trigger button.
  */
 async function openPlanActionsMenu(page: import('@playwright/test').Page) {
   // The PlanActions area contains VSCode, Terminal, and Open in default app buttons.
-  // The MoreVertical button is inside that same area. We locate by finding the container
-  // that has the VSCode button, then click the icon-only button (with a small SVG icon).
+  // The DropdownMenu trigger is the last button (icon-only, h-10 w-10) in the actions bar.
   const actionsBar = page.locator('div.flex.items-center.gap-2').filter({
     has: page.getByRole('button', { name: 'VSCode' }),
   });
-  // The MoreVertical button is a ghost/icon button with no text label inside actionsBar
-  const moreButton = actionsBar.locator('div.relative > button').first();
+  // The DropdownMenuTrigger is a button with size="icon" class (h-10 w-10)
+  const moreButton = actionsBar.locator('button').filter({ hasText: '' }).last();
   await moreButton.click();
 }
 
 /**
- * Helper: Click the Delete option from the already-opened PlanActions menu.
+ * Helper: Click the Delete option from the already-opened PlanActions dropdown menu.
+ * Radix DropdownMenu items have role="menuitem".
  */
 async function clickDeleteMenuItem(page: import('@playwright/test').Page) {
-  const deleteMenuItem = page.getByRole('button', { name: 'Delete', exact: true });
+  const deleteMenuItem = page.getByRole('menuitem', { name: 'Delete', exact: true });
   await expect(deleteMenuItem).toBeVisible();
   await deleteMenuItem.click();
 }
@@ -162,16 +163,16 @@ test.describe('Bulk delete functionality', () => {
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Enter selection mode
-    await page.getByRole('button', { name: '選択' }).click();
+    await page.getByRole('button', { name: '選択', exact: true }).click();
 
-    // Wait for checkboxes to appear
-    await expect(page.locator('input[type="checkbox"]').first()).toBeVisible({ timeout: 3000 });
+    // Wait for checkboxes to appear (Radix Checkbox renders as button[role="checkbox"])
+    await expect(page.locator('button[role="checkbox"]').first()).toBeVisible();
 
     // Select both test plans by clicking their checkboxes
     for (const filename of BULK_TEST_FILES) {
       const planCard = page.locator('div.rounded-lg.border-2').filter({ hasText: filename });
       await expect(planCard).toBeVisible();
-      const checkbox = planCard.locator('input[type="checkbox"]');
+      const checkbox = planCard.locator('button[role="checkbox"]');
       await checkbox.click();
     }
 

@@ -51,18 +51,40 @@ test.afterAll(async ({ request, apiBaseUrl }) => {
   }
 });
 
+/**
+ * Helper: Select a value from a Radix Select (shadcn) trigger.
+ * Radix Select renders as a button trigger + portal listbox.
+ */
+async function selectRadixOption(
+  page: import('@playwright/test').Page,
+  triggerLocator: import('@playwright/test').Locator,
+  optionText: string
+) {
+  await triggerLocator.click();
+  // Radix Select renders options in a portal, so we locate from the page root
+  const option = page.getByRole('option', { name: optionText, exact: true });
+  await option.click();
+}
+
 test.describe('Status Filtering and Status Update', () => {
   test('should display status filter dropdown with all options', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const statusFilter = page.getByRole('combobox').nth(1);
-    await expect(statusFilter).toBeVisible();
+    // The status filter is a Radix Select trigger (button role).
+    // There are multiple Select triggers on the page: sort, status, project.
+    // The status filter trigger contains "All Status" text by default.
+    const statusTrigger = page.locator('button[role="combobox"]').filter({ hasText: 'All Status' });
+    await expect(statusTrigger).toBeVisible();
 
-    await expect(statusFilter.getByRole('option', { name: 'All Status' })).toBeAttached();
-    await expect(statusFilter.getByRole('option', { name: 'ToDo' })).toBeAttached();
-    await expect(statusFilter.getByRole('option', { name: 'In Progress' })).toBeAttached();
-    await expect(statusFilter.getByRole('option', { name: 'Completed' })).toBeAttached();
+    // Open the select to verify options
+    await statusTrigger.click();
+    await expect(page.getByRole('option', { name: 'All Status' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'ToDo' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'In Progress' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Completed' })).toBeVisible();
+    // Close by pressing Escape
+    await page.keyboard.press('Escape');
   });
 
   test('should display status badges on plan cards', async ({ page }) => {
@@ -78,8 +100,8 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const statusFilter = page.getByRole('combobox').nth(1);
-    await statusFilter.selectOption('todo');
+    const statusFilter = page.locator('button[role="combobox"]').filter({ hasText: 'All Status' });
+    await selectRadixOption(page, statusFilter, 'ToDo');
 
     await expect(page.getByText(FIXTURES.inProgress1.filename)).not.toBeVisible();
     await expect(page.getByText(FIXTURES.inProgress2.filename)).not.toBeVisible();
@@ -93,8 +115,8 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const statusFilter = page.getByRole('combobox').nth(1);
-    await statusFilter.selectOption('in_progress');
+    const statusFilter = page.locator('button[role="combobox"]').filter({ hasText: 'All Status' });
+    await selectRadixOption(page, statusFilter, 'In Progress');
 
     await expect(page.getByText(FIXTURES.todo1.filename)).not.toBeVisible();
     await expect(page.getByText(FIXTURES.todo2.filename)).not.toBeVisible();
@@ -108,8 +130,8 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const statusFilter = page.getByRole('combobox').nth(1);
-    await statusFilter.selectOption('completed');
+    const statusFilter = page.locator('button[role="combobox"]').filter({ hasText: 'All Status' });
+    await selectRadixOption(page, statusFilter, 'Completed');
 
     await expect(page.getByText(FIXTURES.todo1.filename)).not.toBeVisible();
     await expect(page.getByText(FIXTURES.inProgress1.filename)).not.toBeVisible();
@@ -185,12 +207,14 @@ test.describe('Status Filtering and Status Update', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const statusFilter = page.getByRole('combobox').nth(1);
-
-    await statusFilter.selectOption('completed');
+    // Select "Completed" first
+    const statusFilter = page.locator('button[role="combobox"]').filter({ hasText: 'All Status' });
+    await selectRadixOption(page, statusFilter, 'Completed');
     await expect(page.getByText(FIXTURES.todo1.filename)).not.toBeVisible();
 
-    await statusFilter.selectOption('all');
+    // Now select "All Status" to reset - the trigger text has changed to "Completed"
+    const currentTrigger = page.locator('button[role="combobox"]').filter({ hasText: 'Completed' });
+    await selectRadixOption(page, currentTrigger, 'All Status');
 
     await expect(page.getByRole('button', { name: 'ToDo' }).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'In Progress' }).first()).toBeVisible();
@@ -203,18 +227,23 @@ test.describe('Sort functionality', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const sortDropdown = page.getByRole('combobox').first();
-    await expect(sortDropdown).toBeVisible();
+    // Sort dropdown is the first Radix Select trigger, showing "Date" by default
+    const sortTrigger = page.locator('button[role="combobox"]').filter({ hasText: 'Date' });
+    await expect(sortTrigger).toBeVisible();
 
-    await expect(sortDropdown.getByRole('option', { name: 'Name' })).toBeAttached();
-    await expect(sortDropdown.getByRole('option', { name: 'Size' })).toBeAttached();
+    // Open to verify options
+    await sortTrigger.click();
+    await expect(page.getByRole('option', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Size' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Date' })).toBeVisible();
+    await page.keyboard.press('Escape');
   });
 
   test('should have sort order toggle button', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
-    const sortOrderButton = page.getByRole('button', { name: /ascending|descending/i });
+    const sortOrderButton = page.getByRole('button', { name: /Ascending|Descending/i });
     await expect(sortOrderButton).toBeVisible();
   });
 });

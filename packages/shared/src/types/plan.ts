@@ -4,18 +4,12 @@
 export type PlanStatus = 'todo' | 'in_progress' | 'review' | 'completed';
 
 /**
- * Plan priority levels
- */
-export type PlanPriority = 'low' | 'medium' | 'high' | 'critical';
-
-/**
  * Subtask within a plan
  */
 export interface Subtask {
   id: string;
   title: string;
   status: 'todo' | 'done';
-  assignee?: string;
   dueDate?: string;
 }
 
@@ -33,28 +27,18 @@ export const STATUS_TRANSITIONS: Record<PlanStatus, PlanStatus[]> = {
  * Metadata extracted from YAML frontmatter
  */
 export interface PlanFrontmatter {
-  /** Creation timestamp from frontmatter (ISO 8601) */
-  created?: string;
-  /** Modification timestamp from frontmatter (ISO 8601) */
-  modified?: string;
   /** Project path where plan was created */
   projectPath?: string;
   /** Claude Code session ID */
   sessionId?: string;
   /** Plan status */
   status?: PlanStatus;
-  /** Priority level */
-  priority?: PlanPriority;
   /** Due date (ISO 8601) */
   dueDate?: string;
-  /** Tags for categorization */
-  tags?: string[];
   /** Estimated effort (e.g. "2h", "3d", "1w") */
   estimate?: string;
   /** Filenames of blocking plans */
   blockedBy?: string[];
-  /** Assigned person or agent */
-  assignee?: string;
   /** Subtasks */
   subtasks?: Subtask[];
   /** Schema version for migration */
@@ -174,7 +158,6 @@ export interface ExportOptions {
   format: BulkExportFormat;
 
   filterStatus?: PlanStatus;
-  filterTags?: string[];
 }
 
 /**

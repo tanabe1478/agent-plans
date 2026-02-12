@@ -1,19 +1,33 @@
 import type { PlanStatus } from '@ccplans/shared';
 import { AlertCircle, ArrowUpDown, CheckSquare, Loader2, Trash2, XSquare } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { BulkActionBar } from '@/components/plan/BulkActionBar';
 import { PlanList } from '@/components/plan/PlanList';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useFrontmatterEnabled } from '@/contexts/SettingsContext';
 import { useBulkDelete, usePlans } from '@/lib/hooks/usePlans';
 import { usePlanStore } from '@/stores/planStore';
-import { useUiStore } from '@/stores/uiStore';
 
 export function HomePage() {
   const { data, isLoading, error } = usePlans();
   const bulkDelete = useBulkDelete();
-  const { addToast } = useUiStore();
   const {
     selectedPlans,
     selectAll,
@@ -67,12 +81,13 @@ export function HomePage() {
   const handleBulkDelete = async () => {
     try {
       await bulkDelete.mutateAsync({ filenames: Array.from(selectedPlans) });
-      addToast(`${selectedPlans.size}件のプランを削除しました`, 'success');
+      toast.success(`${selectedPlans.size}件のプランを削除しました`);
       clearSelection();
       setShowBulkDeleteDialog(false);
       setSelectionMode(false);
     } catch (err) {
-      addToast(`削除に失敗しました: ${err}`, 'error');
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`削除に失敗しました: ${message}`);
     }
   };
 
@@ -90,25 +105,26 @@ export function HomePage() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {/* Quick search */}
         <div className="flex-1 min-w-[200px] max-w-md">
-          <input
+          <Input
             type="text"
             placeholder="フィルター..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
         {/* Sort */}
         <div className="flex items-center gap-1">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'size')}
-            className="rounded-md border bg-background px-2 py-2 text-sm text-foreground"
-          >
-            <option value="name">Name</option>
-            <option value="size">Size</option>
-          </select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'size' | 'date')}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="size">Size</SelectItem>
+              <SelectItem value="date">Date</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             variant="ghost"
             size="icon"
@@ -121,33 +137,38 @@ export function HomePage() {
 
         {/* Status filter */}
         {fmEnabled && (
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as PlanStatus | 'all')}
-            className="rounded-md border bg-background px-2 py-2 text-sm text-foreground"
+            onValueChange={(v) => setStatusFilter(v as PlanStatus | 'all')}
           >
-            <option value="all">All Status</option>
-            <option value="todo">ToDo</option>
-            <option value="in_progress">In Progress</option>
-            <option value="review">Review</option>
-            <option value="completed">Completed</option>
-          </select>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="todo">ToDo</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="review">Review</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         )}
 
         {/* Project filter */}
         {fmEnabled && uniqueProjects.length > 0 && (
-          <select
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
-            className="rounded-md border bg-background px-2 py-2 text-sm text-foreground max-w-[200px]"
-          >
-            <option value="all">All Projects</option>
-            {uniqueProjects.map((project) => (
-              <option key={project} value={project}>
-                {project.split('/').filter(Boolean).pop()}
-              </option>
-            ))}
-          </select>
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {uniqueProjects.map((project) => (
+                <SelectItem key={project} value={project}>
+                  {project.split('/').filter(Boolean).pop()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         {/* Selection mode toggle */}
@@ -163,21 +184,33 @@ export function HomePage() {
           選択
         </Button>
 
-        {/* Selection actions */}
-        {selectionMode && selectedPlans.size > 0 && (
+        {/* Selection actions — always visible in selection mode to avoid layout shift */}
+        {selectionMode && (
           <>
             <Button
               variant="outline"
               size="sm"
+              disabled={selectedPlans.size === 0}
               onClick={() => selectAll(plans.map((p) => p.filename))}
             >
               全選択
             </Button>
-            <Button variant="outline" size="sm" onClick={clearSelection}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={selectedPlans.size === 0}
+              onClick={clearSelection}
+            >
               <XSquare className="h-4 w-4 mr-1" />
               選択解除
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => setShowBulkDeleteDialog(true)}>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-32 tabular-nums"
+              disabled={selectedPlans.size === 0}
+              onClick={() => setShowBulkDeleteDialog(true)}
+            >
               <Trash2 className="h-4 w-4 mr-1" />
               {selectedPlans.size}件を削除
             </Button>
@@ -194,27 +227,35 @@ export function HomePage() {
       {/* Bulk delete dialog */}
       <Dialog
         open={showBulkDeleteDialog}
-        onClose={() => setShowBulkDeleteDialog(false)}
-        title="プランを一括削除"
+        onOpenChange={(v) => !v && setShowBulkDeleteDialog(false)}
       >
-        <p className="text-sm text-muted-foreground mb-4">
-          選択した{selectedPlans.size}件のプランを完全に削除しますか？この操作は取り消せません。
-        </p>
-        <div className="max-h-40 overflow-y-auto mb-4">
-          {Array.from(selectedPlans).map((filename) => (
-            <p key={filename} className="text-sm font-mono text-muted-foreground">
-              {filename}
-            </p>
-          ))}
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)}>
-            キャンセル
-          </Button>
-          <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDelete.isPending}>
-            {bulkDelete.isPending ? '削除中...' : '削除'}
-          </Button>
-        </div>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>プランを一括削除</DialogTitle>
+            <DialogDescription>
+              選択した{selectedPlans.size}件のプランを完全に削除しますか？この操作は取り消せません。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-40 overflow-y-auto">
+            {Array.from(selectedPlans).map((fn) => (
+              <p key={fn} className="text-sm font-mono text-muted-foreground">
+                {fn}
+              </p>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)}>
+              キャンセル
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={bulkDelete.isPending}
+            >
+              {bulkDelete.isPending ? '削除中...' : '削除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );

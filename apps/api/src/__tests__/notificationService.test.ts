@@ -150,7 +150,6 @@ describe('NotificationService', () => {
           frontmatter: {
             status: 'in_progress',
             blockedBy: ['other-plan.md'],
-            modified: fiveDaysAgo.toISOString(),
           },
         }),
       ]);
@@ -176,7 +175,6 @@ describe('NotificationService', () => {
           frontmatter: {
             status: 'in_progress',
             blockedBy: ['other-plan.md'],
-            modified: yesterday.toISOString(),
           },
         }),
       ]);
@@ -199,7 +197,6 @@ describe('NotificationService', () => {
           frontmatter: {
             status: 'todo',
             blockedBy: ['other-plan.md'],
-            modified: fiveDaysAgo.toISOString(),
           },
         }),
       ]);

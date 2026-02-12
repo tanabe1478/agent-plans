@@ -123,7 +123,7 @@ Content.`
       expect(content).toContain('Second Task');
     });
 
-    it('should include optional assignee and dueDate', async () => {
+    it('should include optional dueDate', async () => {
       await writePlan(
         'plan-c.md',
         `---
@@ -136,11 +136,10 @@ Content.`
 
       const subtask = await addSubtask(
         'plan-c.md',
-        { title: 'Assigned Task', status: 'todo', assignee: 'alice', dueDate: '2025-12-31' },
+        { title: 'Dated Task', status: 'todo', dueDate: '2025-12-31' },
         testDir
       );
 
-      expect(subtask.assignee).toBe('alice');
       expect(subtask.dueDate).toBe('2025-12-31');
     });
 
@@ -214,31 +213,6 @@ Content.`
       const updated = await updateSubtask('update-status.md', 'st-1', { status: 'done' }, testDir);
 
       expect(updated.status).toBe('done');
-    });
-
-    it('should update assignee', async () => {
-      await writePlan(
-        'update-assignee.md',
-        `---
-status: todo
-subtasks:
-  - id: st-1
-    title: Task
-    status: todo
----
-# Update Assignee
-
-Content.`
-      );
-
-      const updated = await updateSubtask(
-        'update-assignee.md',
-        'st-1',
-        { assignee: 'bob' },
-        testDir
-      );
-
-      expect(updated.assignee).toBe('bob');
     });
 
     it('should throw for non-existent subtask ID', async () => {
@@ -416,7 +390,7 @@ subtasks:
   - id: st-1
     title: Preserve Props
     status: todo
-    assignee: alice
+    dueDate: "2025-12-31"
 ---
 # Toggle Preserve
 
@@ -427,7 +401,7 @@ Content.`
 
       expect(toggled.status).toBe('done');
       expect(toggled.title).toBe('Preserve Props');
-      expect(toggled.assignee).toBe('alice');
+      expect(toggled.dueDate).toBe('2025-12-31');
     });
   });
 });

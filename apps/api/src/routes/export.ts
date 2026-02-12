@@ -5,7 +5,6 @@ import { exportAsCsv, exportAsJson, exportAsTarGz } from '../services/exportServ
 const exportQuerySchema = z.object({
   format: z.enum(['json', 'csv', 'zip']).default('json'),
   filterStatus: z.enum(['todo', 'in_progress', 'review', 'completed']).optional(),
-  filterTags: z.string().optional(),
 });
 
 export const exportRoutes: FastifyPluginAsync = async (fastify) => {
@@ -14,7 +13,6 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
     Querystring: {
       format?: string;
       filterStatus?: string;
-      filterTags?: string;
     };
   }>('/', async (request, reply) => {
     try {
@@ -22,7 +20,6 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
 
       const options = {
         filterStatus: query.filterStatus as import('@ccplans/shared').PlanStatus | undefined,
-        filterTags: query.filterTags ? query.filterTags.split(',').map((t) => t.trim()) : undefined,
       };
 
       switch (query.format) {

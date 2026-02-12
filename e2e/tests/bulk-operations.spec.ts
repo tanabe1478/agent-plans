@@ -13,10 +13,7 @@ test.describe('Bulk Operations (Feature 5)', () => {
           filename,
           content: `---
 status: todo
-priority: low
-tags:
-  - "test"
-assignee: "nobody"
+estimate: "2d"
 ---
 # ${filename}
 
@@ -56,105 +53,6 @@ Test content for bulk operations.
     }
   });
 
-  test('should perform bulk tag addition via API', async ({ request, apiBaseUrl }) => {
-    // Add tags to all plans
-    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-tags`, {
-      data: {
-        filenames: BULK_TEST_FILES,
-        action: 'add',
-        tags: ['bulk-added', 'automation'],
-      },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const result = await response.json();
-    expect(result.succeeded).toHaveLength(3);
-
-    // Verify tags were added
-    for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
-      const plan = await planResponse.json();
-      expect(plan.frontmatter.tags).toContain('bulk-added');
-      expect(plan.frontmatter.tags).toContain('automation');
-      expect(plan.frontmatter.tags).toContain('test'); // Original tag preserved
-    }
-  });
-
-  test('should perform bulk priority change via API', async ({ request, apiBaseUrl }) => {
-    // Update priority for all plans
-    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-priority`, {
-      data: {
-        filenames: BULK_TEST_FILES,
-        priority: 'high',
-      },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const result = await response.json();
-    expect(result.succeeded).toHaveLength(3);
-
-    // Verify priority was updated
-    for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
-      const plan = await planResponse.json();
-      expect(plan.frontmatter.priority).toBe('high');
-    }
-  });
-
-  test('should perform bulk assignee change via API', async ({ request, apiBaseUrl }) => {
-    // Assign all plans to a user
-    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-assign`, {
-      data: {
-        filenames: BULK_TEST_FILES,
-        assignee: 'charlie',
-      },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const result = await response.json();
-    expect(result.succeeded).toHaveLength(3);
-
-    // Verify assignee was updated
-    for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
-      const plan = await planResponse.json();
-      expect(plan.frontmatter.assignee).toBe('charlie');
-    }
-  });
-
-  test('should handle bulk tag removal via API', async ({ request, apiBaseUrl }) => {
-    // First add some tags
-    await request.post(`${apiBaseUrl}/api/plans/bulk-tags`, {
-      data: {
-        filenames: BULK_TEST_FILES,
-        action: 'add',
-        tags: ['remove-me', 'keep-me'],
-      },
-    });
-
-    // Remove specific tag
-    const response = await request.post(`${apiBaseUrl}/api/plans/bulk-tags`, {
-      data: {
-        filenames: BULK_TEST_FILES,
-        action: 'remove',
-        tags: ['remove-me'],
-      },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const result = await response.json();
-    expect(result.succeeded).toHaveLength(3);
-
-    // Verify tag was removed but others remain
-    for (const filename of BULK_TEST_FILES) {
-      const planResponse = await request.get(`${apiBaseUrl}/api/plans/${filename}`);
-      const plan = await planResponse.json();
-      expect(plan.frontmatter.tags).not.toContain('remove-me');
-      expect(plan.frontmatter.tags).toContain('keep-me');
-      expect(plan.frontmatter.tags).toContain('test'); // Original tag preserved
-    }
-  });
-
   test('should handle partial failures in bulk operations', async ({ request, apiBaseUrl }) => {
     const mixedFiles = [...BULK_TEST_FILES, 'non-existent-file.md'];
 
@@ -181,14 +79,14 @@ Test content for bulk operations.
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Find the selection mode toggle button
-    const selectionButton = page.getByRole('button', { name: '選択' });
+    const selectionButton = page.getByRole('button', { name: '選択', exact: true });
     await expect(selectionButton).toBeVisible();
 
     // Enter selection mode
     await selectionButton.click();
 
-    // Checkboxes should appear on plan cards
-    const checkboxes = page.locator('input[type="checkbox"]');
+    // Checkboxes should appear on plan cards (Radix Checkbox uses button[role="checkbox"])
+    const checkboxes = page.locator('button[role="checkbox"]');
     const count = await checkboxes.count();
     expect(count).toBeGreaterThan(0);
 
@@ -204,11 +102,11 @@ Test content for bulk operations.
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Enter selection mode
-    const selectionButton = page.getByRole('button', { name: '選択' });
+    const selectionButton = page.getByRole('button', { name: '選択', exact: true });
     await selectionButton.click();
 
-    // Find checkboxes on the plan cards
-    const checkboxes = page.locator('input[type="checkbox"]');
+    // Find checkboxes on the plan cards (Radix Checkbox uses button[role="checkbox"])
+    const checkboxes = page.locator('button[role="checkbox"]');
     const checkboxCount = await checkboxes.count();
     expect(checkboxCount).toBeGreaterThan(0);
 
@@ -233,15 +131,15 @@ Test content for bulk operations.
     }
   });
 
-  test('should display bulk action bar with operation buttons', async ({ page }) => {
+  test('should display bulk action bar with status dropdown', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'プラン一覧' })).toBeVisible();
 
     // Enter selection mode and select a plan
-    const selectionButton = page.getByRole('button', { name: '選択' });
+    const selectionButton = page.getByRole('button', { name: '選択', exact: true });
     await selectionButton.click();
 
-    const checkboxes = page.locator('input[type="checkbox"]');
+    const checkboxes = page.locator('button[role="checkbox"]');
     await checkboxes.first().click();
 
     // The BulkActionBar should appear at the bottom with operation buttons
@@ -251,15 +149,9 @@ Test content for bulk operations.
     // Should show "selected" text
     await expect(bulkBar.getByText(/selected/)).toBeVisible();
 
-    // Should have status dropdown
-    const statusSelect = bulkBar.locator('select').first();
+    // Should have status dropdown (Radix Select trigger with "Status..." placeholder)
+    const statusSelect = bulkBar.locator('button[role="combobox"]').first();
     await expect(statusSelect).toBeVisible();
-
-    // Should have Tags button
-    await expect(bulkBar.getByText('Tags')).toBeVisible();
-
-    // Should have Assign button
-    await expect(bulkBar.getByText('Assign')).toBeVisible();
   });
 
   test('should handle bulk delete via API', async ({ request, apiBaseUrl }) => {

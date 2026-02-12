@@ -1,10 +1,4 @@
-import type {
-  ExportFormat,
-  ExternalApp,
-  PlanPriority,
-  PlanStatus,
-  SubtaskActionRequest,
-} from '@ccplans/shared';
+import type { ExportFormat, ExternalApp, PlanStatus, SubtaskActionRequest } from '@ccplans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 
@@ -102,49 +96,6 @@ export function useBulkUpdateStatus() {
   return useMutation({
     mutationFn: ({ filenames, status }: { filenames: string[]; status: PlanStatus }) =>
       api.plans.bulkUpdateStatus(filenames, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
-    },
-  });
-}
-
-export function useBulkUpdateTags() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      filenames,
-      action,
-      tags,
-    }: {
-      filenames: string[];
-      action: 'add' | 'remove';
-      tags: string[];
-    }) => api.plans.bulkUpdateTags(filenames, action, tags),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
-    },
-  });
-}
-
-export function useBulkUpdateAssign() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ filenames, assignee }: { filenames: string[]; assignee: string }) =>
-      api.plans.bulkUpdateAssign(filenames, assignee),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
-    },
-  });
-}
-
-export function useBulkUpdatePriority() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ filenames, priority }: { filenames: string[]; priority: PlanPriority }) =>
-      api.plans.bulkUpdatePriority(filenames, priority),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
     },

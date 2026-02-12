@@ -1,4 +1,5 @@
 import type { PlanStatus } from '@ccplans/shared';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface StatusBadgeProps {
@@ -33,19 +34,33 @@ export function StatusBadge({ status, onClick, interactive = false }: StatusBadg
     label: status,
     className: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
   };
-  const baseClassName = cn(
-    'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-    config.className,
-    interactive && 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current/30'
-  );
 
   if (onClick && interactive) {
     return (
-      <button type="button" onClick={onClick} className={baseClassName}>
+      <Badge
+        variant="outline"
+        className={cn(
+          'border-transparent cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current/30',
+          config.className
+        )}
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+      >
         {config.label}
-      </button>
+      </Badge>
     );
   }
 
-  return <span className={baseClassName}>{config.label}</span>;
+  return (
+    <Badge variant="outline" className={cn('border-transparent', config.className)}>
+      {config.label}
+    </Badge>
+  );
 }

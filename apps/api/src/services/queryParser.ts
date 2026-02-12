@@ -15,16 +15,7 @@ export interface ParsedQuery {
   filters: QueryFilter[];
 }
 
-const FILTER_FIELDS = new Set([
-  'status',
-  'tag',
-  'priority',
-  'assignee',
-  'due',
-  'estimate',
-  'project',
-  'blockedBy',
-]);
+const FILTER_FIELDS = new Set(['status', 'due', 'estimate', 'project', 'blockedBy']);
 
 const OPERATOR_PATTERN = /^(<=|>=|<|>|:|=)(.+)$/;
 
@@ -33,10 +24,7 @@ const OPERATOR_PATTERN = /^(<=|>=|<|>|:|=)(.+)$/;
  *
  * Supported syntax:
  *   status:in_progress
- *   tag:api
  *   due<2026-02-10
- *   priority:high
- *   assignee:john
  *   "exact phrase"
  *   Free text words
  */

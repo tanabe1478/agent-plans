@@ -88,7 +88,7 @@ hooks/     - Claude Code用hookスクリプト
 2. 削除時はデフォルトで `archive/` サブディレクトリへ移動（ソフトデリート）
 3. タイトルはMarkdownの最初のH1から抽出、セクションはH2から抽出
 4. YAMLフロントマターからメタデータ（status, projectPath等）を解析
-5. PostToolUseフック（`hooks/plan-metadata/inject.py`）でプラン作成時にfrontmatterを自動挿入
+5. PostToolUseフック（`hooks/plan-metadata/inject.py`）でプラン作成時にproject_path, session_id, statusを自動挿入
 6. レビューコメントはlocalStorageに保存（プランごとのキー）
 
 ## Worktree Development

@@ -72,59 +72,37 @@ describe('migrationService', () => {
     it('should preserve existing fields during migration', () => {
       const input: Record<string, unknown> = {
         status: 'in_progress',
-        priority: 'high',
-        tags: ['feature', 'api'],
+        estimate: '3d',
         created: '2025-01-01T00:00:00Z',
       };
 
       const result = migrate(input);
       expect(result.status).toBe('in_progress');
-      expect(result.priority).toBe('high');
-      expect(result.tags).toEqual(['feature', 'api']);
+      expect(result.estimate).toBe('3d');
       expect(result.schemaVersion).toBe(1);
-    });
-
-    it('should convert string tags to array', () => {
-      const input: Record<string, unknown> = {
-        status: 'todo',
-        tags: 'single-tag',
-      };
-
-      const result = migrate(input);
-      expect(result.tags).toEqual(['single-tag']);
     });
 
     it('should not modify already-migrated frontmatter', () => {
       const input: Record<string, unknown> = {
         status: 'todo',
         schemaVersion: 1,
-        priority: 'low',
+        estimate: '2h',
       };
 
       const result = migrate(input);
       expect(result.schemaVersion).toBe(1);
-      expect(result.priority).toBe('low');
+      expect(result.estimate).toBe('2h');
     });
 
     it('should be idempotent', () => {
       const input: Record<string, unknown> = {
         status: 'todo',
-        tags: ['a', 'b'],
+        blockedBy: ['dep.md'],
       };
 
       const first = migrate(input);
       const second = migrate(first as unknown as Record<string, unknown>);
       expect(first).toEqual(second);
-    });
-
-    it('should handle undefined tags gracefully', () => {
-      const input: Record<string, unknown> = {
-        status: 'todo',
-      };
-
-      const result = migrate(input);
-      expect(result.tags).toBeUndefined();
-      expect(result.schemaVersion).toBe(1);
     });
   });
 

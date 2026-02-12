@@ -76,56 +76,28 @@ Content.`
   });
 
   describe('updateFrontmatterField', () => {
-    it('should update tags field', async () => {
-      await writePlan('tag-plan.md', 'todo');
+    it('should update estimate field', async () => {
+      await writePlan('estimate-plan.md', 'todo');
 
-      await service.updateFrontmatterField('tag-plan.md', 'tags', ['feature', 'api']);
+      await service.updateFrontmatterField('estimate-plan.md', 'estimate', '3d');
 
-      const plan = await service.getPlan('tag-plan.md');
-      expect(plan.frontmatter?.tags).toEqual(['feature', 'api']);
-    });
-
-    it('should update assignee field', async () => {
-      await writePlan('assign-plan.md', 'todo');
-
-      await service.updateFrontmatterField('assign-plan.md', 'assignee', 'alice');
-
-      const plan = await service.getPlan('assign-plan.md');
-      expect(plan.frontmatter?.assignee).toBe('alice');
-    });
-
-    it('should update priority field', async () => {
-      await writePlan('priority-plan.md', 'todo');
-
-      await service.updateFrontmatterField('priority-plan.md', 'priority', 'critical');
-
-      const plan = await service.getPlan('priority-plan.md');
-      expect(plan.frontmatter?.priority).toBe('critical');
-    });
-
-    it('should update modified timestamp', async () => {
-      await writePlan('modified-plan.md', 'todo', 'modified: "2020-01-01T00:00:00Z"');
-
-      await service.updateFrontmatterField('modified-plan.md', 'assignee', 'bob');
-
-      const plan = await service.getPlan('modified-plan.md');
-      expect(plan.frontmatter?.modified).not.toBe('2020-01-01T00:00:00Z');
+      const plan = await service.getPlan('estimate-plan.md');
+      expect(plan.frontmatter?.estimate).toBe('3d');
     });
 
     it('should preserve existing frontmatter fields', async () => {
-      await writePlan('preserve-plan.md', 'in_progress', 'priority: high\nassignee: "alice"');
+      await writePlan('preserve-plan.md', 'in_progress', 'estimate: "2h"');
 
-      await service.updateFrontmatterField('preserve-plan.md', 'tags', ['urgent']);
+      await service.updateFrontmatterField('preserve-plan.md', 'dueDate', '2025-12-31T00:00:00Z');
 
       const plan = await service.getPlan('preserve-plan.md');
       expect(plan.frontmatter?.status).toBe('in_progress');
-      expect(plan.frontmatter?.priority).toBe('high');
-      expect(plan.frontmatter?.assignee).toBe('alice');
-      expect(plan.frontmatter?.tags).toEqual(['urgent']);
+      expect(plan.frontmatter?.estimate).toBe('2h');
+      expect(plan.frontmatter?.dueDate).toBe('2025-12-31T00:00:00Z');
     });
 
     it('should throw for invalid filename', async () => {
-      await expect(service.updateFrontmatterField('../bad.md', 'assignee', 'x')).rejects.toThrow(
+      await expect(service.updateFrontmatterField('../bad.md', 'estimate', 'x')).rejects.toThrow(
         'Invalid filename'
       );
     });
@@ -146,33 +118,32 @@ Content.`
     });
   });
 
-  describe('bulk tag operations (service level)', () => {
-    it('should add tags to plans without existing tags', async () => {
-      await writePlan('notags.md', 'todo');
+  describe('bulk blockedBy operations (service level)', () => {
+    it('should add blockedBy to plans without existing blockedBy', async () => {
+      await writePlan('noblock.md', 'todo');
 
-      await service.updateFrontmatterField('notags.md', 'tags', ['new-tag']);
+      await service.updateFrontmatterField('noblock.md', 'blockedBy', ['dep.md']);
 
-      const plan = await service.getPlan('notags.md');
-      expect(plan.frontmatter?.tags).toEqual(['new-tag']);
+      const plan = await service.getPlan('noblock.md');
+      expect(plan.frontmatter?.blockedBy).toEqual(['dep.md']);
     });
 
-    it('should replace tags on plans', async () => {
-      await writePlan('withtags.md', 'todo', 'tags: [old-tag]');
+    it('should replace blockedBy on plans', async () => {
+      await writePlan('withblock.md', 'todo', 'blockedBy: [old.md]');
 
-      await service.updateFrontmatterField('withtags.md', 'tags', ['new-tag']);
+      await service.updateFrontmatterField('withblock.md', 'blockedBy', ['new.md']);
 
-      const plan = await service.getPlan('withtags.md');
-      expect(plan.frontmatter?.tags).toEqual(['new-tag']);
+      const plan = await service.getPlan('withblock.md');
+      expect(plan.frontmatter?.blockedBy).toEqual(['new.md']);
     });
 
-    it('should set empty tags array', async () => {
-      await writePlan('cleartags.md', 'todo', 'tags: [a, b]');
+    it('should set empty blockedBy array', async () => {
+      await writePlan('clearblock.md', 'todo', 'blockedBy: [a.md, b.md]');
 
-      await service.updateFrontmatterField('cleartags.md', 'tags', []);
+      await service.updateFrontmatterField('clearblock.md', 'blockedBy', []);
 
-      const plan = await service.getPlan('cleartags.md');
-      // Empty tags are not serialized, so frontmatter.tags should be undefined
-      expect(plan.frontmatter?.tags).toBeUndefined();
+      const plan = await service.getPlan('clearblock.md');
+      expect(plan.frontmatter?.blockedBy).toBeUndefined();
     });
   });
 });

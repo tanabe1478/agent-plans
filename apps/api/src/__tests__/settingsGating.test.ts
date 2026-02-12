@@ -39,10 +39,7 @@ import { resetSettingsCache, updateSettings } from '../services/settingsService.
 const PLAN_WITH_FRONTMATTER = `---
 created: "2025-01-01T00:00:00Z"
 status: todo
-priority: high
-tags:
-  - api
-  - test
+estimate: "3d"
 ---
 # Test Plan
 
@@ -76,7 +73,7 @@ describe('Frontmatter gating', () => {
       const meta = await service.getPlanMeta('test-plan.md');
       expect(meta.frontmatter).toBeDefined();
       expect(meta.frontmatter?.status).toBe('todo');
-      expect(meta.frontmatter?.priority).toBe('high');
+      expect(meta.frontmatter?.estimate).toBe('3d');
     });
   });
 
@@ -91,7 +88,7 @@ describe('Frontmatter gating', () => {
       await updateSettings({ frontmatterEnabled: true });
       const plan = await service.getPlan('test-plan.md');
       expect(plan.frontmatter).toBeDefined();
-      expect(plan.frontmatter?.tags).toEqual(['api', 'test']);
+      expect(plan.frontmatter?.estimate).toBe('3d');
     });
   });
 });

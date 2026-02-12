@@ -7,7 +7,6 @@ import type {
   Notification,
   PlanDetail,
   PlanMeta,
-  PlanPriority,
   PlanStatus,
   PlanVersion,
   SearchResult,
@@ -79,15 +78,6 @@ export interface BulkStatusRequest {
 }
 
 /**
- * POST /api/plans/bulk-tags request body
- */
-export interface BulkTagsRequest {
-  filenames: string[];
-  tags: string[];
-  action: 'add' | 'remove' | 'set';
-}
-
-/**
  * PATCH /api/plans/:filename/frontmatter request body
  */
 export interface UpdateFrontmatterRequest {
@@ -133,22 +123,6 @@ export type SubtaskActionRequest =
 export interface SubtaskActionResponse {
   success: boolean;
   subtask?: Subtask;
-}
-
-/**
- * POST /api/plans/bulk-assign request body
- */
-export interface BulkAssignRequest {
-  filenames: string[];
-  assignee: string;
-}
-
-/**
- * POST /api/plans/bulk-priority request body
- */
-export interface BulkPriorityRequest {
-  filenames: string[];
-  priority: PlanPriority;
 }
 
 /**

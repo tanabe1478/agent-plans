@@ -35,58 +35,6 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(filenames).toContain('yellow-jumping-dog.md');
   });
 
-  test('API: tag:api filter search should work', async ({ request, apiBaseUrl }) => {
-    const response = await request.get(`${apiBaseUrl}/api/search`, {
-      params: { q: 'tag:api' },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const data = await response.json();
-
-    expect(data.results).toBeDefined();
-    expect(Array.isArray(data.results)).toBe(true);
-    expect(data.results.length).toBeGreaterThan(0);
-
-    // red-sleeping-bear.md has tags: [api, security]
-    const filenames = data.results.map((r: any) => r.filename);
-    expect(filenames).toContain('red-sleeping-bear.md');
-  });
-
-  test('API: priority:high filter search should work', async ({ request, apiBaseUrl }) => {
-    const response = await request.get(`${apiBaseUrl}/api/search`, {
-      params: { q: 'priority:high' },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const data = await response.json();
-
-    expect(data.results).toBeDefined();
-    expect(Array.isArray(data.results)).toBe(true);
-    expect(data.results.length).toBeGreaterThan(0);
-
-    // blue-running-fox.md has priority=high
-    const filenames = data.results.map((r: any) => r.filename);
-    expect(filenames).toContain('blue-running-fox.md');
-  });
-
-  test('API: assignee:alice filter search should work', async ({ request, apiBaseUrl }) => {
-    const response = await request.get(`${apiBaseUrl}/api/search`, {
-      params: { q: 'assignee:alice' },
-    });
-
-    expect(response.ok()).toBeTruthy();
-    const data = await response.json();
-
-    expect(data.results).toBeDefined();
-    expect(Array.isArray(data.results)).toBe(true);
-    expect(data.results.length).toBeGreaterThan(0);
-
-    // blue-running-fox.md and red-sleeping-bear.md have assignee=alice
-    const filenames = data.results.map((r: any) => r.filename);
-    expect(filenames).toContain('blue-running-fox.md');
-    expect(filenames).toContain('red-sleeping-bear.md');
-  });
-
   test('API: combined query (text + filter) should work', async ({ request, apiBaseUrl }) => {
     const response = await request.get(`${apiBaseUrl}/api/search`, {
       params: { q: 'auth status:todo' },
@@ -109,12 +57,11 @@ test.describe('Advanced Search (Feature 6)', () => {
 
     // Type a filter query - use the SearchBar component's text input (not the header search)
     const searchInput = page.getByRole('textbox', { name: /Search plans/i });
-    await searchInput.fill('status:todo tag:api priority:high');
+    await searchInput.fill('status:todo estimate:3d');
 
     // Check that filter chips are rendered (use exact match to avoid sidebar conflicts)
     await expect(page.getByText('status', { exact: true })).toBeVisible();
-    await expect(page.getByText('tag', { exact: true })).toBeVisible();
-    await expect(page.getByText('priority', { exact: true })).toBeVisible();
+    await expect(page.getByText('estimate', { exact: true })).toBeVisible();
   });
 
   test('should show autocomplete hints when typing filter prefixes', async ({ page }) => {
@@ -227,7 +174,7 @@ test.describe('Advanced Search (Feature 6)', () => {
 
   test('API: multiple combined filters should work', async ({ request, apiBaseUrl }) => {
     const response = await request.get(`${apiBaseUrl}/api/search`, {
-      params: { q: 'status:todo priority:high tag:backend' },
+      params: { q: 'status:todo estimate:3d' },
     });
 
     expect(response.ok()).toBeTruthy();
@@ -236,12 +183,9 @@ test.describe('Advanced Search (Feature 6)', () => {
     expect(data.results).toBeDefined();
     expect(Array.isArray(data.results)).toBe(true);
 
-    // blue-running-fox matches all three filters
+    // blue-running-fox matches both filters (status=todo, estimate=3d)
     const filenames = data.results.map((r: any) => r.filename);
     expect(filenames).toContain('blue-running-fox.md');
-
-    // Other plans should not match all three filters combined
-    expect(filenames).not.toContain('yellow-jumping-dog.md');
   });
 
   test('API: empty query should return validation error', async ({ request, apiBaseUrl }) => {

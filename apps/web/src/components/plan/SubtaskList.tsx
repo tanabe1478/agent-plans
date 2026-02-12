@@ -1,6 +1,7 @@
 import type { Subtask } from '@ccplans/shared';
 import { CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 import { useUpdateSubtask } from '@/lib/hooks/usePlans';
 
 interface SubtaskListProps {
@@ -98,15 +99,14 @@ export function SubtaskList({ filename, subtasks }: SubtaskListProps) {
       </ul>
 
       <div className="mt-3 flex gap-2">
-        <input
-          type="text"
+        <Input
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleAdd();
           }}
           placeholder="Add subtask..."
-          className="flex-1 rounded-md border px-3 py-1.5 text-sm"
+          className="flex-1 h-8"
         />
         <button
           type="button"

@@ -6,10 +6,7 @@ test.describe.configure({ mode: 'serial' });
 const TEST_IMPORT_FILENAME = 'test-import-plan.md';
 const TEST_IMPORT_CONTENT = `---
 status: todo
-priority: high
-tags:
-  - test
-  - import
+estimate: "2d"
 ---
 
 # Test Import Plan
@@ -242,20 +239,6 @@ test.describe('Import/Export functionality (Feature 14)', () => {
     expect(result.imported).toBeDefined();
     expect(result.skipped).toBeDefined();
     expect(result.errors).toBeDefined();
-  });
-
-  test('should filter export by tags', async ({ request, apiBaseUrl }) => {
-    const response = await request.get(`${apiBaseUrl}/api/export?format=json&filterTags=backend`);
-    expect(response.ok()).toBeTruthy();
-
-    const json = await response.json();
-    expect(json.plans).toBeDefined();
-    // All exported plans should have the 'backend' tag
-    for (const plan of json.plans) {
-      if (plan.frontmatter?.tags) {
-        expect(plan.frontmatter.tags).toContain('backend');
-      }
-    }
   });
 
   test('should display backup page with backup list', async ({ page, request, apiBaseUrl }) => {

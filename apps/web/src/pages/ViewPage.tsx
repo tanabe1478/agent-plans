@@ -8,9 +8,6 @@ import {
   HardDrive,
   Loader2,
   MessageSquareText,
-  Signal,
-  Tag,
-  User,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -70,16 +67,18 @@ export function ViewPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{plan.title}</h1>
+          <div className="flex items-start gap-3">
+            <h1 className="text-2xl font-bold min-w-0">{plan.title}</h1>
             {fmEnabled && plan.frontmatter?.status && (
-              <StatusDropdown
-                currentStatus={plan.frontmatter.status}
-                onStatusChange={(status: PlanStatus) =>
-                  updateStatus.mutate({ filename: plan.filename, status })
-                }
-                disabled={updateStatus.isPending}
-              />
+              <div className="flex-shrink-0 mt-1">
+                <StatusDropdown
+                  currentStatus={plan.frontmatter.status}
+                  onStatusChange={(status: PlanStatus) =>
+                    updateStatus.mutate({ filename: plan.filename, status })
+                  }
+                  disabled={updateStatus.isPending}
+                />
+              </div>
             )}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -98,32 +97,7 @@ export function ViewPage() {
             {fmEnabled && plan.frontmatter?.projectPath && (
               <ProjectBadge projectPath={plan.frontmatter.projectPath} />
             )}
-            {fmEnabled && plan.frontmatter?.priority && (
-              <span className="flex items-center gap-1">
-                <Signal className="h-4 w-4" />
-                {plan.frontmatter.priority}
-              </span>
-            )}
-            {fmEnabled && plan.frontmatter?.assignee && (
-              <span className="flex items-center gap-1">
-                <User className="h-4 w-4" />
-                {plan.frontmatter.assignee}
-              </span>
-            )}
           </div>
-          {fmEnabled && plan.frontmatter?.tags && plan.frontmatter.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              {plan.frontmatter.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
           {fmEnabled && plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
               <GitBranch className="h-4 w-4" />

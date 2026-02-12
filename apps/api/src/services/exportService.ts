@@ -13,7 +13,6 @@ interface ExportPlan {
 
 interface ExportFilterOptions {
   filterStatus?: PlanStatus;
-  filterTags?: string[];
 }
 
 /**
@@ -50,10 +49,7 @@ function parseFrontmatter(content: string): {
 
     switch (key) {
       case 'created':
-        frontmatter.created = value;
-        break;
       case 'modified':
-        frontmatter.modified = value;
         break;
       case 'project_path':
         frontmatter.projectPath = value;
@@ -66,25 +62,8 @@ function parseFrontmatter(content: string): {
           frontmatter.status = value as PlanStatus;
         }
         break;
-      case 'priority':
-        if (['low', 'medium', 'high', 'critical'].includes(value)) {
-          frontmatter.priority = value as PlanFrontmatter['priority'];
-        }
-        break;
       case 'dueDate':
         frontmatter.dueDate = value;
-        break;
-      case 'assignee':
-        frontmatter.assignee = value;
-        break;
-      case 'tags':
-        if (value.startsWith('[') && value.endsWith(']')) {
-          frontmatter.tags = value
-            .slice(1, -1)
-            .split(',')
-            .map((s) => s.trim().replace(/^["']|["']$/g, ''))
-            .filter(Boolean);
-        }
         break;
     }
   }
@@ -116,12 +95,6 @@ async function getPlans(options?: ExportFilterOptions): Promise<ExportPlan[]> {
 
       if (options?.filterStatus && frontmatter?.status !== options.filterStatus) {
         continue;
-      }
-
-      if (options?.filterTags && options.filterTags.length > 0) {
-        const planTags = frontmatter?.tags || [];
-        const hasMatchingTag = options.filterTags.some((t) => planTags.includes(t));
-        if (!hasMatchingTag) continue;
       }
 
       plans.push({ filename, frontmatter, content });
@@ -159,7 +132,7 @@ export async function exportAsJson(options?: ExportFilterOptions): Promise<strin
 export async function exportAsCsv(options?: ExportFilterOptions): Promise<string> {
   const plans = await getPlans(options);
 
-  const header = 'filename,title,status,priority,dueDate,assignee,tags,created,modified';
+  const header = 'filename,title,status,dueDate,estimate';
   const rows = plans.map((p) => {
     const { frontmatter, content } = { frontmatter: p.frontmatter, content: p.content };
     const { body } = parseFrontmatter(content);
@@ -177,12 +150,8 @@ export async function exportAsCsv(options?: ExportFilterOptions): Promise<string
       escapeCsv(p.filename),
       escapeCsv(title),
       escapeCsv(frontmatter?.status),
-      escapeCsv(frontmatter?.priority),
       escapeCsv(frontmatter?.dueDate),
-      escapeCsv(frontmatter?.assignee),
-      escapeCsv(frontmatter?.tags?.join('; ')),
-      escapeCsv(frontmatter?.created),
-      escapeCsv(frontmatter?.modified),
+      escapeCsv(frontmatter?.estimate),
     ].join(',');
   });
 

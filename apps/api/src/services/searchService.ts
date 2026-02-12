@@ -92,19 +92,6 @@ function matchesFilter(filter: QueryFilter, fm: PlanFrontmatter | undefined): bo
       const status = (fm.status ?? '').toLowerCase();
       return operator === ':' || operator === '=' ? status === lowerValue : false;
     }
-    case 'priority': {
-      const priority = (fm.priority ?? '').toLowerCase();
-      return operator === ':' || operator === '=' ? priority === lowerValue : false;
-    }
-    case 'assignee': {
-      const assignee = (fm.assignee ?? '').toLowerCase();
-      if (operator === ':') return assignee.includes(lowerValue);
-      return assignee === lowerValue;
-    }
-    case 'tag': {
-      const tags = (fm.tags ?? []).map((t) => t.toLowerCase());
-      return tags.some((t) => (operator === ':' ? t.includes(lowerValue) : t === lowerValue));
-    }
     case 'due': {
       const due = fm.dueDate;
       if (!due) return false;

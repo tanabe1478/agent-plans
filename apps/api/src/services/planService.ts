@@ -1,13 +1,6 @@
 import { mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type {
-  PlanDetail,
-  PlanFrontmatter,
-  PlanMeta,
-  PlanPriority,
-  PlanStatus,
-  Subtask,
-} from '@ccplans/shared';
+import type { PlanDetail, PlanFrontmatter, PlanMeta, PlanStatus, Subtask } from '@ccplans/shared';
 import { config } from '../config.js';
 import { log as auditLog } from './auditService.js';
 import { checkConflict, recordFileState } from './conflictService.js';
@@ -78,7 +71,6 @@ function parseSubtasks(
       if (key === 'id') current.id = val;
       else if (key === 'title') current.title = val;
       else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
       else if (key === 'dueDate') current.dueDate = val;
       consumed++;
     } else if (propMatch && current) {
@@ -87,7 +79,6 @@ function parseSubtasks(
       if (key === 'id') current.id = val;
       else if (key === 'title') current.title = val;
       else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
       else if (key === 'dueDate') current.dueDate = val;
       consumed++;
     } else {
@@ -144,10 +135,8 @@ function parseFrontmatter(content: string): {
 
     switch (key) {
       case 'created':
-        frontmatter.created = value;
-        break;
       case 'modified':
-        frontmatter.modified = value;
+        // Ignored: use file system timestamps (PlanMeta.createdAt / modifiedAt)
         break;
       case 'project_path':
         frontmatter.projectPath = value;
@@ -158,18 +147,9 @@ function parseFrontmatter(content: string): {
       case 'status':
         frontmatter.status = value as PlanStatus;
         break;
-      case 'priority':
-        frontmatter.priority = value as PlanPriority;
-        break;
       case 'dueDate':
         frontmatter.dueDate = value;
         break;
-      case 'tags': {
-        const tagResult = parseYamlArray(value, lines, i);
-        frontmatter.tags = tagResult.items;
-        i += tagResult.consumed;
-        break;
-      }
       case 'estimate':
         frontmatter.estimate = value;
         break;
@@ -179,9 +159,6 @@ function parseFrontmatter(content: string): {
         i += blockedResult.consumed;
         break;
       }
-      case 'assignee':
-        frontmatter.assignee = value;
-        break;
       case 'subtasks': {
         const subtaskResult = parseSubtasks(lines, i);
         if (subtaskResult.subtasks.length > 0) {
@@ -222,7 +199,6 @@ function serializeSubtasks(subtasks: Subtask[]): string {
         props.push(`  - id: "${st.id}"`);
         props.push(`    title: "${st.title}"`);
         props.push(`    status: ${st.status}`);
-        if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
         if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
         return props.join('\n');
       })
@@ -235,18 +211,13 @@ function serializeSubtasks(subtasks: Subtask[]): string {
  */
 function serializeFrontmatter(fm: PlanFrontmatter): string {
   const lines: string[] = [];
-  if (fm.created) lines.push(`created: "${fm.created}"`);
-  if (fm.modified) lines.push(`modified: "${fm.modified}"`);
   if (fm.projectPath) lines.push(`project_path: "${fm.projectPath}"`);
   if (fm.sessionId) lines.push(`session_id: "${fm.sessionId}"`);
   if (fm.status) lines.push(`status: ${fm.status}`);
-  if (fm.priority) lines.push(`priority: ${fm.priority}`);
   if (fm.dueDate) lines.push(`dueDate: "${fm.dueDate}"`);
-  if (fm.tags && fm.tags.length > 0) lines.push(`tags:${serializeYamlArray(fm.tags)}`);
   if (fm.estimate) lines.push(`estimate: "${fm.estimate}"`);
   if (fm.blockedBy && fm.blockedBy.length > 0)
     lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
-  if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
   if (fm.subtasks && fm.subtasks.length > 0)
     lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
   if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);
@@ -503,7 +474,6 @@ export class PlanService {
     const newFrontmatter: PlanFrontmatter = {
       ...frontmatter,
       status,
-      modified: new Date().toISOString(),
     };
 
     const newContent = `---\n${serializeFrontmatter(newFrontmatter)}\n---\n${body}`;
@@ -534,7 +504,6 @@ export class PlanService {
     const newFrontmatter: PlanFrontmatter = {
       ...frontmatter,
       [field]: value,
-      modified: new Date().toISOString(),
     };
 
     const newContent = `---\n${serializeFrontmatter(newFrontmatter)}\n---\n${body}`;

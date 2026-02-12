@@ -1,6 +1,14 @@
 import { AlertTriangle, DatabaseBackup, Plus, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import { Dialog } from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
 import { useBackups, useCreateBackup, useRestoreBackup } from '@/lib/hooks/useImportExport';
 import { formatDate, formatFileSize } from '@/lib/utils';
 
@@ -32,15 +40,10 @@ export function BackupPage() {
           <DatabaseBackup className="h-5 w-5" />
           <h1 className="text-xl font-semibold">Backups</h1>
         </div>
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={createBackup.isPending}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Plus className="h-4 w-4" />
+        <Button onClick={handleCreate} disabled={createBackup.isPending}>
+          <Plus className="h-4 w-4 mr-2" />
           {createBackup.isPending ? 'Creating...' : 'Create Backup'}
-        </button>
+        </Button>
       </div>
 
       {isLoading && <div className="text-sm text-muted-foreground">Loading backups...</div>}
@@ -74,94 +77,82 @@ export function BackupPage() {
                   <span>{formatFileSize(backup.size)}</span>
                 </div>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setConfirmRestore(backup.id)}
                 disabled={restoreBackup.isPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border hover:bg-accent disabled:opacity-50"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
                 Restore
-              </button>
+              </Button>
             </div>
           ))}
         </div>
       )}
 
       {/* Confirm Restore Dialog */}
-      <Dialog
-        open={confirmRestore !== null}
-        onClose={() => setConfirmRestore(null)}
-        title="Restore Backup"
-      >
-        <div className="space-y-4">
+      <Dialog open={confirmRestore !== null} onOpenChange={(v) => !v && setConfirmRestore(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restore Backup</DialogTitle>
+            <DialogDescription>Restoring will import plans from this backup.</DialogDescription>
+          </DialogHeader>
           <div className="flex items-start gap-3 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-200">
             <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
             <div className="text-sm">
-              Restoring will import plans from this backup. Existing files with the same name will
-              be skipped (not overwritten).
+              Existing files with the same name will be skipped (not overwritten).
             </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirmRestore(null)}
-              className="px-4 py-2 text-sm rounded-md border hover:bg-accent"
-            >
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRestore(null)}>
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={() => confirmRestore && handleRestore(confirmRestore)}
               disabled={restoreBackup.isPending}
-              className="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4 mr-2" />
               {restoreBackup.isPending ? 'Restoring...' : 'Confirm Restore'}
-            </button>
-          </div>
-        </div>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
 
       {/* Restore Result Dialog */}
-      <Dialog
-        open={restoreResult !== null}
-        onClose={() => setRestoreResult(null)}
-        title="Restore Complete"
-      >
-        {restoreResult && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="text-center p-3 rounded-md bg-green-50 dark:bg-green-950/30">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {restoreResult.imported}
+      <Dialog open={restoreResult !== null} onOpenChange={(v) => !v && setRestoreResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restore Complete</DialogTitle>
+          </DialogHeader>
+          {restoreResult && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <div className="text-center p-3 rounded-md bg-green-50 dark:bg-green-950/30">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {restoreResult.imported}
+                  </div>
+                  <div className="text-muted-foreground">Imported</div>
                 </div>
-                <div className="text-muted-foreground">Imported</div>
-              </div>
-              <div className="text-center p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/30">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {restoreResult.skipped}
+                <div className="text-center p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/30">
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                    {restoreResult.skipped}
+                  </div>
+                  <div className="text-muted-foreground">Skipped</div>
                 </div>
-                <div className="text-muted-foreground">Skipped</div>
-              </div>
-              <div className="text-center p-3 rounded-md bg-red-50 dark:bg-red-950/30">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {restoreResult.errors.length}
+                <div className="text-center p-3 rounded-md bg-red-50 dark:bg-red-950/30">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {restoreResult.errors.length}
+                  </div>
+                  <div className="text-muted-foreground">Errors</div>
                 </div>
-                <div className="text-muted-foreground">Errors</div>
               </div>
+              <DialogFooter>
+                <Button onClick={() => setRestoreResult(null)}>Done</Button>
+              </DialogFooter>
             </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setRestoreResult(null)}
-                className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </DialogContent>
       </Dialog>
     </div>
   );

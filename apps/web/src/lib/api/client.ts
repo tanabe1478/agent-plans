@@ -14,7 +14,6 @@ import type {
   PlanDependenciesResponse,
   PlanDetailResponse,
   PlanMeta,
-  PlanPriority,
   PlanStatus,
   PlansListResponse,
   SearchResponse,
@@ -109,24 +108,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ filenames, status }),
       }),
-
-    bulkUpdateTags: (filenames: string[], action: 'add' | 'remove', tags: string[]) =>
-      fetchApi<BulkOperationResponse>('/plans/bulk-tags', {
-        method: 'POST',
-        body: JSON.stringify({ filenames, action, tags }),
-      }),
-
-    bulkUpdateAssign: (filenames: string[], assignee: string) =>
-      fetchApi<BulkOperationResponse>('/plans/bulk-assign', {
-        method: 'POST',
-        body: JSON.stringify({ filenames, assignee }),
-      }),
-
-    bulkUpdatePriority: (filenames: string[], priority: PlanPriority) =>
-      fetchApi<BulkOperationResponse>('/plans/bulk-priority', {
-        method: 'POST',
-        body: JSON.stringify({ filenames, priority }),
-      }),
   },
 
   // Search
@@ -171,13 +152,9 @@ export const api = {
 
   // Import/Export
   importExport: {
-    exportUrl: (
-      format: BulkExportFormat,
-      options?: { filterStatus?: PlanStatus; filterTags?: string[] }
-    ) => {
+    exportUrl: (format: BulkExportFormat, options?: { filterStatus?: PlanStatus }) => {
       const params = new URLSearchParams({ format });
       if (options?.filterStatus) params.set('filterStatus', options.filterStatus);
-      if (options?.filterTags?.length) params.set('filterTags', options.filterTags.join(','));
       return `${API_BASE}/export?${params}`;
     },
 

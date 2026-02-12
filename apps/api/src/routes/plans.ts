@@ -66,7 +66,6 @@ const subtaskActionSchema = z.discriminatedUnion('action', [
     subtask: z.object({
       title: z.string().min(1),
       status: z.enum(['todo', 'done']).default('todo'),
-      assignee: z.string().optional(),
       dueDate: z.string().optional(),
     }),
   }),
@@ -76,7 +75,6 @@ const subtaskActionSchema = z.discriminatedUnion('action', [
     subtask: z.object({
       title: z.string().min(1).optional(),
       status: z.enum(['todo', 'done']).optional(),
-      assignee: z.string().optional(),
       dueDate: z.string().optional(),
     }),
   }),
@@ -96,19 +94,6 @@ const bulkFilenamesSchema = z.array(z.string().regex(/^[a-zA-Z0-9_-]+\.md$/)).mi
 const bulkStatusSchema = z.object({
   filenames: bulkFilenamesSchema,
   status: z.enum(['todo', 'in_progress', 'review', 'completed']),
-});
-const bulkTagsSchema = z.object({
-  filenames: bulkFilenamesSchema,
-  action: z.enum(['add', 'remove']),
-  tags: z.array(z.string().min(1)).min(1),
-});
-const bulkAssignSchema = z.object({
-  filenames: bulkFilenamesSchema,
-  assignee: z.string(),
-});
-const bulkPrioritySchema = z.object({
-  filenames: bulkFilenamesSchema,
-  priority: z.enum(['low', 'medium', 'high', 'critical']),
 });
 async function requireFrontmatter(reply: import('fastify').FastifyReply): Promise<boolean> {
   if (!(await isFrontmatterEnabled())) {
@@ -349,101 +334,6 @@ export const plansRoutes: FastifyPluginAsync = async (fastify) => {
             continue;
           }
           await planService.updateStatus(filename, status);
-          succeeded.push(filename);
-        } catch (err) {
-          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
-        }
-      }
-
-      return { succeeded, failed };
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
-      }
-      throw err;
-    }
-  });
-
-  // POST /api/plans/bulk-tags - Bulk tag add/remove
-  fastify.post<{
-    Body: z.infer<typeof bulkTagsSchema>;
-  }>('/bulk-tags', async (request, reply) => {
-    if (!(await requireFrontmatter(reply))) return;
-    try {
-      const { filenames, action, tags } = bulkTagsSchema.parse(request.body);
-      const succeeded: string[] = [];
-      const failed: { filename: string; error: string }[] = [];
-
-      for (const filename of filenames) {
-        try {
-          const plan = await planService.getPlan(filename);
-          const currentTags = plan.frontmatter?.tags || [];
-          let newTags: string[];
-
-          if (action === 'add') {
-            const tagSet = new Set([...currentTags, ...tags]);
-            newTags = Array.from(tagSet);
-          } else {
-            newTags = currentTags.filter((t) => !tags.includes(t));
-          }
-
-          await planService.updateFrontmatterField(filename, 'tags', newTags);
-          succeeded.push(filename);
-        } catch (err) {
-          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
-        }
-      }
-
-      return { succeeded, failed };
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
-      }
-      throw err;
-    }
-  });
-
-  // POST /api/plans/bulk-assign - Bulk assignee change
-  fastify.post<{
-    Body: z.infer<typeof bulkAssignSchema>;
-  }>('/bulk-assign', async (request, reply) => {
-    if (!(await requireFrontmatter(reply))) return;
-    try {
-      const { filenames, assignee } = bulkAssignSchema.parse(request.body);
-      const succeeded: string[] = [];
-      const failed: { filename: string; error: string }[] = [];
-
-      for (const filename of filenames) {
-        try {
-          await planService.updateFrontmatterField(filename, 'assignee', assignee);
-          succeeded.push(filename);
-        } catch (err) {
-          failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });
-        }
-      }
-
-      return { succeeded, failed };
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Invalid request', details: err.errors });
-      }
-      throw err;
-    }
-  });
-
-  // POST /api/plans/bulk-priority - Bulk priority change
-  fastify.post<{
-    Body: z.infer<typeof bulkPrioritySchema>;
-  }>('/bulk-priority', async (request, reply) => {
-    if (!(await requireFrontmatter(reply))) return;
-    try {
-      const { filenames, priority } = bulkPrioritySchema.parse(request.body);
-      const succeeded: string[] = [];
-      const failed: { filename: string; error: string }[] = [];
-
-      for (const filename of filenames) {
-        try {
-          await planService.updateFrontmatterField(filename, 'priority', priority);
           succeeded.push(filename);
         } catch (err) {
           failed.push({ filename, error: err instanceof Error ? err.message : 'Unknown error' });

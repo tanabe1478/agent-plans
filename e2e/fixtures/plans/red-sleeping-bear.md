@@ -4,11 +4,6 @@ modified: "2026-01-18T16:45:00Z"
 project_path: "/home/user/projects/api-service"
 session_id: "fixture-session-003"
 status: completed
-priority: low
-tags:
-  - "api"
-  - "security"
-assignee: "alice"
 schemaVersion: 1
 ---
 # API Rate Limiting Implementation

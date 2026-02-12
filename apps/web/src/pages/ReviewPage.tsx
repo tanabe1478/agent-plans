@@ -1,16 +1,15 @@
 import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { ReviewToolbar } from '@/components/review/ReviewToolbar';
 import { ReviewViewer } from '@/components/review/ReviewViewer';
 import { usePlan } from '@/lib/hooks/usePlans';
 import { useReviewComments } from '@/lib/hooks/useReviewComments';
 import type { ReviewComment } from '@/lib/types/review';
-import { useUiStore } from '@/stores/uiStore';
 
 export function ReviewPage() {
   const { filename } = useParams<{ filename: string }>();
   const { data: plan, isLoading, error } = usePlan(filename || '');
-  const addToast = useUiStore((s) => s.addToast);
   const {
     comments,
     addComment,
@@ -26,9 +25,9 @@ export function ReviewPage() {
   const copyToClipboard = async (text: string, message: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      addToast(message, 'success');
+      toast.success(message);
     } catch {
-      addToast('Failed to copy to clipboard', 'error');
+      toast.error('Failed to copy to clipboard');
     }
   };
 

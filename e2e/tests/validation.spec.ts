@@ -17,9 +17,7 @@ test.describe('Validation (Feature 2)', () => {
           filename: testFilename,
           content: `---
 status: invalid_status
-priority: super_high
 dueDate: not-a-date
-tags: this-should-be-array
 ---
 # Plan with Invalid Frontmatter
 
@@ -69,33 +67,6 @@ Content.
       expect(response.status()).toBe(400);
       const error = await response.json();
       expect(error.error).toBeTruthy();
-    } finally {
-      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
-    }
-  });
-
-  test('should validate priority values via API', async ({ request, apiBaseUrl }) => {
-    const testFilename = 'test-priority-validation.md';
-
-    try {
-      // Create plan
-      await request.post(`${apiBaseUrl}/api/plans`, {
-        data: {
-          filename: testFilename,
-          content: '# Test Plan\n\nContent.',
-        },
-      });
-
-      // Try bulk priority update with invalid priority
-      const response = await request.post(`${apiBaseUrl}/api/plans/bulk-priority`, {
-        data: {
-          filenames: [testFilename],
-          priority: 'super_critical', // Invalid priority
-        },
-      });
-
-      // Should return validation error
-      expect(response.status()).toBe(400);
     } finally {
       await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }
@@ -162,73 +133,6 @@ Content.
       const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
       const plan = await getResponse.json();
       expect(plan.frontmatter?.status).toBe('invalid');
-    } finally {
-      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
-    }
-  });
-
-  test('should store invalid priority as-is (no auto-correction on create)', async ({
-    request,
-    apiBaseUrl,
-  }) => {
-    const testFilename = 'test-autocorrect-priority.md';
-
-    try {
-      const response = await request.post(`${apiBaseUrl}/api/plans`, {
-        data: {
-          filename: testFilename,
-          content: `---
-priority: super
----
-# Auto-correct Priority Test
-
-Content.
-`,
-        },
-      });
-
-      // Current API accepts plan creation without frontmatter validation
-      expect(response.status()).toBe(201);
-
-      // Invalid priority is stored as-is
-      const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
-      const plan = await getResponse.json();
-      expect(plan.frontmatter?.priority).toBe('super');
-    } finally {
-      await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
-    }
-  });
-
-  test('should auto-correct tags string to array', async ({ request, apiBaseUrl }) => {
-    const testFilename = 'test-autocorrect-tags.md';
-
-    try {
-      // Use YAML array syntax to provide tags as an actual array
-      const response = await request.post(`${apiBaseUrl}/api/plans`, {
-        data: {
-          filename: testFilename,
-          content: `---
-tags:
-  - "single-tag"
----
-# Auto-correct Tags Test
-
-Content.
-`,
-        },
-      });
-
-      if (response.ok()) {
-        const getResponse = await request.get(`${apiBaseUrl}/api/plans/${testFilename}`);
-        const plan = await getResponse.json();
-        // Tags should be stored as an array
-        if (plan.frontmatter?.tags) {
-          expect(Array.isArray(plan.frontmatter.tags)).toBe(true);
-          expect(plan.frontmatter.tags).toContain('single-tag');
-        }
-      } else {
-        expect(response.status()).toBeGreaterThanOrEqual(400);
-      }
     } finally {
       await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});
     }

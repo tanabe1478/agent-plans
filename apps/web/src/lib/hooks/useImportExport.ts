@@ -3,10 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 
 export function useExportUrl() {
-  return (
-    format: BulkExportFormat,
-    options?: { filterStatus?: PlanStatus; filterTags?: string[] }
-  ) => api.importExport.exportUrl(format, options);
+  return (format: BulkExportFormat, options?: { filterStatus?: PlanStatus }) =>
+    api.importExport.exportUrl(format, options);
 }
 
 export function useImportMarkdown() {

@@ -15,17 +15,12 @@ export interface ValidationResult {
 
 const frontmatterSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'review', 'completed']).optional(),
-  priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   dueDate: z.string().datetime().optional(),
-  tags: z.array(z.string()).optional(),
   estimate: z
     .string()
     .regex(/^\d+[hdwm]$/)
     .optional(),
   blockedBy: z.array(z.string()).optional(),
-  assignee: z.string().optional(),
-  created: z.string().datetime().optional(),
-  modified: z.string().datetime().optional(),
   projectPath: z.string().optional(),
   sessionId: z.string().optional(),
   schemaVersion: z.number().optional(),
@@ -35,7 +30,6 @@ const frontmatterSchema = z.object({
         id: z.string(),
         title: z.string(),
         status: z.enum(['todo', 'done']),
-        assignee: z.string().optional(),
         dueDate: z.string().optional(),
       })
     )
@@ -83,30 +77,10 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
     }
   }
 
-  // Priority
-  if (data.priority !== undefined) {
-    if (['low', 'medium', 'high', 'critical'].includes(data.priority as string)) {
-      corrected.priority = data.priority as PlanFrontmatter['priority'];
-    } else {
-      corrected.priority = 'medium';
-    }
-  }
-
   // Due date
   if (data.dueDate !== undefined) {
     const parsed = Date.parse(data.dueDate as string);
     corrected.dueDate = Number.isNaN(parsed) ? new Date().toISOString() : (data.dueDate as string);
-  }
-
-  // Tags: ensure array
-  if (data.tags !== undefined) {
-    if (typeof data.tags === 'string') {
-      corrected.tags = [data.tags];
-    } else if (Array.isArray(data.tags)) {
-      corrected.tags = data.tags.map(String);
-    } else {
-      corrected.tags = [];
-    }
   }
 
   // Estimate
@@ -130,9 +104,6 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
   }
 
   // Simple string fields
-  if (typeof data.assignee === 'string') corrected.assignee = data.assignee;
-  if (typeof data.created === 'string') corrected.created = data.created;
-  if (typeof data.modified === 'string') corrected.modified = data.modified;
   if (typeof data.projectPath === 'string') corrected.projectPath = data.projectPath;
   if (typeof data.sessionId === 'string') corrected.sessionId = data.sessionId;
 

@@ -1,23 +1,11 @@
-import {
-  AlertCircle,
-  Bell,
-  CheckSquare,
-  Clock,
-  Columns,
-  GitBranch,
-  Loader2,
-  Signal,
-  Tag,
-} from 'lucide-react';
+import { AlertCircle, Bell, CheckSquare, Clock, Columns, GitBranch, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useSettings, useUpdateSettings } from '@/lib/hooks/useSettings';
-import { useUiStore } from '@/stores/uiStore';
 
 const FRONTMATTER_FEATURES = [
   { icon: CheckSquare, label: 'Status management (ToDo, In Progress, Review, Completed)' },
   { icon: Columns, label: 'Kanban board view' },
   { icon: GitBranch, label: 'Dependency graph between plans' },
-  { icon: Signal, label: 'Priority levels (Low, Medium, High, Critical)' },
-  { icon: Tag, label: 'Tags and bulk tag operations' },
   { icon: CheckSquare, label: 'Subtasks with progress tracking' },
   { icon: Bell, label: 'Notifications for deadlines and blocked plans' },
   { icon: Clock, label: 'Due date tracking with deadline alerts' },
@@ -26,7 +14,6 @@ const FRONTMATTER_FEATURES = [
 export function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
   const updateSettings = useUpdateSettings();
-  const { addToast } = useUiStore();
 
   if (isLoading) {
     return (
@@ -49,12 +36,9 @@ export function SettingsPage() {
     const newValue = !settings?.frontmatterEnabled;
     try {
       await updateSettings.mutateAsync({ frontmatterEnabled: newValue });
-      addToast(
-        newValue ? 'Frontmatter features enabled' : 'Frontmatter features disabled',
-        'success'
-      );
+      toast.success(newValue ? 'Frontmatter features enabled' : 'Frontmatter features disabled');
     } catch {
-      addToast('Failed to update settings', 'error');
+      toast.error('Failed to update settings');
     }
   };
 

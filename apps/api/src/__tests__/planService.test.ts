@@ -152,8 +152,6 @@ describe('PlanService', () => {
       await writeFile(
         join(testDir, 'with-frontmatter.md'),
         `---
-created: "2025-01-15T10:00:00Z"
-modified: "2025-01-16T12:00:00Z"
 project_path: /path/to/project
 session_id: abc123
 status: in_progress
@@ -170,8 +168,6 @@ Content here.`
       expect(plan.title).toBe('Plan With Frontmatter');
       expect(plan.sections).toContain('Section One');
       expect(plan.frontmatter).toBeDefined();
-      expect(plan.frontmatter?.created).toBe('2025-01-15T10:00:00Z');
-      expect(plan.frontmatter?.modified).toBe('2025-01-16T12:00:00Z');
       expect(plan.frontmatter?.projectPath).toBe('/path/to/project');
       expect(plan.frontmatter?.sessionId).toBe('abc123');
       expect(plan.frontmatter?.status).toBe('in_progress');
@@ -208,22 +204,6 @@ Something to do.`
   });
 
   describe('extended frontmatter fields', () => {
-    it('should parse priority field', async () => {
-      await writeFile(
-        join(testDir, 'priority-plan.md'),
-        `---
-status: todo
-priority: high
----
-# Priority Plan
-
-Content.`
-      );
-
-      const plan = await service.getPlan('priority-plan.md');
-      expect(plan.frontmatter?.priority).toBe('high');
-    });
-
     it('should parse dueDate field', async () => {
       await writeFile(
         join(testDir, 'due-plan.md'),
@@ -238,40 +218,6 @@ Content.`
 
       const plan = await service.getPlan('due-plan.md');
       expect(plan.frontmatter?.dueDate).toBe('2025-12-31T00:00:00Z');
-    });
-
-    it('should parse inline tags array', async () => {
-      await writeFile(
-        join(testDir, 'tags-plan.md'),
-        `---
-status: todo
-tags: [feature, api, backend]
----
-# Tags Plan
-
-Content.`
-      );
-
-      const plan = await service.getPlan('tags-plan.md');
-      expect(plan.frontmatter?.tags).toEqual(['feature', 'api', 'backend']);
-    });
-
-    it('should parse multi-line tags array', async () => {
-      await writeFile(
-        join(testDir, 'tags-multi-plan.md'),
-        `---
-status: todo
-tags:
-  - feature
-  - api
----
-# Tags Multi Plan
-
-Content.`
-      );
-
-      const plan = await service.getPlan('tags-multi-plan.md');
-      expect(plan.frontmatter?.tags).toEqual(['feature', 'api']);
     });
 
     it('should parse estimate field', async () => {
@@ -324,22 +270,6 @@ Content.`
       expect(plan.frontmatter?.blockedBy).toEqual(['dep-a.md', 'dep-b.md']);
     });
 
-    it('should parse assignee field', async () => {
-      await writeFile(
-        join(testDir, 'assignee-plan.md'),
-        `---
-status: todo
-assignee: "alice"
----
-# Assignee Plan
-
-Content.`
-      );
-
-      const plan = await service.getPlan('assignee-plan.md');
-      expect(plan.frontmatter?.assignee).toBe('alice');
-    });
-
     it('should parse review status', async () => {
       await writeFile(
         join(testDir, 'review-plan.md'),
@@ -380,12 +310,9 @@ modified: "2025-01-02T00:00:00Z"
 project_path: /my/project
 session_id: sess-abc
 status: in_progress
-priority: critical
 dueDate: "2025-06-01T00:00:00Z"
-tags: [feature, urgent]
 estimate: "5d"
 blockedBy: [dep.md]
-assignee: "bob"
 schemaVersion: 1
 ---
 # Full Plan
@@ -395,12 +322,9 @@ Content.`
 
       const plan = await service.getPlan('full-plan.md');
       expect(plan.frontmatter?.status).toBe('in_progress');
-      expect(plan.frontmatter?.priority).toBe('critical');
       expect(plan.frontmatter?.dueDate).toBe('2025-06-01T00:00:00Z');
-      expect(plan.frontmatter?.tags).toEqual(['feature', 'urgent']);
       expect(plan.frontmatter?.estimate).toBe('5d');
       expect(plan.frontmatter?.blockedBy).toEqual(['dep.md']);
-      expect(plan.frontmatter?.assignee).toBe('bob');
       expect(plan.frontmatter?.schemaVersion).toBe(1);
     });
   });
@@ -418,7 +342,6 @@ subtasks:
   - id: st-2
     title: Implement
     status: todo
-    assignee: alice
 ---
 # Subtask Plan
 
@@ -433,11 +356,10 @@ Content.`
         title: 'Design API',
         status: 'done',
       });
-      expect(plan.frontmatter?.subtasks?.[1]).toMatchObject({
+      expect(plan.frontmatter?.subtasks?.[1]).toEqual({
         id: 'st-2',
         title: 'Implement',
         status: 'todo',
-        assignee: 'alice',
       });
     });
 
@@ -465,40 +387,6 @@ Content.`
   });
 
   describe('frontmatter serialization via updateStatus', () => {
-    it('should preserve priority when updating status', async () => {
-      await writeFile(
-        join(testDir, 'serialize-priority.md'),
-        `---
-status: todo
-priority: high
----
-# Serialize Priority
-
-Content.`
-      );
-
-      const updated = await service.updateStatus('serialize-priority.md', 'in_progress');
-      expect(updated.frontmatter?.status).toBe('in_progress');
-      expect(updated.frontmatter?.priority).toBe('high');
-    });
-
-    it('should preserve tags when updating status', async () => {
-      await writeFile(
-        join(testDir, 'serialize-tags.md'),
-        `---
-status: todo
-tags: [feature, api]
----
-# Serialize Tags
-
-Content.`
-      );
-
-      const updated = await service.updateStatus('serialize-tags.md', 'in_progress');
-      expect(updated.frontmatter?.status).toBe('in_progress');
-      expect(updated.frontmatter?.tags).toEqual(['feature', 'api']);
-    });
-
     it('should preserve blockedBy when updating status', async () => {
       await writeFile(
         join(testDir, 'serialize-blocked.md'),
@@ -516,13 +404,12 @@ Content.`
       expect(updated.frontmatter?.blockedBy).toEqual(['dep.md']);
     });
 
-    it('should preserve estimate and assignee when updating status', async () => {
+    it('should preserve estimate when updating status', async () => {
       await writeFile(
         join(testDir, 'serialize-misc.md'),
         `---
 status: todo
 estimate: "2h"
-assignee: "alice"
 ---
 # Serialize Misc
 
@@ -532,7 +419,6 @@ Content.`
       const updated = await service.updateStatus('serialize-misc.md', 'in_progress');
       expect(updated.frontmatter?.status).toBe('in_progress');
       expect(updated.frontmatter?.estimate).toBe('2h');
-      expect(updated.frontmatter?.assignee).toBe('alice');
     });
 
     it('should write review status correctly', async () => {
@@ -574,24 +460,6 @@ Content here.`
       const plan = await service.updateStatus('test-plan.md', 'in_progress');
 
       expect(plan.frontmatter?.status).toBe('in_progress');
-      expect(plan.frontmatter?.modified).toBeDefined();
-    });
-
-    it('should update modified timestamp', async () => {
-      await writeFile(
-        join(testDir, 'timestamp-plan.md'),
-        `---
-status: todo
-modified: "2020-01-01T00:00:00Z"
----
-# Timestamp Plan
-
-Content.`
-      );
-
-      const plan = await service.updateStatus('timestamp-plan.md', 'completed');
-
-      expect(plan.frontmatter?.modified).not.toBe('2020-01-01T00:00:00Z');
     });
   });
 });

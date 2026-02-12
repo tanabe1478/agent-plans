@@ -18,8 +18,6 @@ const migrations: MigrationStep[] = [
     migrate: (fm) => ({
       ...fm,
       schemaVersion: 1,
-      priority: fm.priority || undefined,
-      tags: Array.isArray(fm.tags) ? fm.tags : fm.tags ? [fm.tags as string] : undefined,
     }),
   },
 ];
@@ -141,7 +139,7 @@ function serializeFrontmatterRecord(fm: Record<string, unknown>): string {
       lines.push(`${key}: ${value}`);
     } else if (typeof value === 'string') {
       // Don't quote known unquoted fields
-      if (['status', 'priority'].includes(key)) {
+      if (['status'].includes(key)) {
         lines.push(`${key}: ${value}`);
       } else {
         lines.push(`${key}: "${value}"`);

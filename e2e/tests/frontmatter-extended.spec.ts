@@ -16,12 +16,7 @@ modified: "2026-01-20T12:00:00Z"
 project_path: "/home/user/projects/test-project"
 session_id: "test-session-001"
 status: todo
-priority: high
 dueDate: "2026-02-10T00:00:00Z"
-tags:
-  - "frontend"
-  - "ui"
-assignee: "alice"
 estimate: "3d"
 schemaVersion: 1
 ---
@@ -31,9 +26,8 @@ schemaVersion: 1
 This plan tests extended frontmatter fields.
 
 ## Tasks
-- Test priority display
-- Test tags display
-- Test assignee display
+- Test dueDate display
+- Test estimate display
 `,
       },
     });
@@ -44,16 +38,23 @@ This plan tests extended frontmatter fields.
     await request.delete(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`).catch(() => {});
   });
 
-  test('should display priority, dueDate, tags, and assignee on detail page', async ({ page }) => {
+  test('should display detail page with extended frontmatter plan', async ({
+    page,
+    request,
+    apiBaseUrl,
+  }) => {
+    // Verify detail page renders
     await page.goto(`/plan/${TEST_PLAN_FILENAME}`);
     await expect(
       page.getByRole('heading', { name: 'Test Plan with Extended Frontmatter' }).first()
     ).toBeVisible();
 
-    // Verify extended frontmatter fields are rendered on the detail page
-    const pageContent = await page.textContent('body');
-    expect(pageContent).toContain('high');
-    expect(pageContent).toContain('alice');
+    // Verify extended frontmatter fields exist via API
+    const response = await request.get(`${apiBaseUrl}/api/plans/${TEST_PLAN_FILENAME}`);
+    expect(response.ok()).toBeTruthy();
+    const plan = await response.json();
+    expect(plan.frontmatter?.estimate).toBe('3d');
+    expect(plan.frontmatter?.dueDate).toBeDefined();
   });
 
   test('should include new frontmatter fields in API response', async ({ request, apiBaseUrl }) => {
@@ -64,10 +65,7 @@ This plan tests extended frontmatter fields.
 
     // Verify frontmatter fields are present
     expect(plan.frontmatter).toBeDefined();
-    expect(plan.frontmatter.priority).toBe('high');
     expect(plan.frontmatter.dueDate).toBe('2026-02-10T00:00:00Z');
-    expect(plan.frontmatter.tags).toEqual(['frontend', 'ui']);
-    expect(plan.frontmatter.assignee).toBe('alice');
     expect(plan.frontmatter.estimate).toBe('3d');
   });
 
@@ -84,13 +82,10 @@ This plan tests extended frontmatter fields.
           filename: newFilename,
           content: `---
 status: in_progress
-priority: critical
 dueDate: "2026-02-15T00:00:00Z"
-tags:
-  - "backend"
-  - "api"
-assignee: "bob"
 estimate: "5d"
+blockedBy:
+  - "some-plan.md"
 ---
 # New Plan with Fields
 
@@ -105,10 +100,9 @@ Content here.
       expect(getResponse.ok()).toBeTruthy();
 
       const plan = await getResponse.json();
-      expect(plan.frontmatter.priority).toBe('critical');
-      expect(plan.frontmatter.tags).toContain('backend');
-      expect(plan.frontmatter.tags).toContain('api');
-      expect(plan.frontmatter.assignee).toBe('bob');
+      expect(plan.frontmatter.dueDate).toBe('2026-02-15T00:00:00Z');
+      expect(plan.frontmatter.estimate).toBe('5d');
+      expect(plan.frontmatter.blockedBy).toEqual(['some-plan.md']);
     } finally {
       // Clean up
       await request.delete(`${apiBaseUrl}/api/plans/${newFilename}`).catch(() => {});
@@ -131,7 +125,7 @@ Content here.
     await expect(dueDateText).toBeVisible();
   });
 
-  test('should update frontmatter fields via API (tags, priority, assignee)', async ({
+  test('should update frontmatter fields via API (dueDate, estimate, blockedBy)', async ({
     request,
     apiBaseUrl,
   }) => {
@@ -144,10 +138,8 @@ Content here.
           filename: updateFilename,
           content: `---
 status: todo
-priority: low
-tags:
-  - "old-tag"
-assignee: "alice"
+dueDate: "2026-03-01T00:00:00Z"
+estimate: "1d"
 ---
 # Update Fields Test
 
@@ -164,11 +156,10 @@ Content.
         data: {
           content: `---
 status: todo
-priority: high
-tags:
-  - "new-tag"
-  - "another-tag"
-assignee: "bob"
+dueDate: "2026-04-01T00:00:00Z"
+estimate: "3d"
+blockedBy:
+  - "dep-plan.md"
 ---
 # Update Fields Test
 
@@ -181,10 +172,9 @@ Updated content.
       // Verify fields were updated
       const getResponse = await request.get(`${apiBaseUrl}/api/plans/${updateFilename}`);
       const plan = await getResponse.json();
-      expect(plan.frontmatter.priority).toBe('high');
-      expect(plan.frontmatter.tags).toContain('new-tag');
-      expect(plan.frontmatter.tags).toContain('another-tag');
-      expect(plan.frontmatter.assignee).toBe('bob');
+      expect(plan.frontmatter.dueDate).toBe('2026-04-01T00:00:00Z');
+      expect(plan.frontmatter.estimate).toBe('3d');
+      expect(plan.frontmatter.blockedBy).toEqual(['dep-plan.md']);
     } finally {
       await request.delete(`${apiBaseUrl}/api/plans/${updateFilename}`).catch(() => {});
     }
@@ -236,11 +226,9 @@ This plan is blocked.
           filename: preserveFilename,
           content: `---
 status: in_progress
-priority: high
-tags:
-  - "important"
-assignee: "charlie"
 estimate: "2d"
+blockedBy:
+  - "important.md"
 ---
 # Preserve Frontmatter Test
 
@@ -252,19 +240,17 @@ Original content.
       // Verify initial frontmatter
       const initialResponse = await request.get(`${apiBaseUrl}/api/plans/${preserveFilename}`);
       const initialPlan = await initialResponse.json();
-      expect(initialPlan.frontmatter.priority).toBe('high');
-      expect(initialPlan.frontmatter.assignee).toBe('charlie');
+      expect(initialPlan.frontmatter.estimate).toBe('2d');
+      expect(initialPlan.frontmatter.blockedBy).toEqual(['important.md']);
 
       // Update content while keeping the same frontmatter
       await request.put(`${apiBaseUrl}/api/plans/${preserveFilename}`, {
         data: {
           content: `---
 status: in_progress
-priority: high
-tags:
-  - "important"
-assignee: "charlie"
 estimate: "2d"
+blockedBy:
+  - "important.md"
 ---
 # Preserve Frontmatter Test
 
@@ -277,10 +263,8 @@ Updated content here.
       const updatedResponse = await request.get(`${apiBaseUrl}/api/plans/${preserveFilename}`);
       const updatedPlan = await updatedResponse.json();
       expect(updatedPlan.frontmatter.status).toBe('in_progress');
-      expect(updatedPlan.frontmatter.priority).toBe('high');
-      expect(updatedPlan.frontmatter.tags).toEqual(['important']);
-      expect(updatedPlan.frontmatter.assignee).toBe('charlie');
       expect(updatedPlan.frontmatter.estimate).toBe('2d');
+      expect(updatedPlan.frontmatter.blockedBy).toEqual(['important.md']);
       // Content should be updated
       expect(updatedPlan.content).toContain('Updated content here.');
     } finally {

@@ -105,7 +105,7 @@ function highlightMatch(text: string, query: string): string {
   // Only highlight the text part of the query (not filter syntax)
   const textPart = query
     .split(/\s+/)
-    .filter((t) => !/^(status|priority|tag|assignee|due|estimate|project|blockedBy)[:=<>]/.test(t))
+    .filter((t) => !/^(status|due|estimate|project|blockedBy)[:=<>]/.test(t))
     .join(' ');
   if (!textPart) return text;
   const regex = new RegExp(`(${escapeRegExp(textPart)})`, 'gi');

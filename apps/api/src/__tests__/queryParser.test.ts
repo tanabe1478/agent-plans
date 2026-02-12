@@ -47,37 +47,6 @@ describe('parseQuery', () => {
     });
   });
 
-  describe('priority filter', () => {
-    it('should parse priority:high', () => {
-      const result = parseQuery('priority:high');
-      expect(result.filters[0]).toEqual({ field: 'priority', operator: ':', value: 'high' });
-    });
-
-    it('should parse priority=critical', () => {
-      const result = parseQuery('priority=critical');
-      expect(result.filters[0]).toEqual({ field: 'priority', operator: '=', value: 'critical' });
-    });
-  });
-
-  describe('tag filter', () => {
-    it('should parse tag:api', () => {
-      const result = parseQuery('tag:api');
-      expect(result.filters[0]).toEqual({ field: 'tag', operator: ':', value: 'api' });
-    });
-  });
-
-  describe('assignee filter', () => {
-    it('should parse assignee:john', () => {
-      const result = parseQuery('assignee:john');
-      expect(result.filters[0]).toEqual({ field: 'assignee', operator: ':', value: 'john' });
-    });
-
-    it('should parse assignee with quoted value', () => {
-      const result = parseQuery('assignee:"john doe"');
-      expect(result.filters[0]).toEqual({ field: 'assignee', operator: ':', value: 'john doe' });
-    });
-  });
-
   describe('due date filter with comparison operators', () => {
     it('should parse due<2026-02-10', () => {
       const result = parseQuery('due<2026-02-10');
@@ -134,17 +103,17 @@ describe('parseQuery', () => {
     });
 
     it('should parse multiple filters', () => {
-      const result = parseQuery('status:in_progress priority:high');
+      const result = parseQuery('status:in_progress estimate:3d');
       expect(result.textQuery).toBe('');
       expect(result.filters).toHaveLength(2);
       expect(result.filters[0]).toEqual({ field: 'status', operator: ':', value: 'in_progress' });
-      expect(result.filters[1]).toEqual({ field: 'priority', operator: ':', value: 'high' });
+      expect(result.filters[1]).toEqual({ field: 'estimate', operator: ':', value: '3d' });
     });
 
     it('should parse text + multiple filters', () => {
-      const result = parseQuery('api refactor status:todo tag:backend assignee:alice');
+      const result = parseQuery('api refactor status:todo estimate:5d');
       expect(result.textQuery).toBe('api refactor');
-      expect(result.filters).toHaveLength(3);
+      expect(result.filters).toHaveLength(2);
     });
 
     it('should parse filter between text words', () => {
@@ -157,7 +126,7 @@ describe('parseQuery', () => {
 
   describe('edge cases', () => {
     it('should handle extra whitespace', () => {
-      const result = parseQuery('  status:todo   priority:high  ');
+      const result = parseQuery('  status:todo   estimate:3d  ');
       expect(result.filters).toHaveLength(2);
     });
 
@@ -167,12 +136,14 @@ describe('parseQuery', () => {
       expect(result.filters).toHaveLength(0);
     });
 
+    it('should not parse removed fields as filters', () => {
+      const result = parseQuery('priority:high');
+      expect(result.textQuery).toBe('priority:high');
+      expect(result.filters).toHaveLength(0);
+    });
+
     it('should handle field name that starts with a known field', () => {
       const result = parseQuery('statuscode:200');
-      // "statuscode" is not "status" - the parser checks if token starts with field name
-      // but the remaining after "status" would be "code:200" which doesn't match the operator pattern at position 0
-      // Actually "status" + "code:200" -> "code:200" starts with "c" not an operator
-      // So it should try next field. None match. Falls through to text.
       expect(result.textQuery).toBe('statuscode:200');
       expect(result.filters).toHaveLength(0);
     });

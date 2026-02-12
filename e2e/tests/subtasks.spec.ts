@@ -268,10 +268,7 @@ Content.
     }
   });
 
-  test('should update subtask with assignee and dueDate via API', async ({
-    request,
-    apiBaseUrl,
-  }) => {
+  test('should add subtask with dueDate via API', async ({ request, apiBaseUrl }) => {
     const testFilename = 'test-subtask-extra-fields.md';
 
     try {
@@ -293,14 +290,13 @@ Content.
         },
       });
 
-      // Add new subtask with assignee and dueDate
+      // Add new subtask with dueDate
       const addResponse = await request.patch(`${apiBaseUrl}/api/plans/${testFilename}/subtasks`, {
         data: {
           action: 'add',
           subtask: {
-            title: 'Task with assignee and due date',
+            title: 'Task with due date',
             status: 'todo',
-            assignee: 'alice',
             dueDate: '2026-03-01',
           },
         },
@@ -309,8 +305,7 @@ Content.
       expect(addResponse.ok()).toBeTruthy();
       const addResult = await addResponse.json();
       expect(addResult.success).toBe(true);
-      expect(addResult.subtask.title).toBe('Task with assignee and due date');
-      expect(addResult.subtask.assignee).toBe('alice');
+      expect(addResult.subtask.title).toBe('Task with due date');
       expect(addResult.subtask.dueDate).toBe('2026-03-01');
     } finally {
       await request.delete(`${apiBaseUrl}/api/plans/${testFilename}`).catch(() => {});

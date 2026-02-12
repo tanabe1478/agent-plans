@@ -1,11 +1,29 @@
 import type { ExportFormat, ExternalApp } from '@ccplans/shared';
 import { Code, Download, Edit3, ExternalLink, MoreVertical, Terminal, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { DeleteConfirmDialog } from '@/components/plan/DeleteConfirmDialog';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useDeletePlan, useExportPlan, useOpenPlan, useRenamePlan } from '@/lib/hooks/usePlans';
-import { useUiStore } from '@/stores/uiStore';
 
 interface PlanActionsProps {
   filename: string;
@@ -14,48 +32,32 @@ interface PlanActionsProps {
 }
 
 export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
-  const [showMenu, setShowMenu] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const [newFilename, setNewFilename] = useState(filename);
 
   const deletePlan = useDeletePlan();
   const renamePlan = useRenamePlan();
   const openPlan = useOpenPlan();
   const { getExportUrl } = useExportPlan();
-  const { addToast } = useUiStore();
-
-  useEffect(() => {
-    if (!showMenu) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowMenu(false);
-        setShowExportMenu(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showMenu]);
 
   const handleOpen = async (app: ExternalApp) => {
     try {
       await openPlan.mutateAsync({ filename, app });
-      addToast(`${app}で開きました`, 'success');
+      toast.success(`${app}で開きました`);
     } catch (err) {
-      addToast(`開けませんでした: ${err}`, 'error');
+      toast.error(`開けませんでした: ${err}`);
     }
-    setShowMenu(false);
   };
 
   const handleDelete = async () => {
     try {
       await deletePlan.mutateAsync({ filename });
-      addToast('Plan deleted', 'success');
+      toast.success('Plan deleted');
       setShowDeleteDialog(false);
       onDeleted?.();
     } catch (err) {
-      addToast(`Delete failed: ${err}`, 'error');
+      toast.error(`Delete failed: ${err}`);
     }
   };
 
@@ -69,18 +71,16 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
 
     try {
       await renamePlan.mutateAsync({ filename, newFilename: finalName });
-      addToast('Renamed successfully', 'success');
+      toast.success('Renamed successfully');
       setShowRenameDialog(false);
     } catch (err) {
-      addToast(`Rename failed: ${err}`, 'error');
+      toast.error(`Rename failed: ${err}`);
     }
   };
 
   const handleExport = (format: ExportFormat) => {
     const url = getExportUrl(filename, format);
     window.open(url, '_blank');
-    setShowExportMenu(false);
-    setShowMenu(false);
   };
 
   return (
@@ -117,95 +117,42 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
         </Button>
 
         {/* More actions menu */}
-        <div className="relative">
-          <Button variant="ghost" size="icon" onClick={() => setShowMenu(!showMenu)}>
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="More actions">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => setShowRenameDialog(true)}>
+              <Edit3 className="h-4 w-4 mr-2" />
+              Rename
+            </DropdownMenuItem>
 
-          {showMenu && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-md border bg-card shadow-lg z-10">
-              <div className="py-1">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
-                  onClick={() => {
-                    setShowRenameDialog(true);
-                    setShowMenu(false);
-                  }}
-                >
-                  <Edit3 className="h-4 w-4" />
-                  Rename
-                </button>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => handleExport('md')}>Markdown</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('html')}>HTML</DropdownMenuItem>
+                <DropdownMenuItem disabled>PDF (coming soon)</DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
-                    onClick={() => setShowExportMenu(!showExportMenu)}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export
-                  </button>
+            <DropdownMenuSeparator />
 
-                  {showExportMenu && (
-                    <div className="absolute left-full top-0 w-32 rounded-md border bg-card shadow-lg">
-                      <button
-                        type="button"
-                        className="flex w-full px-4 py-2 text-sm hover:bg-accent"
-                        onClick={() => handleExport('md')}
-                      >
-                        Markdown
-                      </button>
-                      <button
-                        type="button"
-                        className="flex w-full px-4 py-2 text-sm hover:bg-accent"
-                        onClick={() => handleExport('html')}
-                      >
-                        HTML
-                      </button>
-                      <button
-                        type="button"
-                        className="flex w-full px-4 py-2 text-sm hover:bg-accent text-muted-foreground"
-                        onClick={() => handleExport('pdf')}
-                        disabled
-                      >
-                        PDF (coming soon)
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <hr className="my-1" />
-
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
-                  onClick={() => {
-                    setShowDeleteDialog(true);
-                    setShowMenu(false);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-
-      {/* Click outside to close menu */}
-      {showMenu && (
-        // biome-ignore lint/a11y/noStaticElementInteractions: click-away backdrop overlay
-        <div
-          role="presentation"
-          className="fixed inset-0 z-0"
-          onClick={() => {
-            setShowMenu(false);
-            setShowExportMenu(false);
-          }}
-        />
-      )}
 
       {/* Delete confirmation dialog */}
       <DeleteConfirmDialog
@@ -218,28 +165,30 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
       />
 
       {/* Rename dialog */}
-      <Dialog open={showRenameDialog} onClose={() => setShowRenameDialog(false)} title="Rename">
-        <div className="mb-4">
-          <label htmlFor="rename-filename-input" className="block text-sm font-medium mb-1">
-            New filename
-          </label>
-          <input
-            id="rename-filename-input"
-            type="text"
-            value={newFilename}
-            onChange={(e) => setNewFilename(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
-            placeholder="new-filename.md"
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleRename} disabled={renamePlan.isPending}>
-            {renamePlan.isPending ? 'Renaming...' : 'Rename'}
-          </Button>
-        </div>
+      <Dialog open={showRenameDialog} onOpenChange={(v) => !v && setShowRenameDialog(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename</DialogTitle>
+          </DialogHeader>
+          <div>
+            <Label htmlFor="rename-filename-input">New filename</Label>
+            <Input
+              id="rename-filename-input"
+              value={newFilename}
+              onChange={(e) => setNewFilename(e.target.value)}
+              className="mt-1"
+              placeholder="new-filename.md"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRename} disabled={renamePlan.isPending}>
+              {renamePlan.isPending ? 'Renaming...' : 'Rename'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );
