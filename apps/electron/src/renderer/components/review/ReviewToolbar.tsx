@@ -21,6 +21,7 @@ export function ReviewToolbar({ commentCount, onCopyAllPrompts, onClearAll }: Re
 
       <div className="ml-auto flex items-center gap-2">
         <button
+          type="button"
           onClick={onCopyAllPrompts}
           disabled={commentCount === 0}
           className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
@@ -33,6 +34,7 @@ export function ReviewToolbar({ commentCount, onCopyAllPrompts, onClearAll }: Re
           <div className="flex items-center gap-1">
             <span className="text-xs text-destructive">Clear all?</span>
             <button
+              type="button"
               onClick={() => {
                 onClearAll();
                 setShowClearConfirm(false);
@@ -42,6 +44,7 @@ export function ReviewToolbar({ commentCount, onCopyAllPrompts, onClearAll }: Re
               Yes
             </button>
             <button
+              type="button"
               onClick={() => setShowClearConfirm(false)}
               className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
             >
@@ -50,6 +53,7 @@ export function ReviewToolbar({ commentCount, onCopyAllPrompts, onClearAll }: Re
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setShowClearConfirm(true)}
             disabled={commentCount === 0}
             className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-destructive hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"

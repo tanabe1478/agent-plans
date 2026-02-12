@@ -76,12 +76,14 @@ export function CommentForm({
         />
         <div className="mt-2 flex items-center justify-end gap-2">
           <button
+            type="button"
             onClick={onCancel}
             className="rounded px-3 py-1 text-xs text-muted-foreground hover:bg-muted"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={!body.trim()}
             className="rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600 disabled:opacity-50"

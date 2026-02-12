@@ -23,7 +23,9 @@ vi.mock('@/components/ui/Dialog', () => ({
   Dialog: ({ children, open, onClose, title }: any) =>
     open ? (
       <div role="dialog" aria-label={title}>
-        <button onClick={onClose}>Close</button>
+        <button type="button" onClick={onClose}>
+          Close
+        </button>
         {children}
       </div>
     ) : null,

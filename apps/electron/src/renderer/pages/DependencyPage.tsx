@@ -285,6 +285,7 @@ export function DependencyPage() {
         <h1 className="text-2xl font-bold">Dependency Graph</h1>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleZoomOut}
             className="p-2 rounded-lg border bg-card hover:bg-accent"
             title="Zoom out"
@@ -295,6 +296,7 @@ export function DependencyPage() {
             {Math.round(scale * 100)}%
           </span>
           <button
+            type="button"
             onClick={handleZoomIn}
             className="p-2 rounded-lg border bg-card hover:bg-accent"
             title="Zoom in"
@@ -302,6 +304,7 @@ export function DependencyPage() {
             <ZoomIn className="h-4 w-4" />
           </button>
           <button
+            type="button"
             onClick={handleReset}
             className="p-2 rounded-lg border bg-card hover:bg-accent"
             title="Reset view"

@@ -72,6 +72,7 @@ export function SettingsPage() {
             </p>
           </div>
           <button
+            type="button"
             role="switch"
             aria-checked={settings?.frontmatterEnabled ?? false}
             onClick={handleToggle}

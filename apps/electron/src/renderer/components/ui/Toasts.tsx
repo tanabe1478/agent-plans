@@ -22,7 +22,11 @@ export function Toasts() {
           {toast.type === 'error' && <AlertCircle className="h-5 w-5" />}
           {toast.type === 'info' && <Info className="h-5 w-5" />}
           <span className="flex-1 text-sm">{toast.message}</span>
-          <button onClick={() => removeToast(toast.id)} className="p-1 hover:bg-black/10 rounded">
+          <button
+            type="button"
+            onClick={() => removeToast(toast.id)}
+            className="p-1 hover:bg-black/10 rounded"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>

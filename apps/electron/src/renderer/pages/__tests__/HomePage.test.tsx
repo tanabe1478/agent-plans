@@ -56,6 +56,7 @@ vi.mock('@/components/plan/PlanList', () => ({
 vi.mock('@/components/ui/Button', () => ({
   Button: ({ children, onClick, disabled, variant, size, title }: any) => (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       data-variant={variant}
@@ -71,7 +72,9 @@ vi.mock('@/components/ui/Dialog', () => ({
   Dialog: ({ children, open, onClose, title }: any) =>
     open ? (
       <div role="dialog" aria-label={title}>
-        <button onClick={onClose}>Close</button>
+        <button type="button" onClick={onClose}>
+          Close
+        </button>
         {children}
       </div>
     ) : null,

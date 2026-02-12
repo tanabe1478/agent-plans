@@ -64,6 +64,7 @@ export function NotificationPanel({ notifications, onClose }: NotificationPanelP
         <h3 className="text-sm font-semibold">Notifications</h3>
         {hasUnread && (
           <button
+            type="button"
             onClick={handleMarkAllRead}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             disabled={markAllAsRead.isPending}
@@ -87,6 +88,7 @@ export function NotificationPanel({ notifications, onClose }: NotificationPanelP
               return (
                 <li key={notification.id}>
                   <button
+                    type="button"
                     onClick={() => handleNotificationClick(notification)}
                     className={`w-full text-left px-4 py-3 border-l-4 border-b last:border-b-0 hover:bg-accent/50 transition-colors ${
                       severityStyles[notification.severity]

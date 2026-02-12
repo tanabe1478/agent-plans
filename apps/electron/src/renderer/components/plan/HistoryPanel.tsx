@@ -73,6 +73,7 @@ export function HistoryPanel({ filename }: HistoryPanelProps) {
           </p>
           <div className="mt-3 flex gap-2">
             <button
+              type="button"
               onClick={() => handleRollback(showRollbackConfirm)}
               disabled={rollbackMutation.isPending}
               className="rounded bg-orange-600 px-3 py-1 text-sm text-white hover:bg-orange-700 disabled:opacity-50"
@@ -80,6 +81,7 @@ export function HistoryPanel({ filename }: HistoryPanelProps) {
               {rollbackMutation.isPending ? 'ロールバック中...' : 'ロールバック'}
             </button>
             <button
+              type="button"
               onClick={() => setShowRollbackConfirm(null)}
               className="rounded border px-3 py-1 text-sm hover:bg-muted"
             >
@@ -121,7 +123,11 @@ function VersionItem({ version, isSelected, onSelect, onRollback }: VersionItemP
       }`}
     >
       <div className="flex items-center justify-between">
-        <button onClick={onSelect} className="flex flex-1 items-center gap-2 text-left">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex flex-1 items-center gap-2 text-left"
+        >
           <ChevronRight
             className={`h-4 w-4 transition-transform ${isSelected ? 'rotate-90' : ''}`}
           />
@@ -133,6 +139,7 @@ function VersionItem({ version, isSelected, onSelect, onRollback }: VersionItemP
           </div>
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRollback();

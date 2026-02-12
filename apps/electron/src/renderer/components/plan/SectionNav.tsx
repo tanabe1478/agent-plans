@@ -81,6 +81,7 @@ export function SectionNav({ content }: SectionNavProps) {
   return (
     <nav className="section-nav">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center gap-2 text-sm font-semibold text-muted-foreground mb-2 hover:text-foreground lg:cursor-default"
       >
@@ -93,6 +94,7 @@ export function SectionNav({ content }: SectionNavProps) {
           {headings.map((heading) => (
             <li key={heading.id}>
               <button
+                type="button"
                 onClick={() => scrollToHeading(heading.id)}
                 className={`section-nav-item w-full text-left text-sm truncate transition-colors ${
                   heading.level === 1

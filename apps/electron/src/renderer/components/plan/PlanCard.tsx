@@ -54,7 +54,11 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
 
       {/* Status dropdown - outside Link to prevent navigation */}
       {fmEnabled && plan.frontmatter?.status && (
-        <div className="absolute right-3 top-3 z-10" onClick={(e) => e.stopPropagation()}>
+        <div
+          // biome-ignore lint/a11y/useSemanticElements: Wrapper for click stop propagation
+          className="absolute right-3 top-3 z-10"
+          onClick={(e) => e.stopPropagation()}
+        >
           <StatusDropdown
             currentStatus={plan.frontmatter.status}
             onStatusChange={handleStatusChange}

@@ -125,6 +125,7 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
             <div className="absolute right-0 top-full mt-1 w-48 rounded-md border bg-card shadow-lg z-10">
               <div className="py-1">
                 <button
+                  type="button"
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
                   onClick={() => {
                     setShowRenameDialog(true);
@@ -137,6 +138,7 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
 
                 <div className="relative">
                   <button
+                    type="button"
                     className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
                     onClick={() => setShowExportMenu(!showExportMenu)}
                   >
@@ -147,18 +149,21 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
                   {showExportMenu && (
                     <div className="absolute left-full top-0 w-32 rounded-md border bg-card shadow-lg">
                       <button
+                        type="button"
                         className="flex w-full px-4 py-2 text-sm hover:bg-accent"
                         onClick={() => handleExport('md')}
                       >
                         Markdown
                       </button>
                       <button
+                        type="button"
                         className="flex w-full px-4 py-2 text-sm hover:bg-accent"
                         onClick={() => handleExport('html')}
                       >
                         HTML
                       </button>
                       <button
+                        type="button"
                         className="flex w-full px-4 py-2 text-sm hover:bg-accent text-muted-foreground"
                         onClick={() => handleExport('pdf')}
                         disabled
@@ -172,6 +177,7 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
                 <hr className="my-1" />
 
                 <button
+                  type="button"
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
                   onClick={() => {
                     setShowDeleteDialog(true);
@@ -188,6 +194,7 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
       </div>
 
       {/* Click outside to close menu */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: Overlay backdrop for click-outside */}
       {showMenu && (
         <div
           className="fixed inset-0 z-0"
