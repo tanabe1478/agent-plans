@@ -60,18 +60,7 @@ export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
       <div className="electron-drag-region h-7 border-b border-slate-900">
-        <div
-          className={cn(
-            'mx-auto flex h-full max-w-[1400px] items-center justify-between px-4',
-            macLeftInsetClass
-          )}
-        >
-          <div className="inline-flex items-center gap-2 text-[11px] tracking-wide text-slate-500">
-            <FileText className="h-3.5 w-3.5" />
-            ccplans
-          </div>
-          <span className="text-[10px] text-slate-600">workspace</span>
-        </div>
+        <div className={cn('mx-auto h-full max-w-[1400px] px-4', macLeftInsetClass)} />
       </div>
       <div
         className={cn(
