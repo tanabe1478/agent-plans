@@ -266,7 +266,9 @@ export function HomePage() {
                       fmEnabled
                         ? 'grid-cols-[28px_minmax(0,1fr)_120px_170px_68px]'
                         : 'grid-cols-[28px_minmax(0,1fr)_170px_68px]',
-                      isActive ? 'bg-slate-800/70' : 'hover:bg-slate-800/40'
+                      isActive
+                        ? 'bg-slate-800/70'
+                        : 'hover:bg-slate-700/30 dark:hover:bg-slate-800/40'
                     )}
                   >
                     <div className="flex items-center justify-center">
@@ -331,7 +333,7 @@ export function HomePage() {
                       <button
                         type="button"
                         onClick={() => navigate(`/plan/${encodeURIComponent(plan.filename)}`)}
-                        className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-800 hover:text-slate-200"
+                        className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
                         title="Open detail"
                       >
                         <Eye className="h-3.5 w-3.5" />
@@ -341,7 +343,7 @@ export function HomePage() {
                         onClick={() =>
                           navigate(`/plan/${encodeURIComponent(plan.filename)}/review`)
                         }
-                        className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-800 hover:text-slate-200"
+                        className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
                         title="Open review"
                       >
                         <MessageSquareText className="h-3.5 w-3.5" />

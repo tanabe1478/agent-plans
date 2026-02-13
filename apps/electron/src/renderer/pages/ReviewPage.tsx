@@ -104,7 +104,7 @@ export function ReviewPage() {
               type="button"
               onClick={handleCopyAllPrompts}
               disabled={commentCount === 0}
-              className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+              className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-slate-200 hover:bg-muted dark:hover:bg-slate-800 disabled:opacity-50"
             >
               <Copy className="h-3.5 w-3.5" />
               Copy All
@@ -113,7 +113,7 @@ export function ReviewPage() {
               type="button"
               onClick={clearAllComments}
               disabled={commentCount === 0}
-              className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-rose-300 hover:bg-slate-800 disabled:opacity-50"
+              className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-rose-300 hover:bg-muted dark:hover:bg-slate-800 disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Clear
@@ -137,7 +137,7 @@ export function ReviewPage() {
                   'px-2 py-1 text-[11px] tracking-wide',
                   tab === item.key
                     ? 'bg-slate-700 text-slate-100'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    : 'text-slate-400 hover:bg-muted dark:hover:bg-slate-800 hover:text-slate-200'
                 )}
               >
                 {item.label}

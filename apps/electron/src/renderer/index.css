@@ -4,29 +4,61 @@
 
 @layer base {
   :root {
-    --background: 222 24% 8%;
-    --foreground: 210 20% 92%;
-    --card: 222 21% 11%;
-    --card-foreground: 210 20% 92%;
-    --popover: 222 21% 11%;
-    --popover-foreground: 210 20% 92%;
-    --primary: 203 88% 66%;
-    --primary-foreground: 222 24% 8%;
-    --secondary: 220 16% 17%;
-    --secondary-foreground: 210 20% 90%;
-    --muted: 220 17% 15%;
-    --muted-foreground: 218 12% 62%;
-    --accent: 220 17% 15%;
-    --accent-foreground: 210 20% 92%;
-    --destructive: 350 82% 65%;
+    color-scheme: light;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 94%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 15% 24%;
-    --input: 220 15% 24%;
-    --ring: 203 88% 66%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
     --radius: 0.125rem;
+
+    --ui-slate-950: 210 40% 98%;
+    --ui-slate-900: 210 40% 96%;
+    --ui-slate-800: 214 32% 91%;
+    --ui-slate-700: 215 20% 84%;
+    --ui-slate-100: 222 47% 11%;
+    --ui-slate-200: 215 25% 27%;
+    --ui-slate-300: 215 16% 47%;
+    --ui-slate-400: 215 20% 40%;
+    --ui-slate-500: 215 14% 50%;
+    --ui-slate-600: 215 16% 58%;
+
+    --scrollbar-track: 210 32% 94%;
+    --scrollbar-thumb: 215 20% 72%;
+    --scrollbar-thumb-hover: 215 20% 62%;
+
+    --review-file-border: 214 32% 88%;
+    --review-file-bg: 0 0% 100%;
+    --review-header-border: 214 32% 88%;
+    --review-header-text: 215 16% 47%;
+    --review-row-border: 214 32% 90%;
+    --review-row-comment-bg: 210 40% 96%;
+    --review-row-select-bg: 210 40% 94%;
+    --review-gutter-border: 214 32% 88%;
+    --review-gutter-bg: 210 40% 97%;
+    --review-gutter-text: 215 16% 47%;
+    --review-gutter-hover-bg: 210 40% 94%;
+    --review-gutter-hover-text: 215 25% 27%;
+    --review-code-text: 222 47% 11%;
+    --review-comment-cell-bg: 210 40% 97%;
   }
 
   .dark {
+    color-scheme: dark;
     --background: 222 24% 8%;
     --foreground: 210 20% 92%;
     --card: 222 21% 11%;
@@ -46,6 +78,36 @@
     --border: 220 15% 24%;
     --input: 220 15% 24%;
     --ring: 203 88% 66%;
+
+    --ui-slate-950: 224 71% 4%;
+    --ui-slate-900: 222 47% 11%;
+    --ui-slate-800: 215 28% 17%;
+    --ui-slate-700: 215 20% 27%;
+    --ui-slate-100: 210 40% 98%;
+    --ui-slate-200: 214 32% 91%;
+    --ui-slate-300: 213 27% 84%;
+    --ui-slate-400: 215 20% 65%;
+    --ui-slate-500: 215 16% 47%;
+    --ui-slate-600: 215 19% 35%;
+
+    --scrollbar-track: 222 47% 11%;
+    --scrollbar-thumb: 215 20% 27%;
+    --scrollbar-thumb-hover: 215 16% 36%;
+
+    --review-file-border: 215 28% 17%;
+    --review-file-bg: 222 47% 11%;
+    --review-header-border: 215 28% 17%;
+    --review-header-text: 215 20% 65%;
+    --review-row-border: 218 42% 14%;
+    --review-row-comment-bg: 220 58% 12%;
+    --review-row-select-bg: 215 28% 17%;
+    --review-gutter-border: 215 28% 17%;
+    --review-gutter-bg: 222 47% 11%;
+    --review-gutter-text: 215 16% 47%;
+    --review-gutter-hover-bg: 218 43% 14%;
+    --review-gutter-hover-text: 213 27% 84%;
+    --review-code-text: 214 95% 93%;
+    --review-comment-cell-bg: 222 47% 11%;
   }
 }
 
@@ -85,16 +147,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b1220;
+  background: hsl(var(--scrollbar-track));
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 2px solid #0b1220;
-  background: #334155;
+  border: 2px solid hsl(var(--scrollbar-track));
+  background: hsl(var(--scrollbar-thumb));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: hsl(var(--scrollbar-thumb-hover));
 }
 
 .markdown-content {
@@ -176,18 +238,18 @@
 }
 
 .review-file {
-  border: 1px solid #1f2937;
-  background: #0f172a;
+  border: 1px solid hsl(var(--review-file-border));
+  background: hsl(var(--review-file-bg));
 }
 
 .review-file-header {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid #1f2937;
+  border-bottom: 1px solid hsl(var(--review-header-border));
   padding: 8px 10px;
   font-size: 11px;
-  color: #94a3b8;
+  color: hsl(var(--review-header-text));
 }
 
 .review-file-content {
@@ -202,29 +264,29 @@
 }
 
 .review-diff-line {
-  border-bottom: 1px solid #172033;
+  border-bottom: none;
 }
 
 .review-diff-line.has-comment {
-  background: #0b1a34;
+  background: hsl(var(--review-row-comment-bg));
 }
 
 .review-diff-line.selecting {
-  background: #1e293b;
+  background: hsl(var(--review-row-select-bg));
 }
 
 .review-diff-gutter {
   width: 56px;
   cursor: pointer;
-  border-right: 1px solid #1f2937;
-  background: #0b1220;
+  border-right: 1px solid hsl(var(--review-gutter-border));
+  background: hsl(var(--review-gutter-bg));
   padding: 0;
-  color: #64748b;
+  color: hsl(var(--review-gutter-text));
 }
 
 .review-diff-gutter:hover {
-  background: #131d33;
-  color: #cbd5e1;
+  background: hsl(var(--review-gutter-hover-bg));
+  color: hsl(var(--review-gutter-hover-text));
 }
 
 .review-line-num {
@@ -246,16 +308,16 @@
   white-space: pre-wrap;
   font-size: 12px;
   font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, monospace;
-  color: #dbeafe;
+  color: hsl(var(--review-code-text));
 }
 
 .review-comment-row {
-  border-bottom: 1px solid #172033;
+  border-bottom: none;
 }
 
 .review-comment-cell {
   padding: 6px 8px;
-  background: #0b1220;
+  background: hsl(var(--review-comment-cell-bg));
 }
 
 .electron-drag-region {
@@ -264,4 +326,108 @@
 
 .electron-no-drag {
   -webkit-app-region: no-drag;
+}
+
+/* Theme bridge for existing slate-based utility classes */
+.bg-slate-950 {
+  background-color: hsl(var(--ui-slate-950));
+}
+
+.bg-slate-950\/45 {
+  background-color: hsl(var(--ui-slate-950) / 0.45);
+}
+
+.bg-slate-950\/95 {
+  background-color: hsl(var(--ui-slate-950) / 0.95);
+}
+
+.bg-slate-900 {
+  background-color: hsl(var(--ui-slate-900));
+}
+
+.bg-slate-900\/50 {
+  background-color: hsl(var(--ui-slate-900) / 0.5);
+}
+
+.bg-slate-900\/60 {
+  background-color: hsl(var(--ui-slate-900) / 0.6);
+}
+
+.bg-slate-900\/70 {
+  background-color: hsl(var(--ui-slate-900) / 0.7);
+}
+
+.bg-slate-900\/80 {
+  background-color: hsl(var(--ui-slate-900) / 0.8);
+}
+
+.bg-slate-800 {
+  background-color: hsl(var(--ui-slate-800));
+}
+
+.bg-slate-800\/40 {
+  background-color: hsl(var(--ui-slate-800) / 0.4);
+}
+
+.bg-slate-800\/70 {
+  background-color: hsl(var(--ui-slate-800) / 0.7);
+}
+
+.bg-slate-700 {
+  background-color: hsl(var(--ui-slate-700));
+}
+
+.border-slate-900,
+.border-slate-800,
+.border-slate-700,
+.border-slate-600 {
+  border-color: hsl(var(--border));
+}
+
+.text-slate-100 {
+  color: hsl(var(--ui-slate-100));
+}
+
+.text-slate-200 {
+  color: hsl(var(--ui-slate-200));
+}
+
+.text-slate-300 {
+  color: hsl(var(--ui-slate-300));
+}
+
+.text-slate-400 {
+  color: hsl(var(--ui-slate-400));
+}
+
+.text-slate-500 {
+  color: hsl(var(--ui-slate-500));
+}
+
+.text-slate-600 {
+  color: hsl(var(--ui-slate-600));
+}
+
+.hover\:bg-slate-900:hover {
+  background-color: hsl(var(--ui-slate-900));
+}
+
+.hover\:bg-slate-800:hover {
+  background-color: hsl(var(--ui-slate-800));
+}
+
+.hover\:bg-slate-800\/40:hover {
+  background-color: hsl(var(--ui-slate-800) / 0.4);
+}
+
+.hover\:bg-slate-800\/70:hover {
+  background-color: hsl(var(--ui-slate-800) / 0.7);
+}
+
+.hover\:text-slate-200:hover {
+  color: hsl(var(--ui-slate-200));
+}
+
+.placeholder\:text-slate-500::placeholder {
+  color: hsl(var(--ui-slate-500));
 }

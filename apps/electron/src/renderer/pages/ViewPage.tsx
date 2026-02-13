@@ -116,7 +116,7 @@ export function ViewPage() {
           <div className="flex items-center gap-2">
             <Link
               to={`/plan/${plan.filename}/review`}
-              className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-slate-200 hover:bg-slate-800"
+              className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-slate-200 hover:bg-slate-700/50 dark:hover:bg-slate-800"
             >
               <MessageSquareText className="h-3.5 w-3.5" />
               Review

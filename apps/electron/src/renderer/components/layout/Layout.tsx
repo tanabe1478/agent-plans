@@ -1,17 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { usePlans } from '@/lib/hooks/usePlans';
-import { type Theme, useUiStore } from '@/stores/uiStore';
+import { getNextToggleTheme } from '@/lib/theme';
+import { useUiStore } from '@/stores/uiStore';
 import { Toasts } from '../ui/Toasts';
 import { type CommandItem, CommandPalette } from '../workbench/CommandPalette';
 import { QuickOpen } from '../workbench/QuickOpen';
 import { Header } from './Header';
-
-const nextTheme: Record<Theme, Theme> = {
-  light: 'dark',
-  dark: 'system',
-  system: 'light',
-};
 
 export function Layout() {
   const navigate = useNavigate();
@@ -35,7 +30,7 @@ export function Layout() {
         id: 'toggle-theme',
         label: 'Toggle Theme',
         hint: `Current: ${theme}`,
-        run: () => setTheme(nextTheme[theme] ?? 'system'),
+        run: () => setTheme(getNextToggleTheme(theme)),
       },
       {
         id: 'open-quick-open',

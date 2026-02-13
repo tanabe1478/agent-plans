@@ -24,7 +24,7 @@ export function ReviewToolbar({ commentCount, onCopyAllPrompts, onClearAll }: Re
           type="button"
           onClick={onCopyAllPrompts}
           disabled={commentCount === 0}
-          className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-muted dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Copy className="h-3.5 w-3.5" />
           Copy All Prompts
@@ -46,7 +46,7 @@ export function ReviewToolbar({ commentCount, onCopyAllPrompts, onClearAll }: Re
             <button
               type="button"
               onClick={() => setShowClearConfirm(false)}
-              className="border border-slate-700 px-2 py-1 text-[11px] text-slate-400 hover:bg-slate-800"
+              className="border border-slate-700 px-2 py-1 text-[11px] text-slate-400 hover:bg-muted dark:hover:bg-slate-800"
             >
               No
             </button>
@@ -56,7 +56,7 @@ export function ReviewToolbar({ commentCount, onCopyAllPrompts, onClearAll }: Re
             type="button"
             onClick={() => setShowClearConfirm(true)}
             disabled={commentCount === 0}
-            className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1 text-[11px] text-rose-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1 text-[11px] text-rose-300 hover:bg-muted dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Clear All

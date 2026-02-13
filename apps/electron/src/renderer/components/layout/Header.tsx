@@ -18,7 +18,6 @@ const nextTheme: Record<Theme, Theme> = {
 const routeTabs = [
   { path: '/', label: 'Home' },
   { path: '/search', label: 'Search' },
-  { path: '/settings', label: 'Settings' },
 ] as const;
 
 interface HeaderProps {
@@ -41,7 +40,7 @@ function RouteTabs() {
               'px-2 py-1 text-[11px] tracking-wide transition-colors',
               isActive
                 ? 'bg-slate-700 text-slate-100'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800'
             )}
             title={label}
           >
@@ -70,7 +69,7 @@ export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
       <div className="mx-auto flex h-12 max-w-[1400px] items-center gap-3 px-4 electron-no-drag">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[12px] font-medium text-slate-100 hover:bg-slate-900"
+          className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[12px] font-medium text-slate-100 hover:bg-slate-700/50 dark:hover:bg-slate-900"
         >
           <FileText className="h-3.5 w-3.5 text-slate-400" />
           Claude Plans
@@ -82,7 +81,7 @@ export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
           <button
             type="button"
             onClick={onOpenQuickOpen}
-            className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[11px] text-slate-300 hover:bg-slate-900"
+            className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[11px] text-slate-300 hover:bg-slate-700/50 dark:hover:bg-slate-900"
             title="Quick Open (Cmd+P)"
           >
             <Search className="h-3.5 w-3.5 text-slate-500" />
@@ -93,7 +92,7 @@ export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[11px] text-slate-300 hover:bg-slate-900"
+            className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[11px] text-slate-300 hover:bg-slate-700/50 dark:hover:bg-slate-900"
             title="Command Palette (Cmd+K)"
           >
             <Command className="h-3.5 w-3.5 text-slate-500" />
@@ -103,7 +102,7 @@ export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
 
           <Link
             to="/settings"
-            className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+            className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1.5 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-900"
             title="Settings"
           >
             <Settings2 className="h-3.5 w-3.5" />
@@ -111,7 +110,7 @@ export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
           <button
             type="button"
             onClick={() => setTheme(nextTheme[theme] ?? 'system')}
-            className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+            className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1.5 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-900"
             title={`Theme: ${theme}`}
           >
             {(() => {
