@@ -183,11 +183,29 @@ describe('ipcClient', () => {
 
     it('should call settings:update channel', async () => {
       const { ipcClient } = await import('../ipcClient');
-      mockInvoke.mockResolvedValueOnce({ settings: { theme: 'dark' } });
+      mockInvoke.mockResolvedValueOnce({
+        frontmatterEnabled: true,
+        planDirectories: ['~/.claude/plans'],
+      });
 
-      await ipcClient.settings.update({ theme: 'dark' });
+      await ipcClient.settings.update({
+        frontmatterEnabled: true,
+        planDirectories: ['~/.claude/plans'],
+      });
 
-      expect(mockInvoke).toHaveBeenCalledWith('settings:update', { theme: 'dark' });
+      expect(mockInvoke).toHaveBeenCalledWith('settings:update', {
+        frontmatterEnabled: true,
+        planDirectories: ['~/.claude/plans'],
+      });
+    });
+
+    it('should call settings:selectDirectory channel', async () => {
+      const { ipcClient } = await import('../ipcClient');
+      mockInvoke.mockResolvedValueOnce('/tmp/selected-plans');
+
+      await ipcClient.settings.selectDirectory('/tmp/current-plans');
+
+      expect(mockInvoke).toHaveBeenCalledWith('settings:selectDirectory', '/tmp/current-plans');
     });
   });
 });

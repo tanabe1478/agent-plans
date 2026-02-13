@@ -8,6 +8,7 @@ describe('queryParser', () => {
 
       expect(result.textQuery).toBe('performance optimization');
       expect(result.filters).toHaveLength(0);
+      expect(result.clauses).toEqual([{ textQuery: 'performance optimization', filters: [] }]);
     });
 
     it('should parse status filter', () => {
@@ -15,6 +16,7 @@ describe('queryParser', () => {
 
       expect(result.textQuery).toBe('');
       expect(result.filters).toHaveLength(1);
+      expect(result.clauses).toHaveLength(1);
       expect(result.filters[0]).toEqual({
         field: 'status',
         operator: ':',
@@ -97,6 +99,25 @@ describe('queryParser', () => {
         operator: ':',
         value: 'TASK-123',
       });
+    });
+
+    it('should parse OR clauses', () => {
+      const result = parseQuery('status:todo OR status:review');
+
+      expect(result.clauses).toHaveLength(2);
+      expect(result.clauses[0].filters[0]?.value).toBe('todo');
+      expect(result.clauses[1].filters[0]?.value).toBe('review');
+      expect(result.filters).toHaveLength(0);
+      expect(result.textQuery).toBe('');
+    });
+
+    it('should ignore explicit AND tokens', () => {
+      const result = parseQuery('status:in_progress AND tag:api');
+
+      expect(result.clauses).toHaveLength(1);
+      expect(result.clauses[0].filters).toHaveLength(2);
+      expect(result.clauses[0].filters[0]?.field).toBe('status');
+      expect(result.clauses[0].filters[1]?.field).toBe('tag');
     });
   });
 });

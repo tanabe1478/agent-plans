@@ -223,7 +223,7 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     'plans:open',
     async (_event: IpcMainInvokeEvent, filename: string, app: ExternalApp): Promise<void> => {
-      const filePath = planService.getFilePath(filename);
+      const filePath = await planService.getFilePath(filename);
       await openerService.openFile(filePath, app);
     }
   );

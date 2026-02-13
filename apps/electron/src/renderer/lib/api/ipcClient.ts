@@ -193,6 +193,9 @@ export const ipcClient = {
 
     update: (data: UpdateSettingsRequest): Promise<UpdateSettingsResponse> =>
       invoke<UpdateSettingsResponse>('settings:update', data),
+
+    selectDirectory: (initialPath?: string): Promise<string | null> =>
+      invoke<string | null>('settings:selectDirectory', initialPath),
   },
 };
 
