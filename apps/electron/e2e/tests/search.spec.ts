@@ -36,4 +36,19 @@ test.describe('Search flows', () => {
     await expect(page).toHaveURL(/#\/search\?q=status%3Ain_progress/);
     await expect(page.getByText('"status:in_progress" -')).toBeVisible();
   });
+
+  test('clears active filter chip and resets search results', async ({ page }) => {
+    await page.getByRole('link', { name: 'Search' }).click();
+    await page.getByRole('button', { name: /^status:todo/i }).click();
+
+    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo/);
+    await expect(page.getByText('"status:todo" -')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Remove status:todo filter' }).click();
+    await expect(page).toHaveURL(/#\/search$/);
+    await expect(page.getByText('"status:todo" -')).not.toBeVisible();
+    await expect(
+      page.getByPlaceholder('Search plans... (e.g. status:in_progress due<2026-12-31)')
+    ).toHaveValue('');
+  });
 });
