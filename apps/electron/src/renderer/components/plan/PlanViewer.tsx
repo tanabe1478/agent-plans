@@ -64,7 +64,10 @@ export function PlanViewer({ plan, showLineNumbers = false }: PlanViewerProps) {
       {fmEnabled && (
         <SubtaskList filename={plan.filename} subtasks={plan.frontmatter?.subtasks || []} />
       )}
-      <article className={`markdown-content mt-6${showLineNumbers ? ' with-line-numbers' : ''}`}>
+      <article
+        data-plan-content="true"
+        className={`markdown-content mt-6${showLineNumbers ? ' with-line-numbers' : ''}`}
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight, rehypeSlug]}

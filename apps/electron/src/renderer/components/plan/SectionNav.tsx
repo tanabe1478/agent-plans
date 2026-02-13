@@ -1,5 +1,5 @@
 import { List } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface SectionNavProps {
   content: string;
@@ -43,25 +43,31 @@ export function extractHeadings(content: string): Heading[] {
   return headings;
 }
 
+function getRenderedHeadingElements(): HTMLElement[] {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(
+      '[data-plan-content="true"] h1, [data-plan-content="true"] h2, [data-plan-content="true"] h3'
+    )
+  );
+}
+
 export function SectionNav({ content }: SectionNavProps) {
-  const [activeId, setActiveId] = useState<string>('');
+  const [activeIndex, setActiveIndex] = useState(-1);
   const [isOpen, setIsOpen] = useState(true);
-  const headings = extractHeadings(content);
+  const headings = useMemo(() => extractHeadings(content), [content]);
 
   const handleScroll = useCallback(() => {
-    const headingElements = headings
-      .map((h) => ({ id: h.id, el: document.getElementById(h.id) }))
-      .filter((h) => h.el != null);
+    const headingElements = getRenderedHeadingElements();
 
-    let currentId = '';
-    for (const { id, el } of headingElements) {
-      const rect = el?.getBoundingClientRect();
-      if (rect && rect.top <= 120) {
-        currentId = id;
+    let currentIndex = -1;
+    headingElements.forEach((el, index) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top <= 120) {
+        currentIndex = index;
       }
-    }
-    setActiveId(currentId);
-  }, [headings]);
+    });
+    setActiveIndex(currentIndex);
+  }, []);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -71,8 +77,8 @@ export function SectionNav({ content }: SectionNavProps) {
 
   if (headings.length === 0) return null;
 
-  const scrollToHeading = (id: string) => {
-    const el = document.getElementById(id);
+  const scrollToHeading = (index: number) => {
+    const el = getRenderedHeadingElements()[index];
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -91,11 +97,11 @@ export function SectionNav({ content }: SectionNavProps) {
       </button>
       {isOpen && (
         <ul className="space-y-1">
-          {headings.map((heading) => (
-            <li key={heading.id}>
+          {headings.map((heading, index) => (
+            <li key={`${heading.id}-${index}`}>
               <button
                 type="button"
-                onClick={() => scrollToHeading(heading.id)}
+                onClick={() => scrollToHeading(index)}
                 className={`section-nav-item w-full text-left text-sm truncate transition-colors ${
                   heading.level === 1
                     ? 'pl-0 font-medium'
@@ -103,7 +109,7 @@ export function SectionNav({ content }: SectionNavProps) {
                       ? 'pl-3'
                       : 'pl-6 text-xs'
                 } ${
-                  activeId === heading.id
+                  activeIndex === index
                     ? 'text-primary font-medium'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}

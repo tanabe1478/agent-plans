@@ -45,7 +45,8 @@ interface ElectronFixtures {
 }
 
 export const test = base.extend<ElectronFixtures>({
-  plansDir: async (_fixtureContext, use, testInfo) => {
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture API requires object destructuring.
+  plansDir: async ({}, use, testInfo) => {
     const dirName = [
       'ccplans-electron-e2e',
       String(Date.now()),
