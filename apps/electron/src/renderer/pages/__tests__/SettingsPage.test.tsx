@@ -50,7 +50,9 @@ describe('SettingsPage', () => {
 
   it('should have toggle switch', () => {
     render(<SettingsPage />, { wrapper: createWrapper() });
-    expect(screen.getAllByRole('switch').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('switch', { name: /frontmatter features/i }).length).toBeGreaterThan(
+      0
+    );
   });
 
   it('should show feature list', () => {

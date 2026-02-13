@@ -1,5 +1,5 @@
 import { List } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 interface SectionNavProps {
   content: string;
@@ -23,6 +23,7 @@ export function slugify(text: string): string {
 export function extractHeadings(content: string): Heading[] {
   const headings: Heading[] = [];
   const lines = content.split('\n');
+  const slugCounts = new Map<string, number>();
   let inCodeBlock = false;
 
   for (const line of lines) {
@@ -36,7 +37,11 @@ export function extractHeadings(content: string): Heading[] {
     if (match) {
       const level = match[1].length;
       const text = match[2].trim();
-      headings.push({ level, text, id: slugify(text) });
+      const baseId = slugify(text) || 'section';
+      const seenCount = slugCounts.get(baseId) ?? 0;
+      slugCounts.set(baseId, seenCount + 1);
+      const id = seenCount === 0 ? baseId : `${baseId}-${seenCount}`;
+      headings.push({ level, text, id });
     }
   }
 
@@ -54,6 +59,7 @@ function getRenderedHeadingElements(): HTMLElement[] {
 export function SectionNav({ content }: SectionNavProps) {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isOpen, setIsOpen] = useState(true);
+  const listId = useId();
   const headings = useMemo(() => extractHeadings(content), [content]);
 
   const handleScroll = useCallback(() => {
@@ -89,6 +95,8 @@ export function SectionNav({ content }: SectionNavProps) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls={listId}
         className="flex w-full items-center gap-2 text-sm font-semibold text-muted-foreground mb-2 hover:text-foreground lg:cursor-default"
       >
         <List className="h-4 w-4" />
@@ -96,9 +104,9 @@ export function SectionNav({ content }: SectionNavProps) {
         <span className="ml-auto text-xs lg:hidden">{isOpen ? '▲' : '▼'}</span>
       </button>
       {isOpen && (
-        <ul className="space-y-1">
+        <ul id={listId} aria-hidden={!isOpen} className="space-y-1">
           {headings.map((heading, index) => (
-            <li key={`${heading.id}-${index}`}>
+            <li key={heading.id}>
               <button
                 type="button"
                 onClick={() => scrollToHeading(index)}

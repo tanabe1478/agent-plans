@@ -34,6 +34,14 @@ describe('SectionNav', () => {
     expect(headings.map((h) => h.text)).toEqual(['Top', 'Visible']);
   });
 
+  it('extractHeadings de-duplicates ids for repeated headings', () => {
+    const content = `## Repeat
+## Repeat
+## Repeat`;
+    const headings = extractHeadings(content);
+    expect(headings.map((h) => h.id)).toEqual(['repeat', 'repeat-1', 'repeat-2']);
+  });
+
   it('scrolls to rendered heading by order even when ids are non-ascii', () => {
     const content = `# 日本語の見出し
 ## Context`;

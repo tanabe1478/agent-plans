@@ -123,12 +123,14 @@ function GraphNode({
   onClick: () => void;
 }) {
   const colors = statusColors[node.status] ?? statusColors.todo;
+  const readableStatus = node.status.replace('_', ' ');
 
   return (
     /* biome-ignore lint/a11y/useSemanticElements: SVG node uses <g> for grouped shapes and text */
     <g
       role="button"
       tabIndex={0}
+      aria-label={`Open plan ${node.title} (${readableStatus})`}
       transform={`translate(${position.x}, ${position.y})`}
       onClick={onClick}
       onKeyDown={(event) => {
@@ -423,12 +425,9 @@ export function DependencyPage() {
               );
             })}
             {/* Nodes */}
-            {graph.nodes.map((node) => {
+            {relevantNodes.map((node) => {
               const pos = positions.get(node.filename);
               if (!pos) return null;
-              if (node.blockedBy.length === 0 && node.blocks.length === 0) {
-                return null;
-              }
               return (
                 <GraphNode
                   key={node.filename}

@@ -1,4 +1,5 @@
 import { AlertCircle, CheckSquare, Clock, Columns, GitBranch, Loader2 } from 'lucide-react';
+import { useId } from 'react';
 import { useSettings, useUpdateSettings } from '@/lib/hooks/useSettings';
 import { useUiStore } from '@/stores/uiStore';
 
@@ -14,6 +15,7 @@ export function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
   const updateSettings = useUpdateSettings();
   const { addToast } = useUiStore();
+  const frontmatterHeadingId = useId();
 
   if (isLoading) {
     return (
@@ -52,7 +54,9 @@ export function SettingsPage() {
       <div className="rounded-lg border bg-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Frontmatter Features</h2>
+            <h2 id={frontmatterHeadingId} className="text-lg font-semibold">
+              Frontmatter Features
+            </h2>
             <p className="text-sm text-muted-foreground mt-1">
               Enable YAML frontmatter-based plan management features. These are custom features
               beyond basic Markdown plans.
@@ -61,6 +65,7 @@ export function SettingsPage() {
           <button
             type="button"
             role="switch"
+            aria-labelledby={frontmatterHeadingId}
             aria-checked={settings?.frontmatterEnabled ?? false}
             onClick={handleToggle}
             disabled={updateSettings.isPending}
