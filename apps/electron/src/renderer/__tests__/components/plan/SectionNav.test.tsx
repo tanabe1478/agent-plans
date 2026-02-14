@@ -57,6 +57,10 @@ describe('SectionNav', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: '日本語の見出し' }));
-    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
+    });
   });
 });
