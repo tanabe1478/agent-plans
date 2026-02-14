@@ -4,14 +4,9 @@
 export interface AppSettings {
   /** Enable YAML frontmatter features (status, priority, tags, subtasks, etc.) */
   frontmatterEnabled: boolean;
+  /** Directories to scan for markdown plans */
+  planDirectories?: string[];
 }
-
-/**
- * Default settings - frontmatter is disabled by default
- */
-export const DEFAULT_SETTINGS: AppSettings = {
-  frontmatterEnabled: false,
-};
 
 /**
  * GET /api/settings response

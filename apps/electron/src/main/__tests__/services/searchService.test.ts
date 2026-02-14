@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SearchService } from '../../services/searchService.js';
+import { SettingsService } from '../../services/settingsService.js';
 
 describe('SearchService', () => {
   let tempDir: string;
@@ -93,6 +94,50 @@ describe('SearchService', () => {
       const results = await searchService.search('authentication status:in_progress');
       expect(results).toHaveLength(1);
       expect(results[0].filename).toBe('plan-1.md');
+    });
+
+    it('should support OR clauses', async () => {
+      await writeFile(
+        join(plansDir, 'todo-plan.md'),
+        '---\nstatus: todo\n---\n\n# Todo Plan\n\nPending item.',
+        'utf-8'
+      );
+      await writeFile(
+        join(plansDir, 'review-plan.md'),
+        '---\nstatus: review\n---\n\n# Review Plan\n\nAwaiting review.',
+        'utf-8'
+      );
+
+      const results = await searchService.search('status:todo OR status:review');
+      const filenames = results.map((result) => result.filename).sort();
+      expect(filenames).toEqual(['review-plan.md', 'todo-plan.md']);
+    });
+
+    it('should search across multiple configured directories', async () => {
+      const secondaryDir = join(plansDir, 'secondary');
+      await mkdir(secondaryDir, { recursive: true });
+
+      const settingsService = new SettingsService({ plansDir });
+      await settingsService.updateSettings({
+        planDirectories: [plansDir, secondaryDir],
+      });
+
+      const multiDirSearch = new SearchService({ plansDir, settingsService });
+
+      await writeFile(
+        join(plansDir, 'primary-plan.md'),
+        '---\nstatus: todo\n---\n\n# Primary\n\nPrimary directory plan.',
+        'utf-8'
+      );
+      await writeFile(
+        join(secondaryDir, 'secondary-plan.md'),
+        '---\nstatus: todo\n---\n\n# Secondary\n\nSecondary directory plan.',
+        'utf-8'
+      );
+
+      const results = await multiDirSearch.search('status:todo');
+      const filenames = results.map((result) => result.filename).sort();
+      expect(filenames).toEqual(['primary-plan.md', 'secondary-plan.md']);
     });
   });
 });

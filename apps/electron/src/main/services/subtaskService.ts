@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { normalizePlanStatus, type PlanFrontmatter, type Subtask } from '@ccplans/shared';
 import { config } from '../config.js';
+import { planService } from './planService.js';
 
 // Re-use the parsing/serialization from planService via a shared approach
 // We read the file, parse frontmatter, modify subtasks, and write back
@@ -231,10 +232,11 @@ function validateFilename(filename: string): void {
 
 async function readPlanFile(
   filename: string,
-  plansDir: string
+  plansDir: string,
+  resolveFilePath?: (filename: string) => Promise<string>
 ): Promise<{ frontmatter: PlanFrontmatter; body: string; filePath: string }> {
   validateFilename(filename);
-  const filePath = join(plansDir, filename);
+  const filePath = resolveFilePath ? await resolveFilePath(filename) : join(plansDir, filename);
   const content = await readFile(filePath, 'utf-8');
   const { frontmatter, body } = parseFrontmatter(content);
   return { frontmatter, body, filePath };
@@ -263,17 +265,24 @@ export function getSubtaskProgress(subtasks: Subtask[]): {
 
 export interface SubtaskServiceConfig {
   plansDir: string;
+  resolveFilePath?: (filename: string) => Promise<string>;
 }
 
 export class SubtaskService {
   private plansDir: string;
+  private resolveFilePath?: (filename: string) => Promise<string>;
 
   constructor(config: SubtaskServiceConfig) {
     this.plansDir = config.plansDir;
+    this.resolveFilePath = config.resolveFilePath;
   }
 
   async addSubtask(filename: string, subtask: Omit<Subtask, 'id'>): Promise<Subtask> {
-    const { frontmatter, body, filePath } = await readPlanFile(filename, this.plansDir);
+    const { frontmatter, body, filePath } = await readPlanFile(
+      filename,
+      this.plansDir,
+      this.resolveFilePath
+    );
     const newSubtask: Subtask = {
       id: randomUUID(),
       title: subtask.title,
@@ -300,7 +309,11 @@ export class SubtaskService {
     subtaskId: string,
     update: Partial<Omit<Subtask, 'id'>>
   ): Promise<Subtask> {
-    const { frontmatter, body, filePath } = await readPlanFile(filename, this.plansDir);
+    const { frontmatter, body, filePath } = await readPlanFile(
+      filename,
+      this.plansDir,
+      this.resolveFilePath
+    );
     const subtasks = frontmatter.subtasks || [];
     const index = subtasks.findIndex((s) => s.id === subtaskId);
 
@@ -323,7 +336,11 @@ export class SubtaskService {
   }
 
   async deleteSubtask(filename: string, subtaskId: string): Promise<void> {
-    const { frontmatter, body, filePath } = await readPlanFile(filename, this.plansDir);
+    const { frontmatter, body, filePath } = await readPlanFile(
+      filename,
+      this.plansDir,
+      this.resolveFilePath
+    );
     const subtasks = frontmatter.subtasks || [];
     const index = subtasks.findIndex((s) => s.id === subtaskId);
 
@@ -343,7 +360,11 @@ export class SubtaskService {
   }
 
   async toggleSubtask(filename: string, subtaskId: string): Promise<Subtask> {
-    const { frontmatter, body, filePath } = await readPlanFile(filename, this.plansDir);
+    const { frontmatter, body, filePath } = await readPlanFile(
+      filename,
+      this.plansDir,
+      this.resolveFilePath
+    );
     const subtasks = frontmatter.subtasks || [];
     const index = subtasks.findIndex((s) => s.id === subtaskId);
 
@@ -373,4 +394,5 @@ export class SubtaskService {
 // Default singleton instance
 export const subtaskService = new SubtaskService({
   plansDir: config.plansDir,
+  resolveFilePath: (filename) => planService.getFilePath(filename),
 });

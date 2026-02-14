@@ -8,21 +8,26 @@ const SEARCH_EXAMPLES: Array<{ label: string; query: string }> = [
   { label: 'In Progress', query: 'status:in_progress' },
   { label: 'Due This Month', query: 'due<2026-03-01' },
   { label: 'By Project Path', query: 'project:ccplans' },
+  { label: 'Todo or Review', query: 'status:todo OR status:review' },
+  { label: 'Progress + API', query: 'status:in_progress AND tag:api' },
   { label: 'Blocked Plans', query: 'blockedBy:backend-plan.md' },
   { label: 'Estimate Includes 2d', query: 'estimate:2d' },
   { label: 'Exact Phrase', query: '"レビュー指摘対応"' },
 ];
 
 const SEARCH_SYNTAX_GUIDE: Array<{ syntax: string; description: string }> = [
-  { syntax: 'status:todo', description: 'Status filter (todo, in_progress, review, completed)' },
   { syntax: 'due<2026-02-20', description: 'Due date comparison (<, >, <=, >=, =)' },
   { syntax: 'project:ccplans', description: 'Project path partial match' },
   { syntax: 'estimate:2d', description: 'Estimate partial match' },
   { syntax: 'blockedBy:plan.md', description: 'Dependency filename match' },
   { syntax: 'tag:api', description: 'Tag match (optional frontmatter field)' },
   { syntax: 'priority:high', description: 'Priority match (optional frontmatter field)' },
+  { syntax: '... AND ...', description: 'All conditions in the same clause must match' },
+  { syntax: '... OR ...', description: 'Either clause can match (OR union search)' },
   { syntax: '"exact phrase"', description: 'Exact text phrase search in markdown body' },
 ];
+
+const STATUS_VALUES = ['todo', 'in_progress', 'review', 'completed'] as const;
 
 export function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -49,6 +54,16 @@ export function SearchPage() {
     handleSubmit(query);
   };
 
+  const selectedStatuses = getSelectedStatuses(searchInput);
+  const toggleStatus = (status: (typeof STATUS_VALUES)[number]) => {
+    const nextStatuses = selectedStatuses.includes(status)
+      ? selectedStatuses.filter((current) => current !== status)
+      : [...selectedStatuses, status];
+    const nextQuery = rebuildQueryWithStatuses(searchInput, nextStatuses);
+    setSearchInput(nextQuery);
+    handleSubmit(nextQuery);
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -61,6 +76,34 @@ export function SearchPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Combine free text and structured filters. Press Enter to run.
           </p>
+          <div className="mt-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Status Filters
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Multiple selection is combined with OR.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {STATUS_VALUES.map((status) => {
+                const selected = selectedStatuses.includes(status);
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleStatus(status)}
+                    className={`rounded border px-2 py-1 text-xs font-mono transition-colors ${
+                      selected
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-background text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {`status:${status}`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {SEARCH_EXAMPLES.map((example) => (
               <button
@@ -165,12 +208,118 @@ export function SearchPage() {
   );
 }
 
+function tokenizeQuery(query: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  let quoteChar = '';
+
+  for (let i = 0; i < query.length; i++) {
+    const ch = query[i];
+    if (!inQuotes && (ch === '"' || ch === "'")) {
+      inQuotes = true;
+      quoteChar = ch;
+      current += ch;
+      continue;
+    }
+    if (inQuotes && ch === quoteChar) {
+      inQuotes = false;
+      quoteChar = '';
+      current += ch;
+      continue;
+    }
+    if (!inQuotes && /\s/.test(ch)) {
+      if (current) {
+        tokens.push(current);
+        current = '';
+      }
+      continue;
+    }
+    current += ch;
+  }
+
+  if (current) {
+    tokens.push(current);
+  }
+
+  return tokens;
+}
+
+function isBooleanToken(token: string): boolean {
+  return /^(AND|OR|\|\||&&)$/i.test(token);
+}
+
+function isStatusToken(token: string): token is `status:${(typeof STATUS_VALUES)[number]}` {
+  return /^status:(todo|in_progress|review|completed)$/i.test(token);
+}
+
+function getSelectedStatuses(query: string): Array<(typeof STATUS_VALUES)[number]> {
+  const tokens = tokenizeQuery(query);
+  const selected = new Set<(typeof STATUS_VALUES)[number]>();
+
+  for (const token of tokens) {
+    const match = token.match(/^status:(todo|in_progress|review|completed)$/i);
+    if (!match) continue;
+    selected.add(match[1].toLowerCase() as (typeof STATUS_VALUES)[number]);
+  }
+
+  return STATUS_VALUES.filter((status) => selected.has(status));
+}
+
+function stripStatusTokens(query: string): string {
+  const tokens = tokenizeQuery(query);
+  const removeIndices = new Set<number>();
+
+  tokens.forEach((token, index) => {
+    if (!isStatusToken(token)) return;
+    removeIndices.add(index);
+    if (index > 0 && isBooleanToken(tokens[index - 1])) {
+      removeIndices.add(index - 1);
+    }
+    if (index < tokens.length - 1 && isBooleanToken(tokens[index + 1])) {
+      removeIndices.add(index + 1);
+    }
+  });
+
+  let remaining = tokens.filter((_, index) => !removeIndices.has(index));
+
+  while (remaining.length > 0 && isBooleanToken(remaining[0])) {
+    remaining = remaining.slice(1);
+  }
+  while (remaining.length > 0 && isBooleanToken(remaining[remaining.length - 1])) {
+    remaining = remaining.slice(0, -1);
+  }
+
+  return remaining.join(' ');
+}
+
+function buildStatusExpression(statuses: Array<(typeof STATUS_VALUES)[number]>): string {
+  if (statuses.length === 0) return '';
+  if (statuses.length === 1) return `status:${statuses[0]}`;
+  return statuses.map((status) => `status:${status}`).join(' OR ');
+}
+
+function rebuildQueryWithStatuses(
+  query: string,
+  statuses: Array<(typeof STATUS_VALUES)[number]>
+): string {
+  const base = stripStatusTokens(query);
+  const statusExpr = buildStatusExpression(statuses);
+  if (!base) return statusExpr;
+  if (!statusExpr) return base;
+  return `${base} AND (${statusExpr})`;
+}
+
 function highlightMatch(text: string, query: string): string {
   if (!query) return text;
   // Only highlight the text part of the query (not filter syntax)
   const textPart = query
     .split(/\s+/)
-    .filter((t) => !/^(status|due|estimate|project|blockedBy)[:=<>]/.test(t))
+    .filter((token) => !/^(AND|OR|\|\||&&)$/i.test(token))
+    .filter(
+      (token) =>
+        !/^(status|due|estimate|project|blockedBy|tag|priority|assignee)[:=<>]/i.test(token)
+    )
     .join(' ');
   if (!textPart) return text;
   const regex = new RegExp(`(${escapeRegExp(textPart)})`, 'gi');

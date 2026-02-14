@@ -2,6 +2,8 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PlanFrontmatter, SearchMatch, SearchResult } from '@ccplans/shared';
 import { parseQuery, type QueryFilter } from './queryParser.js';
+import type { SettingsService } from './settingsService.js';
+import { settingsService } from './settingsService.js';
 
 /**
  * Extract title from markdown content
@@ -158,13 +160,72 @@ function compareDates(actual: string, target: string, operator: string): boolean
 
 export interface SearchServiceConfig {
   plansDir: string;
+  settingsService?: SettingsService;
 }
 
 export class SearchService {
   private plansDir: string;
+  private settingsService?: SettingsService;
 
   constructor(config: SearchServiceConfig) {
     this.plansDir = config.plansDir;
+    this.settingsService = config.settingsService;
+  }
+
+  private async getPlanDirectories(): Promise<string[]> {
+    if (this.settingsService) {
+      return this.settingsService.getPlanDirectories();
+    }
+    return [this.plansDir];
+  }
+
+  private async getSearchTargets(): Promise<Array<{ filename: string; filePath: string }>> {
+    const directories = await this.getPlanDirectories();
+    const targets = new Map<string, string>();
+
+    for (const directory of directories) {
+      try {
+        const files = await readdir(directory);
+        for (const filename of files) {
+          if (!filename.endsWith('.md')) continue;
+          if (targets.has(filename)) continue;
+          targets.set(filename, join(directory, filename));
+        }
+      } catch {
+        // Ignore unreadable directories.
+      }
+    }
+
+    return Array.from(targets, ([filename, filePath]) => ({ filename, filePath }));
+  }
+
+  private clauseMatches(
+    content: string,
+    clause: { textQuery: string; filters: QueryFilter[] },
+    frontmatter: PlanFrontmatter | undefined
+  ): SearchMatch[] | null {
+    if (clause.filters.length > 0) {
+      const allFiltersMatch = clause.filters.every((f) => matchesFilter(f, frontmatter));
+      if (!allFiltersMatch) return null;
+    }
+
+    if (!clause.textQuery) return [];
+    const textMatches = this.findMatches(content, clause.textQuery);
+    return textMatches.length > 0 ? textMatches : null;
+  }
+
+  private dedupeMatches(matches: SearchMatch[]): SearchMatch[] {
+    const seen = new Set<string>();
+    const deduped: SearchMatch[] = [];
+
+    for (const match of matches) {
+      const key = `${match.line}:${match.highlight}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(match);
+    }
+
+    return deduped;
   }
 
   /**
@@ -177,42 +238,39 @@ export class SearchService {
     }
 
     const parsed = parseQuery(query);
-    const files = await readdir(this.plansDir);
-    const mdFiles = files.filter((f) => f.endsWith('.md'));
+    if (parsed.clauses.length === 0) {
+      return [];
+    }
+    const targets = await this.getSearchTargets();
 
     const results: SearchResult[] = [];
 
-    for (const filename of mdFiles) {
+    for (const { filename, filePath } of targets) {
       try {
-        const filePath = join(this.plansDir, filename);
         const content = await readFile(filePath, 'utf-8');
+        let frontmatter: PlanFrontmatter | undefined;
+        let matched = false;
+        const collectedMatches: SearchMatch[] = [];
 
-        // Check structured filters against frontmatter
-        if (parsed.filters.length > 0) {
-          const fm = extractFrontmatter(content);
-          const allFiltersMatch = parsed.filters.every((f) => matchesFilter(f, fm));
-          if (!allFiltersMatch) continue;
+        for (const clause of parsed.clauses) {
+          if (clause.filters.length > 0 && !frontmatter) {
+            frontmatter = extractFrontmatter(content);
+          }
+          const clauseMatchesResult = this.clauseMatches(content, clause, frontmatter);
+          if (clauseMatchesResult === null) continue;
+          matched = true;
+          collectedMatches.push(...clauseMatchesResult);
         }
 
-        // If there's no text query, just include files that pass filters
-        if (!parsed.textQuery) {
-          results.push({
-            filename,
-            title: extractTitle(content),
-            matches: [],
-          });
+        if (!matched) {
           continue;
         }
 
-        // Text search
-        const matches = this.findMatches(content, parsed.textQuery);
-        if (matches.length > 0) {
-          results.push({
-            filename,
-            title: extractTitle(content),
-            matches: matches.slice(0, 10),
-          });
-        }
+        results.push({
+          filename,
+          title: extractTitle(content),
+          matches: this.dedupeMatches(collectedMatches).slice(0, 10),
+        });
       } catch {}
     }
 
@@ -251,4 +309,7 @@ export class SearchService {
 
 // Default instance for function-based exports
 import { config } from '../config.js';
-export const searchService = new SearchService({ plansDir: config.plansDir });
+export const searchService = new SearchService({
+  plansDir: config.plansDir,
+  settingsService,
+});

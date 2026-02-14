@@ -92,10 +92,16 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
 
   const removeChip = useCallback(
     (chipRaw: string) => {
-      const parts = value.split(/\s+/).filter((p) => p !== chipRaw);
-      onChange(parts.join(' '));
+      const parts = value.split(/\s+/).filter(Boolean);
+      const removeIndex = parts.indexOf(chipRaw);
+      if (removeIndex >= 0) {
+        parts.splice(removeIndex, 1);
+      }
+      const nextValue = parts.join(' ');
+      onChange(nextValue);
+      onSubmit(nextValue);
     },
-    [value, onChange]
+    [value, onChange, onSubmit]
   );
 
   useEffect(() => {
@@ -117,6 +123,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
               <button
                 type="button"
                 onClick={() => removeChip(chip.raw)}
+                aria-label={`Remove ${chip.raw} filter`}
                 className="ml-0.5 hover:text-destructive"
               >
                 <X className="h-3 w-3" />

@@ -54,19 +54,24 @@ function RouteTabs() {
 
 export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
   const { theme, setTheme } = useUiStore();
+  const platform = typeof window !== 'undefined' ? window.electronAPI?.getPlatform?.() : undefined;
+  const hasMacTrafficLights =
+    platform != null
+      ? platform === 'darwin'
+      : typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgent);
+  const macLeftInsetClass = hasMacTrafficLights ? 'pl-[84px]' : '';
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
       <div className="electron-drag-region h-7 border-b border-slate-900">
-        <div className="mx-auto flex h-full max-w-[1400px] items-center justify-between px-4">
-          <div className="inline-flex items-center gap-2 text-[11px] tracking-wide text-slate-500">
-            <FileText className="h-3.5 w-3.5" />
-            ccplans
-          </div>
-          <span className="text-[10px] text-slate-600">workspace</span>
-        </div>
+        <div className={cn('mx-auto h-full max-w-[1400px] px-4', macLeftInsetClass)} />
       </div>
-      <div className="mx-auto flex h-12 max-w-[1400px] items-center gap-3 px-4 electron-no-drag">
+      <div
+        className={cn(
+          'mx-auto flex h-12 max-w-[1400px] items-center gap-3 px-4 electron-no-drag',
+          macLeftInsetClass
+        )}
+      >
         <Link
           to="/"
           className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[12px] font-medium text-slate-100 hover:bg-slate-700/50 dark:hover:bg-slate-900"

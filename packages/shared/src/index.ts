@@ -76,4 +76,3 @@ export type {
   UpdateSettingsRequest,
   UpdateSettingsResponse,
 } from './types/settings.js';
-export { DEFAULT_SETTINGS } from './types/settings.js';

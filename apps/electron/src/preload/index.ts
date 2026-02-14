@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     clipboard.writeText(text);
   },
 
+  // Platform info for renderer layout decisions.
+  getPlatform: (): NodeJS.Platform => process.platform,
+
   // Event listeners
   on: (channel: string, callback: (...args: unknown[]) => void): (() => void) => {
     const subscription = (_event: unknown, ...args: unknown[]): void => callback(...args);

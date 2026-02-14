@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 // Mock the hooks
 vi.mock('@/lib/hooks/useSettings', () => ({
   useSettings: () => ({
-    data: { frontmatterEnabled: false },
+    data: { frontmatterEnabled: false, planDirectories: ['~/.claude/plans'] },
     isLoading: false,
     error: null,
   }),

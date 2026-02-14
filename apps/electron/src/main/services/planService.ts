@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type {
   PlanDetail,
   PlanFrontmatter,
@@ -13,7 +12,7 @@ import { normalizePlanStatus } from '@ccplans/shared';
 import { config } from '../config.js';
 import { ArchiveService } from './archiveService.js';
 import { generatePlanName } from './nameGenerator.js';
-import { SettingsService } from './settingsService.js';
+import { type SettingsService, settingsService } from './settingsService.js';
 
 /**
  * Interfaces for dependency injection
@@ -42,6 +41,35 @@ export interface PlanServiceConfig {
   plansDir: string;
   archiveDir: string;
   previewLength: number;
+}
+
+class PlanConflictError extends Error {
+  readonly conflict = true;
+  readonly statusCode = 409;
+  readonly lastKnown: number | undefined;
+  readonly current: number | undefined;
+
+  constructor(lastKnown: number | undefined, current: number | undefined) {
+    super('File was modified externally');
+    this.name = 'PlanConflictError';
+    this.lastKnown = lastKnown;
+    this.current = current;
+  }
+}
+
+function isPlanPriority(value: string): value is PlanPriority {
+  return ['low', 'medium', 'high', 'critical'].includes(value);
+}
+
+function buildSubtask(candidate: Partial<Subtask>): Subtask | null {
+  if (!candidate.id || !candidate.title) return null;
+  return {
+    id: candidate.id,
+    title: candidate.title,
+    status: candidate.status ?? 'todo',
+    assignee: candidate.assignee,
+    dueDate: candidate.dueDate,
+  };
 }
 
 /**
@@ -98,8 +126,9 @@ function parseSubtasks(
     const propMatch = line.match(/^\s{4,}(\w+):\s*(.*)$/);
 
     if (itemMatch) {
-      if (current?.id && current.title) {
-        subtasks.push(current as Subtask);
+      const built = current ? buildSubtask(current) : null;
+      if (built) {
+        subtasks.push(built);
       }
       current = {};
       const key = itemMatch[1];
@@ -124,8 +153,9 @@ function parseSubtasks(
     }
   }
 
-  if (current?.id && current.title) {
-    subtasks.push(current as Subtask);
+  const built = current ? buildSubtask(current) : null;
+  if (built) {
+    subtasks.push(built);
   }
 
   return { subtasks, consumed };
@@ -188,7 +218,9 @@ function parseFrontmatter(content: string): {
         frontmatter.status = normalizePlanStatus(value);
         break;
       case 'priority':
-        frontmatter.priority = value as PlanPriority;
+        if (isPlanPriority(value)) {
+          frontmatter.priority = value;
+        }
         break;
       case 'dueDate':
         frontmatter.dueDate = value;
@@ -363,17 +395,86 @@ export class PlanService {
     this.migrationHandler = deps.migrationHandler;
   }
 
+  private async getConfiguredPlanDirectories(): Promise<string[]> {
+    try {
+      const directories = await this.settingsService.getPlanDirectories();
+      if (directories.length > 0) {
+        return directories;
+      }
+    } catch {
+      // Fall back to configured default path.
+    }
+    return [this.plansDir];
+  }
+
+  private async getCreateTargetDirectory(): Promise<string> {
+    const directories = await this.getConfiguredPlanDirectories();
+    return directories[0] ?? this.plansDir;
+  }
+
+  private async resolvePlanPath(filename: string): Promise<string> {
+    this.validateFilename(filename);
+    const directories = await this.getConfiguredPlanDirectories();
+    for (const directory of directories) {
+      const filePath = join(directory, filename);
+      try {
+        const fileStats = await stat(filePath);
+        if (fileStats.isFile()) {
+          return filePath;
+        }
+      } catch {
+        // Continue searching in remaining directories.
+      }
+    }
+    throw new Error(`Plan not found: ${filename}`);
+  }
+
+  private async getPlanMetaFromPath(
+    filename: string,
+    filePath: string,
+    frontmatterEnabled: boolean
+  ): Promise<PlanMeta> {
+    const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
+    const { frontmatter, body } = parseFrontmatter(content);
+
+    return {
+      filename,
+      title: extractTitle(body),
+      createdAt: stats.birthtime.toISOString(),
+      modifiedAt: stats.mtime.toISOString(),
+      size: stats.size,
+      preview: extractPreview(body, this.previewLength),
+      sections: extractSections(body),
+      relatedProject: extractRelatedProject(body),
+      frontmatter: frontmatterEnabled ? frontmatter : undefined,
+    };
+  }
+
   /**
    * List all plan files with metadata
    */
   async listPlans(): Promise<PlanMeta[]> {
-    const files = await readdir(this.plansDir);
-    const mdFiles = files.filter((f) => f.endsWith('.md'));
+    const directories = await this.getConfiguredPlanDirectories();
+    const targets = new Map<string, string>();
 
+    for (const directory of directories) {
+      try {
+        const files = await readdir(directory);
+        for (const filename of files) {
+          if (!filename.endsWith('.md')) continue;
+          if (targets.has(filename)) continue;
+          targets.set(filename, join(directory, filename));
+        }
+      } catch {
+        // Ignore unreadable directories.
+      }
+    }
+
+    const frontmatterEnabled = await this.settingsService.isFrontmatterEnabled();
     const plans = await Promise.all(
-      mdFiles.map(async (filename) => {
+      Array.from(targets.entries()).map(async ([filename, filePath]) => {
         try {
-          return await this.getPlanMeta(filename);
+          return await this.getPlanMetaFromPath(filename, filePath, frontmatterEnabled);
         } catch {
           return null;
         }
@@ -389,32 +490,16 @@ export class PlanService {
    * Get plan metadata without full content
    */
   async getPlanMeta(filename: string): Promise<PlanMeta> {
-    this.validateFilename(filename);
-    const filePath = join(this.plansDir, filename);
-    const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
-
-    const { frontmatter, body } = parseFrontmatter(content);
-    const fmEnabled = await this.settingsService.isFrontmatterEnabled();
-
-    return {
-      filename,
-      title: extractTitle(body),
-      createdAt: stats.birthtime.toISOString(),
-      modifiedAt: stats.mtime.toISOString(),
-      size: stats.size,
-      preview: extractPreview(body, this.previewLength),
-      sections: extractSections(body),
-      relatedProject: extractRelatedProject(body),
-      frontmatter: fmEnabled ? frontmatter : undefined,
-    };
+    const filePath = await this.resolvePlanPath(filename);
+    const frontmatterEnabled = await this.settingsService.isFrontmatterEnabled();
+    return this.getPlanMetaFromPath(filename, filePath, frontmatterEnabled);
   }
 
   /**
    * Get full plan details including content
    */
   async getPlan(filename: string): Promise<PlanDetail> {
-    this.validateFilename(filename);
-    const filePath = join(this.plansDir, filename);
+    const filePath = await this.resolvePlanPath(filename);
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
 
     // Record file state for conflict detection
@@ -425,9 +510,7 @@ export class PlanService {
     // Auto-migrate if needed
     if (this.migrationHandler) {
       if (frontmatter && this.migrationHandler.needsMigration(frontmatter)) {
-        frontmatter = this.migrationHandler.migrate(
-          frontmatter as unknown as Record<string, unknown>
-        );
+        frontmatter = this.migrationHandler.migrate({ ...frontmatter });
       } else if (!frontmatter) {
         frontmatter = this.migrationHandler.migrate({});
       }
@@ -456,12 +539,14 @@ export class PlanService {
     const finalFilename = filename || this.generateFilename();
     this.validateFilename(finalFilename);
 
-    const filePath = join(this.plansDir, finalFilename);
+    const targetDir = await this.getCreateTargetDirectory();
+    await mkdir(targetDir, { recursive: true });
+    const filePath = join(targetDir, finalFilename);
     await writeFile(filePath, content, 'utf-8');
 
     // Audit log (non-blocking)
     this.auditLogger
-      ?.log({ action: 'create', filename: finalFilename, details: {} }, this.plansDir)
+      ?.log({ action: 'create', filename: finalFilename, details: {} }, targetDir)
       .catch(() => {});
 
     return this.getPlanMeta(finalFilename);
@@ -471,24 +556,14 @@ export class PlanService {
    * Update an existing plan
    */
   async updatePlan(filename: string, content: string): Promise<PlanMeta> {
-    this.validateFilename(filename);
-    const filePath = join(this.plansDir, filename);
+    const filePath = await this.resolvePlanPath(filename);
+    const planDirectory = dirname(filePath);
 
     // Check for conflicts
     if (this.conflictChecker) {
-      const conflict = await this.conflictChecker.checkConflict(filename, this.plansDir);
+      const conflict = await this.conflictChecker.checkConflict(filename, planDirectory);
       if (conflict.hasConflict) {
-        const err = new Error('File was modified externally') as Error & {
-          conflict: boolean;
-          statusCode: number;
-          lastKnown: number | undefined;
-          current: number | undefined;
-        };
-        err.conflict = true;
-        err.statusCode = 409;
-        err.lastKnown = conflict.lastKnownMtime;
-        err.current = conflict.currentMtime;
-        throw err;
+        throw new PlanConflictError(conflict.lastKnownMtime, conflict.currentMtime);
       }
     }
 
@@ -498,7 +573,7 @@ export class PlanService {
     this.auditLogger
       ?.log(
         { action: 'update', filename, details: { contentLength: content.length } },
-        this.plansDir
+        planDirectory
       )
       .catch(() => {});
 
@@ -509,8 +584,8 @@ export class PlanService {
    * Delete a plan (permanently by default)
    */
   async deletePlan(filename: string, archive = false): Promise<void> {
-    this.validateFilename(filename);
-    const filePath = join(this.plansDir, filename);
+    const filePath = await this.resolvePlanPath(filename);
+    const planDirectory = dirname(filePath);
 
     if (archive) {
       const content = await readFile(filePath, 'utf-8');
@@ -526,7 +601,7 @@ export class PlanService {
     this.auditLogger
       ?.log(
         { action: 'delete', filename, details: { permanent: !archive, archived: archive } },
-        this.plansDir
+        planDirectory
       )
       .catch(() => {});
   }
@@ -545,8 +620,8 @@ export class PlanService {
     this.validateFilename(filename);
     this.validateFilename(newFilename);
 
-    const oldPath = join(this.plansDir, filename);
-    const newPath = join(this.plansDir, newFilename);
+    const oldPath = await this.resolvePlanPath(filename);
+    const newPath = join(dirname(oldPath), newFilename);
 
     await rename(oldPath, newPath);
     return this.getPlanMeta(newFilename);
@@ -556,8 +631,7 @@ export class PlanService {
    * Update plan status
    */
   async updateStatus(filename: string, status: PlanStatus): Promise<PlanMeta> {
-    this.validateFilename(filename);
-    const filePath = join(this.plansDir, filename);
+    const filePath = await this.resolvePlanPath(filename);
     const content = await readFile(filePath, 'utf-8');
 
     const { frontmatter, body } = parseFrontmatter(content);
@@ -575,7 +649,7 @@ export class PlanService {
     this.auditLogger
       ?.log(
         { action: 'status_change', filename, details: { from: previousStatus, to: status } },
-        this.plansDir
+        dirname(filePath)
       )
       .catch(() => {});
 
@@ -590,8 +664,7 @@ export class PlanService {
     field: keyof PlanFrontmatter,
     value: unknown
   ): Promise<PlanMeta> {
-    this.validateFilename(filename);
-    const filePath = join(this.plansDir, filename);
+    const filePath = await this.resolvePlanPath(filename);
     const content = await readFile(filePath, 'utf-8');
 
     const { frontmatter, body } = parseFrontmatter(content);
@@ -610,9 +683,8 @@ export class PlanService {
   /**
    * Get full file path for a plan
    */
-  getFilePath(filename: string): string {
-    this.validateFilename(filename);
-    return join(this.plansDir, filename);
+  async getFilePath(filename: string): Promise<string> {
+    return this.resolvePlanPath(filename);
   }
 
   /**
@@ -640,10 +712,6 @@ const defaultArchiveService = new ArchiveService({
   archiveRetentionDays: config.archiveRetentionDays,
 });
 
-const defaultSettingsService = new SettingsService({
-  plansDir: config.plansDir,
-});
-
 export const planService = new PlanService(
   {
     plansDir: config.plansDir,
@@ -652,7 +720,7 @@ export const planService = new PlanService(
   },
   {
     archiveService: defaultArchiveService,
-    settingsService: defaultSettingsService,
+    settingsService,
     auditLogger: undefined,
     conflictChecker: undefined,
     migrationHandler: undefined,

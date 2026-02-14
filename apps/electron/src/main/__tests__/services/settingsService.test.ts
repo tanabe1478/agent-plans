@@ -17,7 +17,18 @@ describe('settingsService', () => {
       expect(typeof service.getSettings).toBe('function');
       expect(typeof service.updateSettings).toBe('function');
       expect(typeof service.isFrontmatterEnabled).toBe('function');
+      expect(typeof service.getPlanDirectories).toBe('function');
       expect(typeof service.resetSettingsCache).toBe('function');
+    });
+
+    it('should return configured plan directories via getPlanDirectories', async () => {
+      const service = new SettingsService({ plansDir: '/tmp/test-plans' });
+      await service.updateSettings({
+        planDirectories: ['/tmp/test-plans', '/tmp/test-plans/secondary-plans'],
+      });
+
+      const directories = await service.getPlanDirectories();
+      expect(directories).toEqual(['/tmp/test-plans', '/tmp/test-plans/secondary-plans']);
     });
   });
 });

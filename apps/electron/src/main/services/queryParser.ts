@@ -7,12 +7,18 @@ export interface QueryFilter {
   value: string;
 }
 
+export interface QueryClause {
+  textQuery: string;
+  filters: QueryFilter[];
+}
+
 /**
  * Result of parsing a search query string
  */
 export interface ParsedQuery {
   textQuery: string;
   filters: QueryFilter[];
+  clauses: QueryClause[];
 }
 
 const FILTER_FIELDS = new Set([
@@ -41,20 +47,63 @@ const OPERATOR_PATTERN = /^(<=|>=|<|>|:|=)(.+)$/;
  *   Free text words
  */
 export function parseQuery(query: string): ParsedQuery {
+  const tokens = tokenize(query);
+  const clauseTokens = splitClauses(tokens);
+  const clauses: QueryClause[] = clauseTokens
+    .map((tokensInClause) => parseClause(tokensInClause))
+    .filter((clause) => clause.filters.length > 0 || clause.textQuery.length > 0);
+
+  if (clauses.length === 0) {
+    return {
+      textQuery: '',
+      filters: [],
+      clauses: [],
+    };
+  }
+
+  // Preserve legacy fields for single-clause queries.
+  const firstClause = clauses[0];
+  const useLegacy = clauses.length === 1;
+
+  return {
+    textQuery: useLegacy ? firstClause.textQuery : '',
+    filters: useLegacy ? firstClause.filters : [],
+    clauses,
+  };
+}
+
+function splitClauses(tokens: string[]): string[][] {
+  const clauses: string[][] = [[]];
+
+  for (const token of tokens) {
+    if (/^OR$/i.test(token) || token === '||') {
+      if (clauses[clauses.length - 1].length > 0) {
+        clauses.push([]);
+      }
+      continue;
+    }
+    if (/^AND$/i.test(token) || token === '&&') {
+      continue;
+    }
+    clauses[clauses.length - 1].push(token);
+  }
+
+  return clauses.filter((clause) => clause.length > 0);
+}
+
+function parseClause(tokens: string[]): QueryClause {
   const filters: QueryFilter[] = [];
   const textParts: string[] = [];
-
-  const tokens = tokenize(query);
 
   for (const token of tokens) {
     const filter = tryParseFilter(token);
     if (filter) {
       filters.push(filter);
-    } else {
-      // Strip surrounding quotes from text tokens (e.g. "Performance Optimization" -> Performance Optimization)
-      const stripped = token.replace(/^["']|["']$/g, '');
-      textParts.push(stripped);
+      continue;
     }
+    // Strip surrounding quotes from text tokens (e.g. "Performance Optimization" -> Performance Optimization)
+    const stripped = token.replace(/^["']|["']$/g, '');
+    textParts.push(stripped);
   }
 
   return {

@@ -13,6 +13,7 @@ import { SettingsService } from '../../services/settingsService.js';
 describe('PlanService', () => {
   let tempDir: string;
   let plansDir: string;
+  let secondaryPlansDir: string;
   let archiveDir: string;
   let planService: PlanService;
   let archiveService: ArchiveService;
@@ -21,8 +22,10 @@ describe('PlanService', () => {
   beforeEach(async () => {
     tempDir = join(tmpdir(), `ccplans-test-${Date.now()}`);
     plansDir = join(tempDir, 'plans');
+    secondaryPlansDir = join(plansDir, 'secondary');
     archiveDir = join(tempDir, 'archive');
     await mkdir(plansDir, { recursive: true });
+    await mkdir(secondaryPlansDir, { recursive: true });
     await mkdir(archiveDir, { recursive: true });
 
     // Create services with DI
@@ -75,6 +78,18 @@ describe('PlanService', () => {
       expect(plans).toHaveLength(2);
       expect(plans.map((p) => p.filename)).toContain('test-plan-1.md');
       expect(plans.map((p) => p.filename)).toContain('test-plan-2.md');
+    });
+
+    it('should list markdown files from multiple configured directories', async () => {
+      await settingsService.updateSettings({
+        planDirectories: [plansDir, secondaryPlansDir],
+      });
+
+      await writeFile(join(plansDir, 'primary.md'), '# Primary', 'utf-8');
+      await writeFile(join(secondaryPlansDir, 'secondary.md'), '# Secondary', 'utf-8');
+
+      const plans = await planService.listPlans();
+      expect(plans.map((plan) => plan.filename).sort()).toEqual(['primary.md', 'secondary.md']);
     });
   });
 
@@ -130,6 +145,26 @@ describe('PlanService', () => {
       const plan = await planService.updatePlan('existing-plan.md', newContent);
 
       expect(plan.title).toBe('Updated Title');
+    });
+
+    it('should update plan from a secondary configured directory', async () => {
+      await settingsService.updateSettings({
+        planDirectories: [plansDir, secondaryPlansDir],
+      });
+
+      await writeFile(
+        join(secondaryPlansDir, 'secondary-plan.md'),
+        '---\nstatus: todo\n---\n\n# Secondary Title\n\nOriginal content.',
+        'utf-8'
+      );
+
+      await planService.updatePlan(
+        'secondary-plan.md',
+        '---\nstatus: todo\n---\n\n# Updated Secondary\n\nUpdated content.'
+      );
+
+      const updated = await planService.getPlan('secondary-plan.md');
+      expect(updated.title).toBe('Updated Secondary');
     });
   });
 

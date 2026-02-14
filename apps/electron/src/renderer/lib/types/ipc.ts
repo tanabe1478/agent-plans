@@ -82,4 +82,5 @@ export interface ViewsListResponse {
  */
 export interface AppSettings {
   frontmatterEnabled: boolean;
+  planDirectories: string[];
 }
