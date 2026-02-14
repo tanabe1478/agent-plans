@@ -86,7 +86,7 @@ export function SectionNav({ content }: SectionNavProps) {
   const scrollToHeading = (index: number) => {
     const el = getRenderedHeadingElements()[index];
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
   };
 
