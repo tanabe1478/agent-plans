@@ -15,7 +15,6 @@ import {
   Save,
 } from 'lucide-react';
 import { useEffect, useId, useMemo, useState } from 'react';
-import { ipcClient } from '@/lib/api/ipcClient';
 import { useSettings, useUpdateSettings } from '@/lib/hooks/useSettings';
 import {
   formatShortcutLabel,
@@ -142,6 +141,9 @@ export function SettingsPage() {
   const [editingShortcut, setEditingShortcut] = useState<ShortcutAction | null>(null);
   const [localShortcuts, setLocalShortcuts] = useState<AppShortcuts>(DEFAULT_SHORTCUTS);
   const macOS = isMacOS();
+  const codexToggleAriaLabel = settings?.codexIntegrationEnabled
+    ? 'Disable Codex integration'
+    : 'Enable Codex integration';
 
   const savedDirectories =
     settings?.planDirectories && settings.planDirectories.length > 0
@@ -332,7 +334,10 @@ export function SettingsPage() {
     try {
       const currentEntry = directoryEntries.find((entry) => entry.id === id);
       setPickingDirectoryId(id);
-      const selectedPath = await ipcClient.settings.selectDirectory(currentEntry?.path);
+      const selectedPath = (await window.electronAPI.invoke(
+        'settings:selectDirectory',
+        currentEntry?.path
+      )) as string | null;
       if (!selectedPath) return;
       handleDirectoryChange(id, selectedPath);
     } catch {
@@ -375,7 +380,10 @@ export function SettingsPage() {
     try {
       const currentEntry = codexDirectoryEntries.find((entry) => entry.id === id);
       setPickingCodexDirectoryId(id);
-      const selectedPath = await ipcClient.settings.selectDirectory(currentEntry?.path);
+      const selectedPath = (await window.electronAPI.invoke(
+        'settings:selectDirectory',
+        currentEntry?.path
+      )) as string | null;
       if (!selectedPath) return;
       handleCodexDirectoryChange(id, selectedPath);
     } catch {
@@ -553,6 +561,7 @@ export function SettingsPage() {
           <button
             type="button"
             role="switch"
+            aria-label={codexToggleAriaLabel}
             aria-checked={settings?.codexIntegrationEnabled ?? false}
             onClick={handleCodexIntegrationToggle}
             disabled={updateSettings.isPending}
