@@ -73,6 +73,7 @@ export { isPlanStatus, normalizePlanStatus, STATUS_TRANSITIONS } from './types/p
 export type {
   AppSettings,
   AppShortcuts,
+  FileChangeEvent,
   GetSettingsResponse,
   ShortcutAction,
   UpdateSettingsRequest,

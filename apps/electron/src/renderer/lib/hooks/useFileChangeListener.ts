@@ -1,10 +1,6 @@
+import type { FileChangeEvent } from '@agent-plans/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-
-interface FileChangeEvent {
-  eventType: 'rename' | 'change';
-  filename: string;
-}
 
 /**
  * Listen for file change events from the main process and invalidate

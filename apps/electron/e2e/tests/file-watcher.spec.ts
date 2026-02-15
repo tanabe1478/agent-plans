@@ -37,9 +37,11 @@ test.describe('File watcher', () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-checked', 'true');
 
-    // Navigate to home to see plan list
+    // Navigate to home and wait for initial list to fully load
     await page.getByRole('link', { name: 'Home' }).click();
     await expect(page.getByRole('heading', { name: 'Plans' })).toBeVisible();
+    await expect(page.locator('[data-plan-row="purple-swimming-fish.md"]').first()).toBeVisible();
+    await expect(page.getByText('New External Plan')).toHaveCount(0);
 
     // Externally create a new plan file
     const newPlanPath = join(plansDir, 'new-external-plan.md');
@@ -96,9 +98,11 @@ test.describe('File watcher', () => {
     const toggle = page.getByRole('switch', { name: 'File Watcher' });
     await expect(toggle).toHaveAttribute('aria-checked', 'false');
 
-    // Navigate to home
+    // Navigate to home and wait for initial list to fully load
     await page.getByRole('link', { name: 'Home' }).click();
     await expect(page.getByRole('heading', { name: 'Plans' })).toBeVisible();
+    await expect(page.locator('[data-plan-row="purple-swimming-fish.md"]').first()).toBeVisible();
+    await expect(page.getByText('Invisible Plan')).toHaveCount(0);
 
     // Externally create a new plan file
     const newPlanPath = join(plansDir, 'invisible-plan.md');
@@ -116,8 +120,7 @@ test.describe('File watcher', () => {
       ].join('\n')
     );
 
-    // Wait a reasonable time — the plan should NOT appear
-    await page.waitForTimeout(3000);
-    await expect(page.getByText('Invisible Plan')).not.toBeVisible();
+    // The plan should NOT appear (fail fast if it does)
+    await expect(page.getByText('Invisible Plan')).not.toBeVisible({ timeout: 3000 });
   });
 });

@@ -1,11 +1,6 @@
 import { type FSWatcher, watch } from 'node:fs';
-import { basename } from 'node:path';
+import type { FileChangeEvent } from '@agent-plans/shared';
 import type { BrowserWindow } from 'electron';
-
-export interface FileChangeEvent {
-  eventType: 'rename' | 'change';
-  filename: string;
-}
 
 export class FileWatcherService {
   private watchers: FSWatcher[] = [];
@@ -45,7 +40,7 @@ export class FileWatcherService {
       }
     }
 
-    this.running = true;
+    this.running = this.watchers.length > 0;
   }
 
   stop(): void {
@@ -72,18 +67,17 @@ export class FileWatcherService {
   }
 
   private handleFileChange(eventType: 'rename' | 'change', filename: string): void {
-    const key = filename;
-    const existing = this.debounceTimers.get(key);
+    const existing = this.debounceTimers.get(filename);
     if (existing) {
       clearTimeout(existing);
     }
 
     const timer = setTimeout(() => {
-      this.debounceTimers.delete(key);
-      this.sendChangeEvent({ eventType, filename: basename(filename) });
+      this.debounceTimers.delete(filename);
+      this.sendChangeEvent({ eventType, filename });
     }, FileWatcherService.DEBOUNCE_MS);
 
-    this.debounceTimers.set(key, timer);
+    this.debounceTimers.set(filename, timer);
   }
 
   private sendChangeEvent(event: FileChangeEvent): void {
