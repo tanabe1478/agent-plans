@@ -1,4 +1,4 @@
-import type { PlanMeta } from '@ccplans/shared';
+import type { PlanMeta } from '@agent-plans/shared';
 import { describe, expect, it } from 'vitest';
 import { NotificationService } from '../../services/notificationService';
 

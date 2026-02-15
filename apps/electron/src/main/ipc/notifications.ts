@@ -1,4 +1,4 @@
-import type { NotificationsListResponse } from '@ccplans/shared';
+import type { NotificationsListResponse } from '@agent-plans/shared';
 import type { IpcMainInvokeEvent } from 'electron';
 import {
   generateNotifications,

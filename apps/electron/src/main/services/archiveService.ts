@@ -1,6 +1,6 @@
 import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { ArchivedPlan } from '@ccplans/shared';
+import type { ArchivedPlan } from '@agent-plans/shared';
 import { config } from '../config.js';
 
 interface ArchiveMetaEntry {

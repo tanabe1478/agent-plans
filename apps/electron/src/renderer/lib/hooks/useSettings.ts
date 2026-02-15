@@ -2,7 +2,7 @@
  * React Query hooks for settings operations via IPC
  */
 
-import type { UpdateSettingsRequest } from '@ccplans/shared';
+import type { UpdateSettingsRequest } from '@agent-plans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ipcClient } from '../api/ipcClient';
 

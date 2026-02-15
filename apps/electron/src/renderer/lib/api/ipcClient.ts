@@ -31,7 +31,7 @@ import type {
   UpdateSettingsRequest,
   UpdateSettingsResponse,
   UpdateStatusRequest,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 
 // Type definition for the electron API exposed by preload script
 interface ElectronAPI {

@@ -1,4 +1,4 @@
-import type { DependencyGraph, DependencyNode, PlanStatus } from '@ccplans/shared';
+import type { DependencyGraph, DependencyNode, PlanStatus } from '@agent-plans/shared';
 import { AlertTriangle, Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';

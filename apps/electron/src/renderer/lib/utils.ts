@@ -1,4 +1,4 @@
-import type { DeadlineCategory, PlanMeta } from '@ccplans/shared';
+import type { DeadlineCategory, PlanMeta } from '@agent-plans/shared';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

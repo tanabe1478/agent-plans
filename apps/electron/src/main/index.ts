@@ -70,7 +70,7 @@ async function createWindow() {
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>ccplans: failed to load renderer</title>
+    <title>agent-plans: failed to load renderer</title>
     <style>
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 24px; color: #111827; }
       h1 { margin: 0 0 12px 0; font-size: 20px; }
@@ -83,7 +83,7 @@ async function createWindow() {
     <h1>Renderer failed to load</h1>
     <p>URL: <code>${rendererUrl}</code></p>
     <pre>${message}</pre>
-    <p>Retry command: <code>pnpm --filter @ccplans/electron dev</code></p>
+    <p>Retry command: <code>pnpm --filter @agent-plans/electron dev</code></p>
   </body>
 </html>`;
       await mainWindow.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(html)}`);

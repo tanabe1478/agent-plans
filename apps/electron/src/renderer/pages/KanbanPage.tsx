@@ -3,7 +3,7 @@ import {
   type PlanMeta,
   type PlanStatus,
   STATUS_TRANSITIONS,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { type DragEvent, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';

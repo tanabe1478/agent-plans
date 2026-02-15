@@ -1,4 +1,4 @@
-import type { ShortcutAction } from '@ccplans/shared';
+import type { ShortcutAction } from '@agent-plans/shared';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppShortcuts } from '@/contexts/SettingsContext';

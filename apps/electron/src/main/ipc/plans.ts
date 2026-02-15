@@ -12,7 +12,7 @@ import type {
   SubtaskActionRequest,
   UpdatePlanRequest,
   UpdateStatusRequest,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { openerService } from '../services/openerService.js';
 import { planService } from '../services/planService.js';

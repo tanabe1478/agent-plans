@@ -1,5 +1,5 @@
-import type { PlanStatus } from '@ccplans/shared';
-import { STATUS_TRANSITIONS } from '@ccplans/shared';
+import type { PlanStatus } from '@agent-plans/shared';
+import { STATUS_TRANSITIONS } from '@agent-plans/shared';
 
 /**
  * Check if a status transition is valid

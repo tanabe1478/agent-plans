@@ -11,7 +11,7 @@ describe('SearchService', () => {
   let searchService: SearchService;
 
   beforeEach(async () => {
-    tempDir = join(tmpdir(), `ccplans-search-test-${Date.now()}`);
+    tempDir = join(tmpdir(), `agent-plans-search-test-${Date.now()}`);
     plansDir = join(tempDir, 'plans');
     await mkdir(plansDir, { recursive: true });
     searchService = new SearchService({ plansDir });

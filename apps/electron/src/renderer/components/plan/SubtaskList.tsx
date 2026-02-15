@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { Subtask } from '@ccplans/shared';
+import type { Subtask } from '@agent-plans/shared';
 import { CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useUpdateSubtask } from '../../lib/hooks';

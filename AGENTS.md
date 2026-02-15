@@ -4,7 +4,7 @@ This file provides guidance to coding agents (e.g., Codex, Claude Code) working 
 
 ## Project
 
-Claude Plans Manager (ccplans) is an **Electron-native** application for managing Markdown plan files in `~/.claude/plans/`.
+Agent Plans Manager (agent-plans) is an **Electron-native** application for managing Markdown plan files.
 
 - No standalone web app
 - No standalone API server
@@ -32,10 +32,10 @@ pnpm lint
 Package-level commands:
 
 ```bash
-pnpm --filter @ccplans/electron dev
-pnpm --filter @ccplans/electron test
-pnpm --filter @ccplans/electron test:e2e
-pnpm --filter @ccplans/shared test
+pnpm --filter @agent-plans/electron dev
+pnpm --filter @agent-plans/electron test
+pnpm --filter @agent-plans/electron test:e2e
+pnpm --filter @agent-plans/shared test
 ```
 
 ## Architecture
@@ -49,7 +49,7 @@ apps/
     e2e/          # Electron Playwright tests + seed fixtures
 packages/
   shared/         # Shared types
-hooks/            # Claude Code hooks
+hooks/            # Hook scripts
 ```
 
 ### Main Process (`apps/electron/src/main`)

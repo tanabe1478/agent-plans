@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { normalizePlanStatus, type PlanFrontmatter, type Subtask } from '@ccplans/shared';
+import { normalizePlanStatus, type PlanFrontmatter, type Subtask } from '@agent-plans/shared';
 import { config } from '../config.js';
 import { planService } from './planService.js';
 

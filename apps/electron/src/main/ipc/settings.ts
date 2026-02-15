@@ -2,7 +2,7 @@ import type {
   GetSettingsResponse,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { getSettings, selectPlanDirectory, updateSettings } from '../services/settingsService.js';
 

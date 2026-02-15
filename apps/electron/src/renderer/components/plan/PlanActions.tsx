@@ -1,4 +1,4 @@
-import type { ExternalApp } from '@ccplans/shared';
+import type { ExternalApp } from '@agent-plans/shared';
 import { Code, Copy, Edit3, ExternalLink, MoreVertical, Terminal, Trash2 } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import { useDeletePlan, useOpenPlan, useRenamePlan } from '../../lib/hooks';

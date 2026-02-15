@@ -10,10 +10,10 @@ import type {
   SavedView,
   SavedViewFilters,
   Subtask,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 
 // Re-export from shared
-export type { Subtask } from '@ccplans/shared';
+export type { Subtask } from '@agent-plans/shared';
 
 /**
  * Extended subtask action request that includes filename

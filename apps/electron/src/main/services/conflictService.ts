@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { ConflictInfo } from '@ccplans/shared';
+import type { ConflictInfo } from '@agent-plans/shared';
 import { config } from '../config.js';
 
 interface FileState {

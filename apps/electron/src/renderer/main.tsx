@@ -12,7 +12,7 @@ function showBootError(message: string): void {
   if (!bootFallback) return;
   bootFallback.style.display = 'block';
   bootFallback.style.color = '#b91c1c';
-  bootFallback.textContent = `Failed to start ccplans: ${message}`;
+  bootFallback.textContent = `Failed to start agent-plans: ${message}`;
 }
 
 window.addEventListener('error', (event) => {

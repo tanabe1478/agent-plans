@@ -48,7 +48,7 @@ export const test = base.extend<ElectronFixtures>({
   // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture API requires object destructuring.
   plansDir: async ({}, use, testInfo) => {
     const dirName = [
-      'ccplans-electron-e2e',
+      'agent-plans-electron-e2e',
       String(Date.now()),
       String(testInfo.workerIndex),
       slugify(testInfo.title),

@@ -1,10 +1,10 @@
 ---
 name: worktree-setup
-description: Setup guide for developing in a git worktree of the ccplans monorepo. Covers dependency installation, build verification, and per-worktree configuration differences. Use when starting work in a new worktree.
+description: Setup guide for developing in a git worktree of the agent-plans monorepo. Covers dependency installation, build verification, and per-worktree configuration differences. Use when starting work in a new worktree.
 disable-model-invocation: false
 ---
 
-# Worktree Setup for ccplans
+# Worktree Setup for agent-plans
 
 Guide for environment setup when working in a git worktree of this pnpm monorepo.
 
@@ -20,8 +20,8 @@ pnpm install
 pnpm build
 
 # 3. Run unit tests to verify
-pnpm --filter @ccplans/api test
-pnpm --filter @ccplans/web test
+pnpm --filter @agent-plans/shared test
+pnpm --filter @agent-plans/electron test
 ```
 
 The lockfile (`pnpm-lock.yaml`) is git-tracked and shared, so install reuses the

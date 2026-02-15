@@ -10,8 +10,8 @@
     "strict": false,
     "noImplicitAny": false,
     "paths": {
-      "@ccplans/shared": ["../../packages/shared/src/index.ts"],
-      "@ccplans/shared/ports": ["../../packages/shared/src/ports.ts"],
+      "@agent-plans/shared": ["../../packages/shared/src/index.ts"],
+      "@agent-plans/shared/ports": ["../../packages/shared/src/ports.ts"],
       "@renderer/*": ["./src/renderer/*"],
       "@/*": ["./src/renderer/*"]
     }

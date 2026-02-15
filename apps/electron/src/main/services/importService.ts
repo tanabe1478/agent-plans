@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { BackupInfo, ImportResult } from '@ccplans/shared';
+import type { BackupInfo, ImportResult } from '@agent-plans/shared';
 import { config } from '../config.js';
 import { planService } from './planService.js';
 

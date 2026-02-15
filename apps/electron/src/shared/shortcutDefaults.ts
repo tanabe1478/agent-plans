@@ -1,4 +1,4 @@
-import type { AppShortcuts, ShortcutAction } from '@ccplans/shared';
+import type { AppShortcuts, ShortcutAction } from '@agent-plans/shared';
 
 const SHORTCUT_ACTIONS: ShortcutAction[] = [
   'openCommandPalette',

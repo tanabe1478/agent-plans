@@ -3,7 +3,7 @@ import type {
   SavedView,
   UpdateViewRequest,
   ViewsListResponse,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { viewService } from '../services/viewService.js';
 

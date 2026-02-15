@@ -1,4 +1,4 @@
-import { normalizePlanStatus, type PlanMeta, type PlanStatus } from '@ccplans/shared';
+import { normalizePlanStatus, type PlanMeta, type PlanStatus } from '@agent-plans/shared';
 import { Calendar, Clock, FileText, HardDrive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFrontmatterEnabled } from '../../contexts/SettingsContext';

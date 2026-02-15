@@ -1,4 +1,4 @@
-import type { DependencyGraphResponse, PlanDependencies } from '@ccplans/shared';
+import type { DependencyGraphResponse, PlanDependencies } from '@agent-plans/shared';
 import type { IpcMainInvokeEvent } from 'electron';
 import { buildDependencyGraph, getPlanDependencies } from '../services/dependencyService.js';
 

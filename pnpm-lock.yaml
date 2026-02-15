@@ -29,7 +29,7 @@ importers:
 
   apps/electron:
     dependencies:
-      '@ccplans/shared':
+      '@agent-plans/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@tanstack/react-query':

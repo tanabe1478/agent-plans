@@ -6,7 +6,7 @@ import type {
   NotificationSeverity,
   NotificationType,
   PlanMeta,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 import { config } from '../config.js';
 import { planService } from './planService.js';
 

@@ -1,4 +1,4 @@
-import type { SearchResponse } from '@ccplans/shared';
+import type { SearchResponse } from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { searchService } from '../services/searchService.js';
 

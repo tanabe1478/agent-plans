@@ -1,5 +1,5 @@
-import type { PlanMeta } from '@ccplans/shared';
-import { normalizePlanStatus } from '@ccplans/shared';
+import type { PlanMeta } from '@agent-plans/shared';
+import { normalizePlanStatus } from '@agent-plans/shared';
 import { useMemo } from 'react';
 import { usePlanStore } from '../../stores/planStore';
 import { PlanCard } from './PlanCard';

@@ -5,14 +5,14 @@
 ## Package Structure
 
 ```text
-ccplans/
+agent-plans/
 ├── apps/electron/
 │   ├── src/main/        # Electron main process, IPC, services
 │   ├── src/preload/     # contextBridge API exposure
 │   ├── src/renderer/    # React UI
 │   └── e2e/             # Electron Playwright tests
 ├── packages/shared/     # shared TypeScript types
-└── hooks/               # Claude Code hooks
+└── hooks/               # Hook scripts
 ```
 
 ## Data Flow

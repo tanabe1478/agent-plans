@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { platform } from 'node:os';
 import { dirname } from 'node:path';
-import type { ExternalApp } from '@ccplans/shared';
+import type { ExternalApp } from '@agent-plans/shared';
 import { clipboard } from 'electron';
 
 /**

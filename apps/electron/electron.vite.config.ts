@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
 const externalizeDeps = externalizeDepsPlugin({
-  exclude: ['@ccplans/shared'],
+  exclude: ['@agent-plans/shared'],
 });
 
 export default defineConfig({

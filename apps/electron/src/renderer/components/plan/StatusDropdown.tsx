@@ -1,4 +1,4 @@
-import { normalizePlanStatus, type PlanStatus, STATUS_TRANSITIONS } from '@ccplans/shared';
+import { normalizePlanStatus, type PlanStatus, STATUS_TRANSITIONS } from '@agent-plans/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { StatusBadge } from './StatusBadge';
