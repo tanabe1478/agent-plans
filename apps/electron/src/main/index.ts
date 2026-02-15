@@ -2,9 +2,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { registerAllHandlers } from './ipc/index.js';
+import { FileWatcherService } from './services/fileWatcherService.js';
+import { settingsService } from './services/settingsService.js';
 
 let mainWindow: BrowserWindow | null = null;
 const currentDir = dirname(fileURLToPath(import.meta.url));
+const fileWatcher = new FileWatcherService(() => settingsService.getPlanDirectories());
 const DEV_LOAD_MAX_RETRIES = 30;
 const DEV_LOAD_RETRY_MS = 300;
 
@@ -100,12 +103,18 @@ async function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  fileWatcher.setWindow(mainWindow);
+  const settings = await settingsService.getSettings();
+  if (settings.fileWatcherEnabled) {
+    await fileWatcher.start();
+  }
 }
 
 // App lifecycle
 app.whenReady().then(() => {
   // Register all IPC handlers
-  registerAllHandlers(ipcMain);
+  registerAllHandlers(ipcMain, fileWatcher);
 
   void createWindow();
 
@@ -114,6 +123,10 @@ app.whenReady().then(() => {
       void createWindow();
     }
   });
+});
+
+app.on('before-quit', () => {
+  fileWatcher.stop();
 });
 
 app.on('window-all-closed', () => {

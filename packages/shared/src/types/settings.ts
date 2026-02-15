@@ -20,6 +20,8 @@ export interface AppSettings {
   planDirectories?: string[];
   /** Keyboard shortcuts for app actions */
   shortcuts?: AppShortcuts;
+  /** Enable automatic file watching for external changes */
+  fileWatcherEnabled?: boolean;
 }
 
 /**
