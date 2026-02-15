@@ -4,6 +4,7 @@ import {
   CheckSquare,
   Clock,
   Columns,
+  Eye,
   Folder,
   FolderOpen,
   GitBranch,
@@ -121,6 +122,7 @@ export function SettingsPage() {
   const updateSettings = useUpdateSettings();
   const { addToast } = useUiStore();
   const frontmatterHeadingId = useId();
+  const fileWatcherHeadingId = useId();
   const [directoryEntries, setDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [pickingDirectoryId, setPickingDirectoryId] = useState<string | null>(null);
   const [editingShortcut, setEditingShortcut] = useState<ShortcutAction | null>(null);
@@ -238,6 +240,16 @@ export function SettingsPage() {
       );
     } catch {
       addToast('Failed to update settings', 'error');
+    }
+  };
+
+  const handleFileWatcherToggle = async () => {
+    const newValue = !settings?.fileWatcherEnabled;
+    try {
+      await updateSettings.mutateAsync({ fileWatcherEnabled: newValue });
+      addToast(newValue ? 'File watcher enabled' : 'File watcher disabled', 'success');
+    } catch {
+      addToast('Failed to update file watcher setting', 'error');
     }
   };
 
@@ -419,6 +431,49 @@ export function SettingsPage() {
             Save Directories
           </button>
         </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 id={fileWatcherHeadingId} className="text-lg font-semibold flex items-center gap-2">
+              <Eye className="h-5 w-5 text-muted-foreground" />
+              File Watcher
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Automatically refresh plans when files are modified by external editors (e.g., Claude
+              Code).
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-labelledby={fileWatcherHeadingId}
+            aria-checked={settings?.fileWatcherEnabled ?? false}
+            onClick={handleFileWatcherToggle}
+            disabled={updateSettings.isPending}
+            className={`
+              relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
+              transition-colors duration-200 ease-in-out
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+              disabled:cursor-not-allowed disabled:opacity-50
+              ${settings?.fileWatcherEnabled ? 'bg-primary' : 'bg-muted'}
+            `}
+          >
+            <span
+              className={`
+                pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0
+                transition duration-200 ease-in-out
+                ${settings?.fileWatcherEnabled ? 'translate-x-5' : 'translate-x-0'}
+              `}
+            />
+          </button>
+        </div>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          When enabled, the app watches plan directories for changes and automatically invalidates
+          cached data. Disabled by default.
+        </p>
       </div>
 
       <div className="rounded-lg border bg-card p-6">

@@ -10,6 +10,7 @@ const ELECTRON_DEFAULT_SETTINGS: AppSettings = {
   frontmatterEnabled: true,
   planDirectories: [config.plansDir],
   shortcuts: DEFAULT_SHORTCUTS,
+  fileWatcherEnabled: false,
 };
 
 export interface SettingsServiceConfig {

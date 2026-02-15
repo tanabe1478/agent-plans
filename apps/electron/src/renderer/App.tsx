@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { useFileChangeListener } from '@/lib/hooks/useFileChangeListener';
 import { DependencyPage } from '@/pages/DependencyPage';
 import { HomePage } from '@/pages/HomePage';
 import { KanbanPage } from '@/pages/KanbanPage';
@@ -13,6 +14,7 @@ import { useUiStore } from '@/stores/uiStore';
 
 function App() {
   const theme = useUiStore((state) => state.theme);
+  useFileChangeListener();
 
   useEffect(() => {
     const root = document.documentElement;

@@ -39,7 +39,7 @@ describe('IPC Index', () => {
     expect(registerPlansHandlers).toHaveBeenCalledWith(mockIpcMain);
     expect(registerSearchHandlers).toHaveBeenCalledWith(mockIpcMain);
     expect(registerDependenciesHandlers).toHaveBeenCalledWith(mockIpcMain);
-    expect(registerSettingsHandlers).toHaveBeenCalledWith(mockIpcMain);
+    expect(registerSettingsHandlers).toHaveBeenCalledWith(mockIpcMain, undefined);
   });
 
   it('should register handlers in correct order', async () => {
