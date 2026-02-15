@@ -59,6 +59,12 @@ hooks/          # Claude Code hook scripts
 | `pnpm test:e2e` | Run Electron Playwright E2E |
 | `pnpm lint` | Type-check shared + Electron |
 | `pnpm check` | Biome check |
+| `pnpm codex:pr-loop:status -- --pr <PR>` | Fetch PR loop snapshot for this session |
+| `pnpm codex:pr-loop:watch -- --pr <PR>` | Wait until checks leave pending state |
+| `pnpm codex:pr-loop:submit -- --message "<msg>"` | Stage + commit + push via helper |
+| `pnpm codex:pr-loop:ack -- --pr <PR> --comment-id <ID>` | Mark comment as handled |
+| `pnpm codex:pr-loop:create-pr -- --title "<title>" --body "<body>"` | Create PR via helper |
+| `pnpm codex:pr-loop:merge -- --pr <PR>` | Merge PR via GitHub GraphQL |
 
 ## Environment Variables
 
@@ -85,6 +91,24 @@ Release is tag-based and fully automated by GitHub Actions:
 3. Artifact is attached to a GitHub Release page
 
 Detailed runbook: `docs/release.md`
+
+## Session PR Loop
+
+This repository includes a session-scoped PR loop helper:
+
+- Entrypoint: `tools/session-pr-loop/index.mjs`
+- Companion docs: `tools/session-pr-loop/README.md`
+
+Use this when you want the current Codex conversation to continuously:
+1. watch PR checks
+2. fetch CodeRabbit comments
+3. apply fixes in this same session
+4. commit/push
+5. repeat until merge-ready
+
+State is stored in `.codex/state/session-pr-loop/` (ignored by git).
+
+For lower-friction automation, prefer `codex:pr-loop:submit` and `codex:pr-loop:create-pr` instead of raw `git` / `gh` commands.
 
 ## License
 
