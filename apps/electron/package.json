@@ -10,6 +10,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "dist:mac": "pnpm build && electron-builder --mac dmg --arm64 --publish never",
+    "dist:mac:unsigned": "pnpm build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64 --publish never",
     "preview": "electron-vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

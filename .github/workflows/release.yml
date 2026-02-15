@@ -5,6 +5,15 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Release mode (`unsigned` skips signing/notarization checks)
+        required: true
+        default: unsigned
+        type: choice
+        options:
+          - unsigned
+          - signed
 
 jobs:
   release:
@@ -36,7 +45,20 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Resolve release mode
+        id: release_mode
+        run: |
+          mode="unsigned"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.mode }}" ]; then
+            mode="${{ github.event.inputs.mode }}"
+          fi
+
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_MODE=$mode" >> "$GITHUB_ENV"
+          echo "Release mode: $mode"
+
       - name: Verify signing and notarization secrets
+        if: steps.release_mode.outputs.mode == 'signed'
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
@@ -55,7 +77,12 @@ jobs:
             exit 1
           fi
 
-      - name: Build DMG
+      - name: Build DMG (unsigned)
+        if: steps.release_mode.outputs.mode == 'unsigned'
+        run: pnpm --filter @agent-plans/electron dist:mac:unsigned
+
+      - name: Build DMG (signed)
+        if: steps.release_mode.outputs.mode == 'signed'
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
@@ -64,9 +91,59 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: pnpm --filter @agent-plans/electron dist:mac
 
+      - name: Verify signed artifacts
+        if: steps.release_mode.outputs.mode == 'signed'
+        run: |
+          app_path="$(find apps/electron/release -name '*.app' -type d | head -n 1)"
+          dmg_path="$(find apps/electron/release -name '*.dmg' -type f | head -n 1)"
+
+          if [ -z "$app_path" ] || [ -z "$dmg_path" ]; then
+            echo "::error::Failed to locate built app or DMG artifact"
+            exit 1
+          fi
+
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          spctl -a -vvv -t exec "$app_path"
+          xcrun stapler validate "$app_path"
+          xcrun stapler validate "$dmg_path"
+
+      - name: Verify DMG artifacts exist
+        run: |
+          count="$(find apps/electron/release -name '*.dmg' -type f | wc -l | tr -d ' ')"
+          if [ "$count" = "0" ]; then
+            echo "::error::No DMG artifact was produced"
+            exit 1
+          fi
+          echo "Found $count DMG artifact(s)"
+
+      - name: Prepare release notes
+        run: |
+          {
+            echo "## Distribution"
+            if [ "$RELEASE_MODE" = "unsigned" ]; then
+              echo ""
+              echo "⚠️ Unsigned build (Gatekeeper override required on first launch)."
+              echo ""
+              echo "Open with right-click -> Open, or allow from System Settings > Privacy & Security."
+            else
+              echo ""
+              echo "✅ Signed and notarized build."
+            fi
+            echo ""
+            echo "## Artifacts (SHA256)"
+            for file in apps/electron/release/*.dmg; do
+              if [ ! -f "$file" ]; then
+                continue
+              fi
+              sum="$(shasum -a 256 "$file" | awk '{print $1}')"
+              name="$(basename "$file")"
+              echo "- \`$name\`: \`$sum\`"
+            done
+          } > release-body.md
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: release-body.md
           files: |
             apps/electron/release/*.dmg
