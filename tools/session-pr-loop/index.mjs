@@ -42,13 +42,11 @@ function parseArgs(argv) {
 
 async function runShell(command, cwd) {
   return new Promise((resolvePromise) => {
-    const shell = IS_WINDOWS ? process.env.ComSpec || 'cmd.exe' : process.env.SHELL || '/bin/sh';
-    const args = IS_WINDOWS ? ['/d', '/s', '/c', command] : ['-lc', command];
-
-    const child = spawn(shell, args, {
+    const child = spawn(command, {
       cwd,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true,
     });
 
     let stdout = '';
