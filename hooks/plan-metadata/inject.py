@@ -2,7 +2,7 @@
 """
 PostToolUse hook script for injecting YAML frontmatter into plan files.
 
-This script is triggered after Write or Edit tools modify files in ~/.claude/plans/.
+This script is triggered after Write or Edit tools modify files in plan directories.
 It injects/updates metadata including project_path, session_id, and status.
 
 Preservation rules:
@@ -11,10 +11,11 @@ Preservation rules:
 """
 
 import json
+import os
 import sys
 import re
 from pathlib import Path
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, List
 
 
 def parse_frontmatter(content: str) -> Tuple[Optional[Dict[str, str]], str]:
@@ -73,7 +74,7 @@ def inject_metadata(file_path: Path, cwd: str, session_id: str) -> bool:
     Args:
         file_path: Path to the plan file
         cwd: Current working directory (project path)
-        session_id: Claude session ID
+        session_id: Agent session ID
 
     Returns:
         True if file was modified, False otherwise
@@ -104,6 +105,45 @@ def inject_metadata(file_path: Path, cwd: str, session_id: str) -> bool:
         return False
 
 
+def get_target_plan_dirs() -> List[Path]:
+    """Resolve plan directories handled by this hook.
+
+    Priority:
+    1. PLANS_DIR (if provided)
+    2. ~/.agent-plans/plans
+    3. ~/.claude/plans (legacy)
+    """
+    candidates: List[Path] = []
+    env_plans_dir = os.environ.get('PLANS_DIR')
+    if env_plans_dir:
+        candidates.append(Path(env_plans_dir).expanduser().resolve())
+
+    candidates.append((Path.home() / '.agent-plans' / 'plans').resolve())
+    candidates.append((Path.home() / '.claude' / 'plans').resolve())
+
+    unique: List[Path] = []
+    seen = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(candidate)
+
+    return unique
+
+
+def is_target_plan_file(file_path: Path, plan_dirs: List[Path]) -> bool:
+    """Return True when file_path belongs to one of plan_dirs."""
+    for plan_dir in plan_dirs:
+        try:
+            file_path.relative_to(plan_dir)
+            return True
+        except ValueError:
+            continue
+    return False
+
+
 def main():
     """Main entry point for the hook script."""
     # Read JSON input from stdin
@@ -130,12 +170,9 @@ def main():
 
     file_path = Path(file_path_str).expanduser().resolve()
 
-    # Check if the file is in ~/.claude/plans/
-    plans_dir = Path.home() / '.claude' / 'plans'
-    try:
-        file_path.relative_to(plans_dir)
-    except ValueError:
-        # File is not in plans directory
+    # Check if the file is in a target plan directory
+    plan_dirs = get_target_plan_dirs()
+    if not is_target_plan_file(file_path, plan_dirs):
         sys.exit(0)
 
     # Check if it's a markdown file

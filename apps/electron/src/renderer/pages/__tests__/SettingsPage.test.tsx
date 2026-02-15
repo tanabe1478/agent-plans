@@ -8,7 +8,7 @@ vi.mock('@/lib/hooks/useSettings', () => ({
   useSettings: () => ({
     data: {
       frontmatterEnabled: false,
-      planDirectories: ['~/.claude/plans'],
+      planDirectories: ['~/.agent-plans/plans'],
       shortcuts: DEFAULT_SHORTCUTS,
     },
     isLoading: false,

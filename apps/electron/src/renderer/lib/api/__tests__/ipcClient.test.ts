@@ -177,7 +177,7 @@ describe('ipcClient', () => {
       const { ipcClient } = await import('../ipcClient');
       mockInvoke.mockResolvedValueOnce({
         frontmatterEnabled: true,
-        planDirectories: ['~/.claude/plans'],
+        planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });
 
@@ -190,19 +190,19 @@ describe('ipcClient', () => {
       const { ipcClient } = await import('../ipcClient');
       mockInvoke.mockResolvedValueOnce({
         frontmatterEnabled: false,
-        planDirectories: ['~/.claude/plans'],
+        planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });
 
       await ipcClient.settings.update({
         frontmatterEnabled: true,
-        planDirectories: ['~/.claude/plans'],
+        planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });
 
       expect(mockInvoke).toHaveBeenCalledWith('settings:update', {
         frontmatterEnabled: true,
-        planDirectories: ['~/.claude/plans'],
+        planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });
     });

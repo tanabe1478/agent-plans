@@ -70,14 +70,14 @@ hooks/          # Hook scripts
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `PLANS_DIR` | `~/.claude/plans` | Plan file directory (set to `~/.codex/plans` for Codex workflows) |
+| `PLANS_DIR` | `~/.agent-plans/plans` | Plan file directory (`~/.claude/plans` is auto-detected as legacy fallback) |
 | `ARCHIVE_DIR` | `<PLANS_DIR>/archive` | Archive directory (legacy/internal) |
 | `ARCHIVE_RETENTION_DAYS` | `30` | Archive retention days (legacy/internal) |
 | `OPEN_DEVTOOLS` | `false` | Open devtools in Electron dev mode |
 
 ## Hook
 
-This repository includes a plan-metadata hook script for Claude Code:
+This repository includes a plan-metadata hook script for agent workflows (Claude Code supported):
 
 - `hooks/plan-metadata/inject.py`
 - See `hooks/plan-metadata/README.md` for setup.

@@ -39,13 +39,13 @@ describe('OpenerService', () => {
   it('opens Terminal at the file directory on macOS', async () => {
     const { OpenerService } = await import('../openerService.js');
     const service = new OpenerService();
-    const filePath = '/Users/test/.claude/plans/sample.md';
+    const filePath = '/Users/test/.agent-plans/plans/sample.md';
 
     await service.openFile(filePath, 'terminal');
 
     expect(spawnMock).toHaveBeenCalledWith(
       'open',
-      ['-a', 'Terminal', '/Users/test/.claude/plans'],
+      ['-a', 'Terminal', '/Users/test/.agent-plans/plans'],
       expect.objectContaining({
         detached: true,
         stdio: 'ignore',
@@ -56,13 +56,13 @@ describe('OpenerService', () => {
   it('opens Ghostty by opening the file directory on macOS', async () => {
     const { OpenerService } = await import('../openerService.js');
     const service = new OpenerService();
-    const filePath = '/Users/test/.claude/plans/sample.md';
+    const filePath = '/Users/test/.agent-plans/plans/sample.md';
 
     await service.openFile(filePath, 'ghostty');
 
     expect(spawnMock).toHaveBeenCalledWith(
       'open',
-      ['-a', 'Ghostty', '/Users/test/.claude/plans'],
+      ['-a', 'Ghostty', '/Users/test/.agent-plans/plans'],
       expect.objectContaining({
         detached: true,
         stdio: 'ignore',
@@ -73,7 +73,7 @@ describe('OpenerService', () => {
   it('copies full file path for copy-path action', async () => {
     const { OpenerService } = await import('../openerService.js');
     const service = new OpenerService();
-    const filePath = '/Users/test/.claude/plans/sample.md';
+    const filePath = '/Users/test/.agent-plans/plans/sample.md';
 
     await service.openFile(filePath, 'copy-path');
 
@@ -85,7 +85,7 @@ describe('OpenerService', () => {
     platformMock.mockReturnValue('linux');
     const { OpenerService } = await import('../openerService.js');
     const service = new OpenerService();
-    const filePath = '/Users/test/.claude/plans/sample.md';
+    const filePath = '/Users/test/.agent-plans/plans/sample.md';
 
     await service.openFile(filePath, 'zed');
 

@@ -73,7 +73,7 @@ export interface PlanFrontmatter {
   modified?: string;
   /** Project path where plan was created */
   projectPath?: string;
-  /** Claude Code session ID */
+  /** Agent session ID (e.g. Claude Code/Codex) */
   sessionId?: string;
   /** Plan status */
   status?: PlanStatus;

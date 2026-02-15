@@ -1,7 +1,27 @@
+import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const plansDir = process.env.PLANS_DIR || join(homedir(), '.claude', 'plans');
+const AGENT_PLANS_DIR = join(homedir(), '.agent-plans', 'plans');
+const LEGACY_CLAUDE_PLANS_DIR = join(homedir(), '.claude', 'plans');
+
+function resolvePlansDir(): string {
+  if (process.env.PLANS_DIR) {
+    return process.env.PLANS_DIR;
+  }
+
+  if (existsSync(AGENT_PLANS_DIR)) {
+    return AGENT_PLANS_DIR;
+  }
+
+  if (existsSync(LEGACY_CLAUDE_PLANS_DIR)) {
+    return LEGACY_CLAUDE_PLANS_DIR;
+  }
+
+  return AGENT_PLANS_DIR;
+}
+
+const plansDir = resolvePlansDir();
 
 export const config = {
   /** Directory containing plan files */

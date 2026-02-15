@@ -5,8 +5,10 @@ describe('config', () => {
   describe('default values', () => {
     it('should have plansDir defined', () => {
       expect(config.plansDir).toBeDefined();
-      expect(config.plansDir).toContain('.claude');
       expect(config.plansDir).toContain('plans');
+      expect(config.plansDir.includes('.agent-plans') || config.plansDir.includes('.claude')).toBe(
+        true
+      );
     });
 
     it('should have archiveDir defined', () => {
