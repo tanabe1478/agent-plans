@@ -8,6 +8,7 @@ import process from 'node:process';
 
 const DEFAULT_INTERVAL_SEC = 20;
 const DEFAULT_TIMEOUT_SEC = 1800;
+const IS_WINDOWS = process.platform === 'win32';
 
 function parseArgs(argv) {
   const positional = [];
@@ -41,7 +42,10 @@ function parseArgs(argv) {
 
 async function runShell(command, cwd) {
   return new Promise((resolvePromise) => {
-    const child = spawn('/bin/zsh', ['-lc', command], {
+    const shell = IS_WINDOWS ? process.env.ComSpec || 'cmd.exe' : process.env.SHELL || '/bin/sh';
+    const args = IS_WINDOWS ? ['/d', '/s', '/c', command] : ['-lc', command];
+
+    const child = spawn(shell, args, {
       cwd,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -107,6 +111,13 @@ function escapeSingleQuotes(value) {
 }
 
 function quote(value) {
+  if (IS_WINDOWS) {
+    const escaped = String(value)
+      .replace(/"/g, '\\"')
+      .replace(/[%^&|<>]/g, '^$&');
+    return `"${escaped}"`;
+  }
+
   return `'${escapeSingleQuotes(value)}'`;
 }
 
@@ -120,9 +131,10 @@ async function getRepoRoot(cwd) {
 
 async function resolvePr(repoRoot, prFlag) {
   if (prFlag) {
+    const prArg = quote(String(prFlag));
+
     if (/^\d+$/.test(String(prFlag))) {
-      const number = Number(prFlag);
-      const pr = await runJson(`gh pr view ${number} --json url`, repoRoot);
+      const pr = await runJson(`gh pr view ${prArg} --json url`, repoRoot);
       const parsed = parseRepoFromPrUrl(pr.url);
       return { number: parsed.number, owner: parsed.owner, repo: parsed.repo };
     }
@@ -132,9 +144,9 @@ async function resolvePr(repoRoot, prFlag) {
       return { number: parsed.number, owner: parsed.owner, repo: parsed.repo };
     }
 
-    const pr = await runJson(`gh pr view ${prFlag} --json number,url`, repoRoot);
+    const pr = await runJson(`gh pr view ${prArg} --json number,url`, repoRoot);
     const parsed = parseRepoFromPrUrl(pr.url);
-    return { number: pr.number, owner: parsed.owner, repo: parsed.repo };
+    return { number: parsed.number, owner: parsed.owner, repo: parsed.repo };
   }
 
   const current = await runJson('gh pr view --json number,url', repoRoot);
@@ -152,8 +164,14 @@ async function loadState(repoRoot, prNumber) {
     return { path, value: { ackedComments: {} } };
   }
 
-  const raw = await readFile(path, 'utf-8');
-  const parsed = JSON.parse(raw);
+  let parsed;
+  try {
+    const raw = await readFile(path, 'utf-8');
+    parsed = JSON.parse(raw);
+  } catch {
+    return { path, value: { ackedComments: {} } };
+  }
+
   if (!parsed || typeof parsed !== 'object') {
     return { path, value: { ackedComments: {} } };
   }
@@ -233,6 +251,11 @@ function shortBody(body) {
   if (typeof body !== 'string') return '';
   const compact = body.replace(/\s+/g, ' ').trim();
   return compact.length > 180 ? `${compact.slice(0, 180)}...` : compact;
+}
+
+function isCodeRabbitAuthor(login) {
+  const normalized = String(login || '').toLowerCase();
+  return normalized === 'coderabbitai' || normalized === 'coderabbitai[bot]';
 }
 
 function deriveNextAction(snapshot) {
@@ -319,7 +342,7 @@ async function buildSnapshot(repoRoot, prRef) {
     .filter((thread) => !thread?.isResolved)
     .flatMap((thread) =>
       (Array.isArray(thread?.comments?.nodes) ? thread.comments.nodes : [])
-        .filter((comment) => comment?.author?.login === 'coderabbitai[bot]')
+        .filter((comment) => isCodeRabbitAuthor(comment?.author?.login))
         .map((comment) => ({
           id: comment.databaseId,
           source: 'review',
@@ -467,8 +490,14 @@ function sleep(ms) {
 }
 
 async function handleWatch(repoRoot, prRef, flags) {
-  const intervalSec = Number(flags.interval || DEFAULT_INTERVAL_SEC);
-  const timeoutSec = Number(flags.timeout || DEFAULT_TIMEOUT_SEC);
+  const intervalSec = Number(flags.interval ?? DEFAULT_INTERVAL_SEC);
+  const timeoutSec = Number(flags.timeout ?? DEFAULT_TIMEOUT_SEC);
+  if (!Number.isFinite(intervalSec) || intervalSec <= 0) {
+    throw new Error('watch requires --interval to be a positive number of seconds');
+  }
+  if (!Number.isFinite(timeoutSec) || timeoutSec <= 0) {
+    throw new Error('watch requires --timeout to be a positive number of seconds');
+  }
   const started = Date.now();
 
   while (true) {
