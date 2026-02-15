@@ -1,6 +1,6 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { MigrationResult, PlanFrontmatter } from '@ccplans/shared';
+import type { MigrationResult, PlanFrontmatter } from '@agent-plans/shared';
 import { config } from '../config.js';
 
 const CURRENT_SCHEMA_VERSION = 1;

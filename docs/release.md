@@ -36,7 +36,7 @@ git push origin v0.2.1
 2. `pnpm check`
 3. `pnpm lint`
 4. `pnpm test`
-5. `pnpm --filter @ccplans/electron dist:mac`
+5. `pnpm --filter @agent-plans/electron dist:mac`
 6. Sign and notarize the app bundle
 7. Upload `apps/electron/release/*.dmg` to GitHub Release
 
@@ -44,12 +44,12 @@ git push origin v0.2.1
 
 ```bash
 pnpm install
-pnpm --filter @ccplans/electron dist:mac
+pnpm --filter @agent-plans/electron dist:mac
 ```
 
 Generated files:
 
-- `apps/electron/release/ccplans-<version>-mac-arm64.dmg`
+- `apps/electron/release/agent-plans-<version>-mac-arm64.dmg`
 
 ## Notes for `v0.2.0`
 

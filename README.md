@@ -1,10 +1,10 @@
-# Claude Plans Manager (ccplans)
+# Agent Plans Manager (agent-plans)
 
-A native Electron app for managing Claude plan files in `~/.claude/plans/`.
+A native Electron app for managing agent plan files.
 
 ## Overview
 
-ccplans is now Electron-first and runs standalone.
+agent-plans is now Electron-first and runs standalone.
 It does **not** require a separate web server or API process.
 
 ## Features
@@ -34,7 +34,7 @@ pnpm dev
 
 Prebuilt binaries are distributed on GitHub Releases:
 
-- https://github.com/tanabe1478/ccplans/releases/latest
+- https://github.com/tanabe1478/agent-plans/releases/latest
 
 macOS users can download the latest `.dmg` from the assets section.
 
@@ -45,7 +45,7 @@ apps/
   electron/     # Electron main/preload/renderer + E2E
 packages/
   shared/       # Shared type definitions
-hooks/          # Claude Code hook scripts
+hooks/          # Hook scripts
 ```
 
 ## Scripts
@@ -70,14 +70,14 @@ hooks/          # Claude Code hook scripts
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `PLANS_DIR` | `~/.claude/plans` | Plan file directory |
+| `PLANS_DIR` | `~/.claude/plans` | Plan file directory (set to `~/.codex/plans` for Codex workflows) |
 | `ARCHIVE_DIR` | `<PLANS_DIR>/archive` | Archive directory (legacy/internal) |
 | `ARCHIVE_RETENTION_DAYS` | `30` | Archive retention days (legacy/internal) |
 | `OPEN_DEVTOOLS` | `false` | Open devtools in Electron dev mode |
 
 ## Hook
 
-This repository includes a Claude Code hook script to inject/maintain plan frontmatter:
+This repository includes a plan-metadata hook script for Claude Code:
 
 - `hooks/plan-metadata/inject.py`
 - See `hooks/plan-metadata/README.md` for setup.

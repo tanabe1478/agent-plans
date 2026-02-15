@@ -3,7 +3,7 @@ import type {
   DependencyGraph,
   DependencyNode,
   PlanDependencies,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 import { planService } from './planService.js';
 
 /**

@@ -20,7 +20,7 @@ describe('PlanService', () => {
   let settingsService: SettingsService;
 
   beforeEach(async () => {
-    tempDir = join(tmpdir(), `ccplans-test-${Date.now()}`);
+    tempDir = join(tmpdir(), `agent-plans-test-${Date.now()}`);
     plansDir = join(tempDir, 'plans');
     secondaryPlansDir = join(plansDir, 'secondary');
     archiveDir = join(tempDir, 'archive');

@@ -1,4 +1,4 @@
-import type { PlanStatus } from '@ccplans/shared';
+import type { PlanStatus } from '@agent-plans/shared';
 import { create } from 'zustand';
 
 interface PlanStore {

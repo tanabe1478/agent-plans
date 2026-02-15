@@ -24,7 +24,7 @@ exports.default = async function notarizeApp(context) {
 
   await notarize({
     tool: 'notarytool',
-    appBundleId: 'com.tanabe1478.ccplans',
+    appBundleId: 'com.tanabe1478.agentplans',
     appPath,
     appleId: process.env.APPLE_ID,
     appleIdPassword: process.env.APPLE_APP_SPECIFIC_PASSWORD,

@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { createGzip } from 'node:zlib';
-import { normalizePlanStatus, type PlanFrontmatter, type PlanStatus } from '@ccplans/shared';
+import { normalizePlanStatus, type PlanFrontmatter, type PlanStatus } from '@agent-plans/shared';
 import { config } from '../config.js';
 
 interface ExportPlan {

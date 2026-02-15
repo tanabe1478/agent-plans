@@ -7,7 +7,7 @@ import { useSearch } from '@/lib/hooks/useSearch';
 const SEARCH_EXAMPLES: Array<{ label: string; query: string }> = [
   { label: 'In Progress', query: 'status:in_progress' },
   { label: 'Due This Month', query: 'due<2026-03-01' },
-  { label: 'By Project Path', query: 'project:ccplans' },
+  { label: 'By Project Path', query: 'project:agent-plans' },
   { label: 'Todo or Review', query: 'status:todo OR status:review' },
   { label: 'Progress + API', query: 'status:in_progress AND tag:api' },
   { label: 'Blocked Plans', query: 'blockedBy:backend-plan.md' },
@@ -17,7 +17,7 @@ const SEARCH_EXAMPLES: Array<{ label: string; query: string }> = [
 
 const SEARCH_SYNTAX_GUIDE: Array<{ syntax: string; description: string }> = [
   { syntax: 'due<2026-02-20', description: 'Due date comparison (<, >, <=, >=, =)' },
-  { syntax: 'project:ccplans', description: 'Project path partial match' },
+  { syntax: 'project:agent-plans', description: 'Project path partial match' },
   { syntax: 'estimate:2d', description: 'Estimate partial match' },
   { syntax: 'blockedBy:plan.md', description: 'Dependency filename match' },
   { syntax: 'tag:api', description: 'Tag match (optional frontmatter field)' },

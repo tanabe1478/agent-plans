@@ -1,4 +1,4 @@
-import type { PlanDetail } from '@ccplans/shared';
+import type { PlanDetail } from '@agent-plans/shared';
 import { type ComponentType, createElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';

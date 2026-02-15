@@ -7,8 +7,8 @@ import type {
   PlanPriority,
   PlanStatus,
   Subtask,
-} from '@ccplans/shared';
-import { normalizePlanStatus } from '@ccplans/shared';
+} from '@agent-plans/shared';
+import { normalizePlanStatus } from '@agent-plans/shared';
 import { config } from '../config.js';
 import { ArchiveService } from './archiveService.js';
 import { generatePlanName } from './nameGenerator.js';

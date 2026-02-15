@@ -1,4 +1,4 @@
-import { normalizePlanStatus, type PlanStatus } from '@ccplans/shared';
+import { normalizePlanStatus, type PlanStatus } from '@agent-plans/shared';
 import {
   AlertCircle,
   ArrowLeft,

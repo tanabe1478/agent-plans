@@ -1,6 +1,6 @@
 import { appendFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { AuditEntry } from '@ccplans/shared';
+import type { AuditEntry } from '@agent-plans/shared';
 import { config } from '../config.js';
 
 const AUDIT_FILENAME = '.audit.jsonl';

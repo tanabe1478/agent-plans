@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SavedView } from '@ccplans/shared';
+import type { SavedView } from '@agent-plans/shared';
 import { config } from '../config.js';
 
 const VIEWS_FILE = '.views.json';

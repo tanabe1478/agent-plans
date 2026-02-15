@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanFrontmatter, SearchMatch, SearchResult } from '@ccplans/shared';
+import type { PlanFrontmatter, SearchMatch, SearchResult } from '@agent-plans/shared';
 import { parseQuery, type QueryFilter } from './queryParser.js';
 import type { SettingsService } from './settingsService.js';
 import { settingsService } from './settingsService.js';

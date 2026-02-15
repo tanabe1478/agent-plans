@@ -62,7 +62,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: pnpm --filter @ccplans/electron dist:mac
+        run: pnpm --filter @agent-plans/electron dist:mac
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

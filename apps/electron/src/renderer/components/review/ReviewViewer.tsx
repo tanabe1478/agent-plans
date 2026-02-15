@@ -1,4 +1,4 @@
-import type { PlanDetail } from '@ccplans/shared';
+import type { PlanDetail } from '@agent-plans/shared';
 import { Fragment, useCallback, useRef, useState } from 'react';
 import type { ReviewComment } from '../../lib/types/review';
 import { CommentForm } from './CommentForm';

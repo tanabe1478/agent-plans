@@ -1,6 +1,6 @@
 # Features (Electron)
 
-ccplans is a standalone Electron app that manages Markdown plans in `~/.claude/plans/`.
+agent-plans is a standalone Electron app that manages Markdown plans in `PLANS_DIR`.
 
 ## Implemented User Features
 

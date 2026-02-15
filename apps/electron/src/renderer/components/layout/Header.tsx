@@ -84,7 +84,7 @@ export function Header({
           className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[12px] font-medium text-slate-100 hover:bg-slate-700/50 dark:hover:bg-slate-900"
         >
           <FileText className="h-3.5 w-3.5 text-slate-400" />
-          Claude Plans
+          Agent Plans
         </Link>
 
         <RouteTabs />

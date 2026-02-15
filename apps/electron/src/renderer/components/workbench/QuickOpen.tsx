@@ -1,4 +1,4 @@
-import type { PlanMeta } from '@ccplans/shared';
+import type { PlanMeta } from '@agent-plans/shared';
 import { CornerDownLeft, FileText, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn, formatDate } from '@/lib/utils';

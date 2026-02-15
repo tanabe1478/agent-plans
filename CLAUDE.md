@@ -4,9 +4,9 @@ Guidance for Claude Code (claude.ai/code) in this repository.
 
 ## Project
 
-ccplans is now an **Electron-first native app**.
+agent-plans is now an **Electron-first native app**.
 
-- Plans are managed directly from local files in `~/.claude/plans/`
+- Plans are managed directly from local files in `PLANS_DIR`
 - No separate web frontend package
 - No separate API server package
 
@@ -29,7 +29,7 @@ apps/electron/
   src/renderer    # React app
   e2e/            # Playwright tests
 packages/shared/  # shared type definitions
-hooks/            # Claude Code hooks
+hooks/            # Hook scripts
 ```
 
 ## Data Flow

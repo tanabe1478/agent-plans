@@ -3,7 +3,7 @@ import type {
   ImportMarkdownRequest,
   ImportMarkdownResponse,
   PlanStatus,
-} from '@ccplans/shared';
+} from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { exportAsCsv, exportAsJson, exportAsTarGz } from '../services/exportService.js';
 import {

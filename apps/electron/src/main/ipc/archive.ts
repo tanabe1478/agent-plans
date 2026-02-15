@@ -1,4 +1,4 @@
-import type { ArchiveListResponse } from '@ccplans/shared';
+import type { ArchiveListResponse } from '@agent-plans/shared';
 import type { IpcMainInvokeEvent } from 'electron';
 import {
   cleanupExpired,

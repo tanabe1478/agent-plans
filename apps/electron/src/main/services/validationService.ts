@@ -1,4 +1,4 @@
-import type { PlanFrontmatter } from '@ccplans/shared';
+import type { PlanFrontmatter } from '@agent-plans/shared';
 import { z } from 'zod';
 
 export interface ValidationError {

@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import type { ReviewComment, ReviewCommentsStorage } from '../types/review';
 
 function storageKey(filename: string): string {
-  return `ccplans-review-comments-${filename}`;
+  return `agent-plans-review-comments-${filename}`;
 }
 
 function loadComments(filename: string): ReviewComment[] {

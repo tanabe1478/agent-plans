@@ -84,7 +84,7 @@ reviews:
 
     - path: "packages/shared/**/*.ts"
       instructions: |
-        Shared type definitions package (@ccplans/shared).
+        Shared type definitions package (@agent-plans/shared).
         This package contains ONLY type definitions, no runtime code.
         Review for:
         - Backward compatibility of type changes

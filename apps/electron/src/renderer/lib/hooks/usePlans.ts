@@ -2,7 +2,7 @@
  * React Query hooks for plans operations via IPC
  */
 
-import type { ExternalApp, PlanStatus, SubtaskActionRequest } from '@ccplans/shared';
+import type { ExternalApp, PlanStatus, SubtaskActionRequest } from '@agent-plans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ipcClient } from '../api/ipcClient';
 import { useSettings } from './useSettings';

@@ -1,4 +1,4 @@
-import type { PlanStatus } from '@ccplans/shared';
+import type { PlanStatus } from '@agent-plans/shared';
 import { ArrowRightCircle, CheckSquare, XSquare } from 'lucide-react';
 import { useFrontmatterEnabled } from '../../contexts/SettingsContext';
 import { useBulkUpdateStatus } from '../../lib/hooks';
