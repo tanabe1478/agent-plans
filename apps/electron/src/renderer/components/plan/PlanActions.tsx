@@ -1,14 +1,5 @@
 import type { ExternalApp } from '@ccplans/shared';
-import {
-  ChevronDown,
-  Code,
-  Copy,
-  Edit3,
-  ExternalLink,
-  MoreVertical,
-  Terminal,
-  Trash2,
-} from 'lucide-react';
+import { Code, Copy, Edit3, ExternalLink, MoreVertical, Terminal, Trash2 } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import { useDeletePlan, useOpenPlan, useRenamePlan } from '../../lib/hooks';
 import { useUiStore } from '../../stores/uiStore';
@@ -104,16 +95,15 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
         <div className="relative">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => {
               setShowOpenMenu(!showOpenMenu);
               setShowMenu(false);
             }}
             title="Open in external app"
+            aria-label="Open in external app"
           >
-            <ExternalLink className="h-4 w-4 mr-1" />
-            Open in...
-            <ChevronDown className="h-3 w-3 ml-1" />
+            <ExternalLink className="h-4 w-4" />
           </Button>
 
           {showOpenMenu && (
