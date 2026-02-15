@@ -1,4 +1,12 @@
-export type ShortcutAction = 'openCommandPalette' | 'openQuickOpen';
+export type ShortcutAction =
+  | 'openCommandPalette'
+  | 'openQuickOpen'
+  | 'commandGoHome'
+  | 'commandGoSearch'
+  | 'commandOpenSettings'
+  | 'commandToggleTheme'
+  | 'commandOpenQuickOpen'
+  | 'commandOpenCurrentReview';
 
 export type AppShortcuts = Record<ShortcutAction, string>;
 
@@ -8,6 +16,12 @@ export type AppShortcuts = Record<ShortcutAction, string>;
 export const DEFAULT_SHORTCUTS: AppShortcuts = {
   openCommandPalette: 'Mod+K',
   openQuickOpen: 'Mod+P',
+  commandGoHome: 'Mod+1',
+  commandGoSearch: 'Mod+2',
+  commandOpenSettings: 'Mod+,',
+  commandToggleTheme: 'Mod+Shift+T',
+  commandOpenQuickOpen: 'Mod+Shift+P',
+  commandOpenCurrentReview: 'Mod+Shift+R',
 };
 
 /**

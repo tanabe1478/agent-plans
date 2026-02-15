@@ -30,18 +30,65 @@ const SHORTCUT_ITEMS: Array<{
   action: ShortcutAction;
   label: string;
   description: string;
+  section: 'Global' | 'Command Palette';
 }> = [
   {
     action: 'openCommandPalette',
     label: 'Command Palette',
     description: 'Open the command palette.',
+    section: 'Global',
   },
   {
     action: 'openQuickOpen',
     label: 'Quick Open',
     description: 'Open plan search and jump.',
+    section: 'Global',
+  },
+  {
+    action: 'commandGoHome',
+    label: 'Go to Home',
+    description: 'Run "Go to Home" from Command Palette.',
+    section: 'Command Palette',
+  },
+  {
+    action: 'commandGoSearch',
+    label: 'Go to Search',
+    description: 'Run "Go to Search" from Command Palette.',
+    section: 'Command Palette',
+  },
+  {
+    action: 'commandOpenSettings',
+    label: 'Open Settings',
+    description: 'Run "Open Settings" from Command Palette.',
+    section: 'Command Palette',
+  },
+  {
+    action: 'commandToggleTheme',
+    label: 'Toggle Theme',
+    description: 'Run "Toggle Theme" from Command Palette.',
+    section: 'Command Palette',
+  },
+  {
+    action: 'commandOpenQuickOpen',
+    label: 'Open Quick Open (Command)',
+    description: 'Run "Open Quick Open" from Command Palette.',
+    section: 'Command Palette',
+  },
+  {
+    action: 'commandOpenCurrentReview',
+    label: 'Open Current Review',
+    description: 'Run "Open Review for current plan" from Command Palette.',
+    section: 'Command Palette',
   },
 ];
+
+const SHORTCUT_SECTIONS: Array<'Global' | 'Command Palette'> = ['Global', 'Command Palette'];
+
+function areShortcutsEqual(left: AppShortcuts, right: AppShortcuts): boolean {
+  return (Object.keys(DEFAULT_SHORTCUTS) as ShortcutAction[]).every(
+    (action) => left[action] === right[action]
+  );
+}
 
 export function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
@@ -62,10 +109,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     setLocalShortcuts((previous) => {
-      if (
-        previous.openCommandPalette === currentShortcuts.openCommandPalette &&
-        previous.openQuickOpen === currentShortcuts.openQuickOpen
-      ) {
+      if (areShortcutsEqual(previous, currentShortcuts)) {
         return previous;
       }
       return currentShortcuts;
@@ -218,31 +262,43 @@ export function SettingsPage() {
           <Keyboard className="h-5 w-5 text-muted-foreground shrink-0" />
         </div>
 
-        <div className="mt-4 space-y-3">
-          {SHORTCUT_ITEMS.map((item) => {
-            const isEditing = editingShortcut === item.action;
-            const shortcutLabel = isEditing
-              ? 'Press shortcut...'
-              : formatShortcutLabel(localShortcuts[item.action], macOS);
-
+        <div className="mt-4 space-y-4">
+          {SHORTCUT_SECTIONS.map((section) => {
+            const sectionItems = SHORTCUT_ITEMS.filter((item) => item.section === section);
             return (
-              <div
-                key={item.action}
-                className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2"
-              >
-                <div>
-                  <p className="text-sm font-medium">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.description}</p>
+              <section key={section}>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {section}
+                </h3>
+                <div className="space-y-3">
+                  {sectionItems.map((item) => {
+                    const isEditing = editingShortcut === item.action;
+                    const shortcutLabel = isEditing
+                      ? 'Press shortcut...'
+                      : formatShortcutLabel(localShortcuts[item.action], macOS);
+
+                    return (
+                      <div
+                        key={item.action}
+                        className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{item.label}</p>
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={updateSettings.isPending}
+                          onClick={() => setEditingShortcut(item.action)}
+                          className="inline-flex min-w-[172px] items-center justify-center rounded-md border border-input bg-background px-3 py-2 font-mono text-xs text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {shortcutLabel}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-                <button
-                  type="button"
-                  disabled={updateSettings.isPending}
-                  onClick={() => setEditingShortcut(item.action)}
-                  className="inline-flex min-w-[172px] items-center justify-center rounded-md border border-input bg-background px-3 py-2 font-mono text-xs text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {shortcutLabel}
-                </button>
-              </div>
+              </section>
             );
           })}
         </div>

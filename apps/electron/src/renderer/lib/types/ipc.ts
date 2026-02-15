@@ -4,6 +4,7 @@
  */
 
 import type {
+  AppShortcuts,
   PlanStatus as BasePlanStatus,
   UpdateViewRequest as BaseUpdateViewRequest,
   SavedView,
@@ -82,8 +83,5 @@ export interface ViewsListResponse {
  */
 export interface AppSettings {
   frontmatterEnabled: boolean;
-  shortcuts: {
-    openCommandPalette: string;
-    openQuickOpen: string;
-  };
+  shortcuts: AppShortcuts;
 }

@@ -1,3 +1,4 @@
+import { DEFAULT_SHORTCUTS } from '@ccplans/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,10 +8,7 @@ vi.mock('@/lib/hooks/useSettings', () => ({
   useSettings: () => ({
     data: {
       frontmatterEnabled: false,
-      shortcuts: {
-        openCommandPalette: 'Mod+K',
-        openQuickOpen: 'Mod+P',
-      },
+      shortcuts: DEFAULT_SHORTCUTS,
     },
     isLoading: false,
     error: null,

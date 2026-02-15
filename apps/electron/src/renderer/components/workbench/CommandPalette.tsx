@@ -6,6 +6,7 @@ export interface CommandItem {
   id: string;
   label: string;
   hint?: string;
+  shortcut?: string;
   run: () => void;
 }
 
@@ -31,7 +32,7 @@ export function CommandPalette({
     const normalized = query.trim().toLowerCase();
     if (!normalized) return items;
     return items.filter((item) => {
-      const source = `${item.label} ${item.hint ?? ''}`.toLowerCase();
+      const source = `${item.label} ${item.hint ?? ''} ${item.shortcut ?? ''}`.toLowerCase();
       return source.includes(normalized);
     });
   }, [items, query]);
@@ -121,7 +122,16 @@ export function CommandPalette({
                   <Command className="h-3.5 w-3.5 text-slate-500" />
                   {item.label}
                 </span>
-                {item.hint ? <span className="text-[11px] text-slate-500">{item.hint}</span> : null}
+                {item.hint || item.shortcut ? (
+                  <span className="inline-flex items-center gap-2 text-[11px]">
+                    {item.hint ? <span className="text-slate-500">{item.hint}</span> : null}
+                    {item.shortcut ? (
+                      <span className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono text-slate-400">
+                        {item.shortcut}
+                      </span>
+                    ) : null}
+                  </span>
+                ) : null}
               </button>
             ))
           )}

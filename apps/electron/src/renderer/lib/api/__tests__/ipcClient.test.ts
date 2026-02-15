@@ -4,6 +4,7 @@
  * Note: These tests mock window.electronAPI which is normally provided by the preload script.
  */
 
+import { DEFAULT_SHORTCUTS } from '@ccplans/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock window.electronAPI
@@ -176,7 +177,7 @@ describe('ipcClient', () => {
       const { ipcClient } = await import('../ipcClient');
       mockInvoke.mockResolvedValueOnce({
         frontmatterEnabled: true,
-        shortcuts: { openCommandPalette: 'Mod+K', openQuickOpen: 'Mod+P' },
+        shortcuts: DEFAULT_SHORTCUTS,
       });
 
       await ipcClient.settings.get();
@@ -188,7 +189,7 @@ describe('ipcClient', () => {
       const { ipcClient } = await import('../ipcClient');
       mockInvoke.mockResolvedValueOnce({
         frontmatterEnabled: false,
-        shortcuts: { openCommandPalette: 'Mod+K', openQuickOpen: 'Mod+P' },
+        shortcuts: DEFAULT_SHORTCUTS,
       });
 
       await ipcClient.settings.update({ frontmatterEnabled: false });

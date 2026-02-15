@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import type { ShortcutAction } from '@ccplans/shared';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppShortcuts } from '@/contexts/SettingsContext';
 import { usePlans } from '@/lib/hooks/usePlans';
@@ -9,6 +10,40 @@ import { Toasts } from '../ui/Toasts';
 import { type CommandItem, CommandPalette } from '../workbench/CommandPalette';
 import { QuickOpen } from '../workbench/QuickOpen';
 import { Header } from './Header';
+
+type PaletteShortcutAction = Extract<
+  ShortcutAction,
+  | 'commandGoHome'
+  | 'commandGoSearch'
+  | 'commandOpenSettings'
+  | 'commandToggleTheme'
+  | 'commandOpenQuickOpen'
+  | 'commandOpenCurrentReview'
+>;
+
+const PALETTE_COMMANDS: Array<{
+  id: string;
+  action: PaletteShortcutAction;
+  label: string;
+  hint: string;
+}> = [
+  { id: 'go-home', action: 'commandGoHome', label: 'Go to Home', hint: 'Route' },
+  { id: 'go-search', action: 'commandGoSearch', label: 'Go to Search', hint: 'Route' },
+  { id: 'go-settings', action: 'commandOpenSettings', label: 'Open Settings', hint: 'Route' },
+  { id: 'toggle-theme', action: 'commandToggleTheme', label: 'Toggle Theme', hint: 'Theme' },
+  {
+    id: 'open-quick-open',
+    action: 'commandOpenQuickOpen',
+    label: 'Open Quick Open',
+    hint: 'Plans',
+  },
+  {
+    id: 'open-current-review',
+    action: 'commandOpenCurrentReview',
+    label: 'Open Review for current plan',
+    hint: 'Route',
+  },
+];
 
 export function Layout() {
   const navigate = useNavigate();
@@ -22,43 +57,55 @@ export function Layout() {
   const commandShortcutLabel = formatShortcutLabel(shortcuts.openCommandPalette, macOS);
   const quickOpenShortcutLabel = formatShortcutLabel(shortcuts.openQuickOpen, macOS);
 
-  const commands = useMemo<CommandItem[]>(
-    () => [
-      { id: 'go-home', label: 'Go to Home', hint: 'Route', run: () => navigate('/') },
-      { id: 'go-search', label: 'Go to Search', hint: 'Route', run: () => navigate('/search') },
-      {
-        id: 'go-settings',
-        label: 'Open Settings',
-        hint: 'Route',
-        run: () => navigate('/settings'),
-      },
-      {
-        id: 'toggle-theme',
-        label: 'Toggle Theme',
-        hint: `Current: ${theme}`,
-        run: () => setTheme(getNextToggleTheme(theme)),
-      },
-      {
-        id: 'open-quick-open',
-        label: 'Open Quick Open',
-        hint: 'Plans',
-        run: () => {
+  const runPaletteCommand = useCallback(
+    (action: PaletteShortcutAction) => {
+      switch (action) {
+        case 'commandGoHome':
+          navigate('/');
+          return;
+        case 'commandGoSearch':
+          navigate('/search');
+          return;
+        case 'commandOpenSettings':
+          navigate('/settings');
+          return;
+        case 'commandToggleTheme':
+          setTheme(getNextToggleTheme(theme));
+          return;
+        case 'commandOpenQuickOpen':
           setCommandOpen(false);
           setQuickOpen(true);
-        },
-      },
-      {
-        id: 'open-current-review',
-        label: 'Open Review for current plan',
-        hint: 'Route',
-        run: () => {
+          return;
+        case 'commandOpenCurrentReview': {
           const match = location.pathname.match(/^\/plan\/([^/]+)$/);
           if (!match) return;
           navigate(`/plan/${match[1]}/review`);
-        },
-      },
-    ],
+        }
+      }
+    },
     [location.pathname, navigate, setTheme, theme]
+  );
+
+  const commands = useMemo<CommandItem[]>(
+    () =>
+      PALETTE_COMMANDS.map((command) => ({
+        id: command.id,
+        label: command.label,
+        hint: command.action === 'commandToggleTheme' ? `Current: ${theme}` : command.hint,
+        shortcut: formatShortcutLabel(shortcuts[command.action], macOS),
+        run: () => runPaletteCommand(command.action),
+      })),
+    [
+      macOS,
+      runPaletteCommand,
+      shortcuts.commandGoHome,
+      shortcuts.commandGoSearch,
+      shortcuts.commandOpenCurrentReview,
+      shortcuts.commandOpenQuickOpen,
+      shortcuts.commandOpenSettings,
+      shortcuts.commandToggleTheme,
+      theme,
+    ]
   );
 
   useEffect(() => {
@@ -78,11 +125,30 @@ export function Layout() {
         event.preventDefault();
         setCommandOpen(false);
         setQuickOpen(true);
+        return;
+      }
+      if (isTyping) return;
+      for (const command of PALETTE_COMMANDS) {
+        if (matchesShortcut(event, shortcuts[command.action])) {
+          event.preventDefault();
+          runPaletteCommand(command.action);
+          return;
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [shortcuts.openCommandPalette, shortcuts.openQuickOpen]);
+  }, [
+    runPaletteCommand,
+    shortcuts.commandGoHome,
+    shortcuts.commandGoSearch,
+    shortcuts.commandOpenCurrentReview,
+    shortcuts.commandOpenQuickOpen,
+    shortcuts.commandOpenSettings,
+    shortcuts.commandToggleTheme,
+    shortcuts.openCommandPalette,
+    shortcuts.openQuickOpen,
+  ]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
