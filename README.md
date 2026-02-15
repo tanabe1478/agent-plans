@@ -107,7 +107,6 @@ Release is tag-based and fully automated by GitHub Actions:
 1. Push a `vX.Y.Z` tag (example: `v0.2.1`)
 2. `Release` workflow builds macOS arm64 `.dmg` in `unsigned` (default) or `signed` mode
 3. Artifact is attached to a GitHub Release page
-4. `Sync Homebrew Cask` workflow updates the tap cask (`tanabe1478/homebrew-agent-plans`)
 
 Detailed runbook: `docs/release.md`
 
