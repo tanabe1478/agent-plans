@@ -34,7 +34,7 @@ pnpm dev
 
 Prebuilt binaries are distributed on GitHub Releases:
 
-- https://github.com/tanabe1478/ccplans/releases/latest
+- https://github.com/tanabe1478/agent-plans/releases/latest
 
 macOS users can download the latest `.dmg` from the assets section.
 
