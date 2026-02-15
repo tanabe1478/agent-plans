@@ -1,17 +1,35 @@
 import { useCallback, useState } from 'react';
 import type { ReviewComment, ReviewCommentsStorage } from '../types/review';
 
+const STORAGE_PREFIX = 'agent-plans-review-comments-';
+const LEGACY_STORAGE_PREFIX = 'ccplans-review-comments-';
+
 function storageKey(filename: string): string {
-  return `agent-plans-review-comments-${filename}`;
+  return `${STORAGE_PREFIX}${filename}`;
+}
+
+function legacyStorageKey(filename: string): string {
+  return `${LEGACY_STORAGE_PREFIX}${filename}`;
+}
+
+function parseStorage(raw: string | null): ReviewComment[] | null {
+  if (!raw) return null;
+  const data: ReviewCommentsStorage = JSON.parse(raw);
+  if (data.version !== 1 || !Array.isArray(data.comments)) return null;
+  return data.comments;
 }
 
 function loadComments(filename: string): ReviewComment[] {
   try {
-    const raw = localStorage.getItem(storageKey(filename));
-    if (!raw) return [];
-    const data: ReviewCommentsStorage = JSON.parse(raw);
-    if (data.version !== 1 || !Array.isArray(data.comments)) return [];
-    return data.comments;
+    const current = parseStorage(localStorage.getItem(storageKey(filename)));
+    if (current) return current;
+
+    const legacy = parseStorage(localStorage.getItem(legacyStorageKey(filename)));
+    if (!legacy) return [];
+
+    saveComments(filename, legacy);
+    localStorage.removeItem(legacyStorageKey(filename));
+    return legacy;
   } catch {
     return [];
   }
