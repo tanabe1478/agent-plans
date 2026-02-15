@@ -1,14 +1,17 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import type { AppSettings } from '@agent-plans/shared';
 import { DEFAULT_SHORTCUTS, mergeShortcuts } from '../../shared/shortcutDefaults.js';
 import { config } from '../config.js';
 
 const SETTINGS_FILENAME = '.settings.json';
+const DEFAULT_CODEX_SESSIONS_DIR = join(homedir(), '.codex', 'sessions');
 const ELECTRON_DEFAULT_SETTINGS: AppSettings = {
   frontmatterEnabled: true,
   planDirectories: [config.plansDir],
+  codexIntegrationEnabled: false,
+  codexSessionLogDirectories: [DEFAULT_CODEX_SESSIONS_DIR],
   shortcuts: DEFAULT_SHORTCUTS,
   fileWatcherEnabled: false,
 };
@@ -37,21 +40,24 @@ export class SettingsService {
     return resolve(trimmed);
   }
 
-  private isDirectoryWithinBase(path: string, base: string): boolean {
-    const rel = relative(base, path);
-    return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
-  }
-
-  private normalizePlanDirectories(value: unknown): string[] {
-    const baseFallback = this.normalizeDirectory(this.plansDir);
+  private normalizeDirectories(value: unknown): string[] {
     const raw = Array.isArray(value) ? value : [];
     const normalized = raw
       .filter((item): item is string => typeof item === 'string')
       .map((item) => this.normalizeDirectory(item))
-      .filter(Boolean)
-      .filter((item) => this.isDirectoryWithinBase(item, baseFallback));
-    const unique = Array.from(new Set(normalized));
-    return [baseFallback, ...unique.filter((item) => item !== baseFallback)];
+      .filter(Boolean);
+    return Array.from(new Set(normalized));
+  }
+
+  private normalizePlanDirectories(value: unknown): string[] {
+    const baseFallback = this.normalizeDirectory(this.plansDir);
+    const unique = this.normalizeDirectories(value);
+    return unique.length > 0 ? unique : [baseFallback];
+  }
+
+  private normalizeCodexSessionLogDirectories(value: unknown): string[] {
+    const unique = this.normalizeDirectories(value);
+    return unique.length > 0 ? unique : [DEFAULT_CODEX_SESSIONS_DIR];
   }
 
   private sanitizeSettings(parsed: Partial<AppSettings>): AppSettings {
@@ -59,6 +65,9 @@ export class SettingsService {
       ...ELECTRON_DEFAULT_SETTINGS,
       ...parsed,
       planDirectories: this.normalizePlanDirectories(parsed.planDirectories),
+      codexSessionLogDirectories: this.normalizeCodexSessionLogDirectories(
+        parsed.codexSessionLogDirectories
+      ),
       shortcuts: mergeShortcuts(parsed.shortcuts),
     };
   }

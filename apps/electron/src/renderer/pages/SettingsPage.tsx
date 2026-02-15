@@ -35,6 +35,7 @@ const FRONTMATTER_FEATURES = [
 ];
 
 const DEFAULT_PLAN_DIRECTORY = '~/.agent-plans/plans';
+const DEFAULT_CODEX_SESSION_LOG_DIRECTORY = '~/.codex/sessions';
 
 interface DirectoryEntry {
   id: string;
@@ -111,6 +112,14 @@ function toDirectoryEntries(paths: string[] | undefined): DirectoryEntry[] {
   return source.map((path) => createDirectoryEntry(path));
 }
 
+function normalizeDirectoryPaths(paths: string[]): string[] {
+  return Array.from(new Set(paths.map((path) => path.trim()).filter(Boolean)));
+}
+
+function arePathListsEqual(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((path, index) => path === right[index]);
+}
+
 function areShortcutsEqual(left: AppShortcuts, right: AppShortcuts): boolean {
   return (Object.keys(DEFAULT_SHORTCUTS) as ShortcutAction[]).every(
     (action) => left[action] === right[action]
@@ -125,6 +134,8 @@ export function SettingsPage() {
   const fileWatcherHeadingId = useId();
   const [directoryEntries, setDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [pickingDirectoryId, setPickingDirectoryId] = useState<string | null>(null);
+  const [codexDirectoryEntries, setCodexDirectoryEntries] = useState<DirectoryEntry[]>([]);
+  const [pickingCodexDirectoryId, setPickingCodexDirectoryId] = useState<string | null>(null);
   const [editingShortcut, setEditingShortcut] = useState<ShortcutAction | null>(null);
   const [localShortcuts, setLocalShortcuts] = useState<AppShortcuts>(DEFAULT_SHORTCUTS);
   const macOS = isMacOS();
@@ -133,10 +144,26 @@ export function SettingsPage() {
     settings?.planDirectories && settings.planDirectories.length > 0
       ? settings.planDirectories
       : [DEFAULT_PLAN_DIRECTORY];
-  const normalizedDirectories = Array.from(
-    new Set(directoryEntries.map((entry) => entry.path.trim()).filter(Boolean))
+  const draftDirectories = directoryEntries.map((entry) => entry.path);
+  const effectiveDirectories = normalizeDirectoryPaths(draftDirectories);
+  const normalizedSavedDirectories = normalizeDirectoryPaths(savedDirectories);
+  const hasDirectoryChanges = !arePathListsEqual(effectiveDirectories, normalizedSavedDirectories);
+  const hasDirectoryDraftChanges = !arePathListsEqual(draftDirectories, savedDirectories);
+  const savedCodexDirectories =
+    settings?.codexSessionLogDirectories && settings.codexSessionLogDirectories.length > 0
+      ? settings.codexSessionLogDirectories
+      : [DEFAULT_CODEX_SESSION_LOG_DIRECTORY];
+  const draftCodexDirectories = codexDirectoryEntries.map((entry) => entry.path);
+  const normalizedCodexDirectories = normalizeDirectoryPaths(draftCodexDirectories);
+  const normalizedSavedCodexDirectories = normalizeDirectoryPaths(savedCodexDirectories);
+  const hasCodexDirectoryChanges = !arePathListsEqual(
+    normalizedCodexDirectories,
+    normalizedSavedCodexDirectories
   );
-  const hasDirectoryChanges = normalizedDirectories.join('\n') !== savedDirectories.join('\n');
+  const hasCodexDirectoryDraftChanges = !arePathListsEqual(
+    draftCodexDirectories,
+    savedCodexDirectories
+  );
 
   const currentShortcuts: AppShortcuts = useMemo(
     () => mergeShortcuts(settings?.shortcuts),
@@ -144,7 +171,7 @@ export function SettingsPage() {
   );
 
   useEffect(() => {
-    if (hasDirectoryChanges && directoryEntries.length > 0) return;
+    if (hasDirectoryDraftChanges && directoryEntries.length > 0) return;
 
     const directories = settings?.planDirectories ?? [];
     const source = directories.length > 0 ? directories : [DEFAULT_PLAN_DIRECTORY];
@@ -158,7 +185,28 @@ export function SettingsPage() {
       if (isSame) return current;
       return source.map((path) => createDirectoryEntry(path));
     });
-  }, [settings?.planDirectories, hasDirectoryChanges, directoryEntries.length]);
+  }, [settings?.planDirectories, hasDirectoryDraftChanges, directoryEntries.length]);
+
+  useEffect(() => {
+    if (hasCodexDirectoryDraftChanges && codexDirectoryEntries.length > 0) return;
+
+    const directories = settings?.codexSessionLogDirectories ?? [];
+    const source = directories.length > 0 ? directories : [DEFAULT_CODEX_SESSION_LOG_DIRECTORY];
+
+    setCodexDirectoryEntries((current) => {
+      const currentPaths = current.map((entry) => entry.path);
+      const isSame =
+        currentPaths.length === source.length &&
+        currentPaths.every((path, index) => path === source[index]);
+
+      if (isSame) return current;
+      return source.map((path) => createDirectoryEntry(path));
+    });
+  }, [
+    settings?.codexSessionLogDirectories,
+    hasCodexDirectoryDraftChanges,
+    codexDirectoryEntries.length,
+  ]);
 
   useEffect(() => {
     setLocalShortcuts((previous) => {
@@ -253,6 +301,16 @@ export function SettingsPage() {
     }
   };
 
+  const handleCodexIntegrationToggle = async () => {
+    const newValue = !(settings?.codexIntegrationEnabled ?? false);
+    try {
+      await updateSettings.mutateAsync({ codexIntegrationEnabled: newValue });
+      addToast(newValue ? 'Codex integration enabled' : 'Codex integration disabled', 'success');
+    } catch {
+      addToast('Failed to update Codex integration setting', 'error');
+    }
+  };
+
   const handleDirectoryChange = (id: string, nextValue: string) => {
     setDirectoryEntries((current) =>
       current.map((entry) => (entry.id === id ? { ...entry, path: nextValue } : entry))
@@ -282,17 +340,66 @@ export function SettingsPage() {
   };
 
   const handleSaveDirectories = async () => {
-    if (normalizedDirectories.length === 0) {
+    if (effectiveDirectories.length === 0) {
       addToast('At least one directory is required', 'error');
       return;
     }
 
     try {
-      const updated = await updateSettings.mutateAsync({ planDirectories: normalizedDirectories });
+      const updated = await updateSettings.mutateAsync({ planDirectories: effectiveDirectories });
       setDirectoryEntries(toDirectoryEntries(updated.planDirectories));
       addToast('Plan directories updated', 'success');
     } catch {
       addToast('Failed to update plan directories', 'error');
+    }
+  };
+
+  const handleCodexDirectoryChange = (id: string, nextValue: string) => {
+    setCodexDirectoryEntries((current) =>
+      current.map((entry) => (entry.id === id ? { ...entry, path: nextValue } : entry))
+    );
+  };
+
+  const handleAddCodexDirectory = () => {
+    setCodexDirectoryEntries((current) => [...current, createDirectoryEntry('')]);
+  };
+
+  const handleRemoveCodexDirectory = (id: string) => {
+    setCodexDirectoryEntries((current) => current.filter((entry) => entry.id !== id));
+  };
+
+  const handlePickCodexDirectory = async (id: string) => {
+    try {
+      const currentEntry = codexDirectoryEntries.find((entry) => entry.id === id);
+      setPickingCodexDirectoryId(id);
+      const selectedPath = await ipcClient.settings.selectDirectory(currentEntry?.path);
+      if (!selectedPath) return;
+      handleCodexDirectoryChange(id, selectedPath);
+    } catch {
+      addToast('Failed to open directory picker', 'error');
+    } finally {
+      setPickingCodexDirectoryId(null);
+    }
+  };
+
+  const handleSaveCodexDirectories = async () => {
+    if (normalizedCodexDirectories.length === 0) {
+      addToast('At least one Codex session log directory is required', 'error');
+      return;
+    }
+
+    try {
+      const updated = await updateSettings.mutateAsync({
+        codexSessionLogDirectories: normalizedCodexDirectories,
+      });
+      setCodexDirectoryEntries(
+        toDirectoryEntries(
+          updated.codexSessionLogDirectories ?? [DEFAULT_CODEX_SESSION_LOG_DIRECTORY]
+        )
+      );
+      addToast('Codex session log directories updated', 'success');
+    } catch {
+      addToast('Failed to update Codex session log directories', 'error');
     }
   };
 
@@ -430,6 +537,109 @@ export function SettingsPage() {
             <Save className="h-3.5 w-3.5" />
             Save Directories
           </button>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Codex Integration</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Import read-only plans from Codex session logs (`*.jsonl`) and merge them into your
+              plan list.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings?.codexIntegrationEnabled ?? false}
+            onClick={handleCodexIntegrationToggle}
+            disabled={updateSettings.isPending}
+            className={`
+              relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
+              transition-colors duration-200 ease-in-out
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+              disabled:cursor-not-allowed disabled:opacity-50
+              ${settings?.codexIntegrationEnabled ? 'bg-primary' : 'bg-muted'}
+            `}
+          >
+            <span
+              className={`
+                pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0
+                transition duration-200 ease-in-out
+                ${settings?.codexIntegrationEnabled ? 'translate-x-5' : 'translate-x-0'}
+              `}
+            />
+          </button>
+        </div>
+
+        <div className="mt-4 border-t pt-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-medium">Session Log Directories</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Directories containing Codex session logs. Example: `~/.codex/sessions`
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddCodexDirectory}
+              className="inline-flex items-center gap-1 rounded border border-border px-2.5 py-1.5 text-xs hover:bg-muted"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {codexDirectoryEntries.map((entry) => (
+              <div key={entry.id} className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Folder className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={entry.path}
+                    onChange={(event) => handleCodexDirectoryChange(entry.id, event.target.value)}
+                    placeholder={DEFAULT_CODEX_SESSION_LOG_DIRECTORY}
+                    className="h-10 w-full rounded border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-primary"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handlePickCodexDirectory(entry.id)}
+                  disabled={pickingCodexDirectoryId === entry.id}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Browse directory"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCodexDirectory(entry.id)}
+                  disabled={codexDirectoryEntries.length <= 1}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Remove directory"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between border-t pt-4">
+            <p className="text-xs text-muted-foreground">
+              Empty and duplicate paths are ignored when saving.
+            </p>
+            <button
+              type="button"
+              onClick={handleSaveCodexDirectories}
+              disabled={updateSettings.isPending || !hasCodexDirectoryChanges}
+              className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Save className="h-3.5 w-3.5" />
+              Save Log Directories
+            </button>
+          </div>
         </div>
       </div>
 

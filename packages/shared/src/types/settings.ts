@@ -18,6 +18,10 @@ export interface AppSettings {
   frontmatterEnabled: boolean;
   /** Directories to scan for markdown plans */
   planDirectories?: string[];
+  /** Enable Codex session log integration */
+  codexIntegrationEnabled?: boolean;
+  /** Directories containing Codex session *.jsonl logs */
+  codexSessionLogDirectories?: string[];
   /** Keyboard shortcuts for app actions */
   shortcuts?: AppShortcuts;
   /** Enable automatic file watching for external changes */

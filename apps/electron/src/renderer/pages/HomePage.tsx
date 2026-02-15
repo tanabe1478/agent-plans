@@ -145,6 +145,7 @@ export function HomePage() {
   };
 
   const hasSelection = selectedPlans.size > 0;
+  const writablePlans = filteredPlans.filter((plan) => !plan.readOnly);
 
   return (
     <div className="space-y-3">
@@ -170,7 +171,7 @@ export function HomePage() {
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    setSelectedPlans(new Set(filteredPlans.map((plan) => plan.filename)))
+                    setSelectedPlans(new Set(writablePlans.map((plan) => plan.filename)))
                   }
                 >
                   All
@@ -252,6 +253,7 @@ export function HomePage() {
                 const isChecked = selectedPlans.has(plan.filename);
                 const dueDate = fmEnabled ? plan.frontmatter?.dueDate : undefined;
                 const status = normalizePlanStatus(plan.frontmatter?.status);
+                const readOnly = Boolean(plan.readOnly);
                 return (
                   // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
                   <div
@@ -277,7 +279,11 @@ export function HomePage() {
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => toggleSelection(plan.filename)}
+                          disabled={readOnly}
+                          onChange={() => {
+                            if (readOnly) return;
+                            toggleSelection(plan.filename);
+                          }}
                           className="h-3.5 w-3.5 rounded-none border-slate-600 bg-slate-950"
                         />
                       ) : (
@@ -289,6 +295,7 @@ export function HomePage() {
                       className="min-w-0 text-left"
                       onClick={() => {
                         if (selectionMode) {
+                          if (readOnly) return;
                           toggleSelection(plan.filename);
                           return;
                         }
@@ -300,12 +307,17 @@ export function HomePage() {
                       <p className="truncate font-mono text-[10px] text-slate-500">
                         {plan.filename}
                       </p>
+                      {plan.source === 'codex' ? (
+                        <span className="mt-1 inline-flex rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
+                          Codex
+                        </span>
+                      ) : null}
                     </button>
                     {fmEnabled ? (
                       <div className="pr-2">
                         <StatusDropdown
                           currentStatus={status}
-                          disabled={updateStatus.isPending}
+                          disabled={updateStatus.isPending || readOnly}
                           onStatusChange={(next) =>
                             updateStatus.mutate({ filename: plan.filename, status: next })
                           }
@@ -469,9 +481,11 @@ export function HomePage() {
         }}
         onDelete={() => {
           if (!contextPlan) return;
+          if (contextPlan.readOnly) return;
           setDeleteTarget(contextPlan);
           setContextPlan(null);
         }}
+        canDelete={!contextPlan?.readOnly}
       />
     </div>
   );
