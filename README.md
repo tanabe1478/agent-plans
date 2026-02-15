@@ -38,6 +38,22 @@ Prebuilt binaries are distributed on GitHub Releases:
 
 macOS users can download the latest `.dmg` from the assets section.
 
+## Unsigned macOS Builds
+
+This project currently distributes unsigned macOS builds by default.
+On first launch, Gatekeeper may block the app.
+
+Use either method below:
+
+1. Finder: right-click the app and choose `Open`.
+2. System Settings: `Privacy & Security` -> allow blocked app -> `Open Anyway`.
+
+Advanced users can also clear quarantine metadata manually:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/agent-plans.app
+```
+
 ## Project Structure
 
 ```text
@@ -55,10 +71,12 @@ hooks/          # Hook scripts
 | `pnpm dev` | Launch Electron app in dev mode |
 | `pnpm build` | Build Electron app |
 | `pnpm dist:mac` | Build macOS arm64 `.dmg` locally |
+| `pnpm dist:mac:unsigned` | Build unsigned macOS arm64 `.dmg` locally |
 | `pnpm test` | Run shared + Electron unit tests |
 | `pnpm test:e2e` | Run Electron Playwright E2E |
 | `pnpm lint` | Type-check shared + Electron |
 | `pnpm check` | Biome check |
+| `pnpm release:smoke` | Smoke-test a DMG install + launch on macOS |
 | `pnpm codex:pr-loop:status -- --pr <PR>` | Fetch PR loop snapshot for this session |
 | `pnpm codex:pr-loop:watch -- --pr <PR>` | Wait until checks leave pending state |
 | `pnpm codex:pr-loop:submit -- --message "<msg>"` | Stage + commit + push via helper |
@@ -87,10 +105,16 @@ This repository includes a plan-metadata hook script for agent workflows (Claude
 Release is tag-based and fully automated by GitHub Actions:
 
 1. Push a `vX.Y.Z` tag (example: `v0.2.1`)
-2. `Release` workflow builds and notarizes macOS arm64 `.dmg`
+2. `Release` workflow builds macOS arm64 `.dmg` in `unsigned` (default) or `signed` mode
 3. Artifact is attached to a GitHub Release page
 
 Detailed runbook: `docs/release.md`
+
+Before publishing, run a local smoke check:
+
+```bash
+pnpm release:smoke -- --dmg apps/electron/release/<artifact>.dmg
+```
 
 ## Session PR Loop
 
