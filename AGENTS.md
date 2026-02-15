@@ -79,3 +79,10 @@ hooks/            # Hook scripts
 ## Conventions
 
 - Write all code comments, commit messages, and PR descriptions in English.
+
+## PR Completion Policy
+
+- When a PR is in scope, continue work until merged unless the user explicitly stops the task.
+- Do not ask "should I continue?" during CI/CodeRabbit loops.
+- Use `tools/session-pr-loop` commands (`snapshot`, `watch`, `submit`, `ack`, `merge`) as the default execution path.
+- After merge, report merged PR URL and `mergedAt` timestamp.
