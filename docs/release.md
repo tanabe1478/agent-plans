@@ -63,19 +63,25 @@ You can run the workflow manually and choose release mode:
 7. Generate release notes with distribution mode + SHA256 checksums
 8. Upload `apps/electron/release/*.dmg` to GitHub Release
 
-## Automatic Homebrew Cask sync
+## Local Homebrew Cask sync
 
-After a release is published, `Sync Homebrew Cask` workflow updates:
+Homebrew tap updates are intentionally handled locally (not via this repository's CI).
 
-- `tanabe1478/homebrew-agent-plans`
-- `Casks/agent-plans.rb` (`version` and `sha256`)
+Recommended local flow:
 
-Required repository secret (`agent-plans` repo):
-
-- `HOMEBREW_TAP_TOKEN`:
-  - Personal Access Token with push access to `tanabe1478/homebrew-agent-plans`
-
-Manual retry is available via `workflow_dispatch` with `tag` input.
+1. Build or download the final DMG.
+2. Compute checksum:
+   ```bash
+   shasum -a 256 <path-to-dmg>
+   ```
+3. In your local clone of `tanabe1478/homebrew-agent-plans`, update `Casks/agent-plans.rb` (`version` + `sha256`).
+4. Commit and push in the tap repository.
+5. Verify install:
+   ```bash
+   brew update
+   brew uninstall --cask agent-plans || true
+   brew install --cask tanabe1478/agent-plans/agent-plans
+   ```
 
 ## Local DMG build
 

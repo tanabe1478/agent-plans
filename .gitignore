@@ -50,3 +50,7 @@ playwright/.cache/
 # Python
 __pycache__/
 *.pyc
+
+# Local-only Homebrew cask operation files
+.local/homebrew-cask-sync/
+.local/homebrew-cask-sync.env
