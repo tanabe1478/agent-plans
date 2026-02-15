@@ -107,8 +107,11 @@ function createDirectoryEntry(path = ''): DirectoryEntry {
   };
 }
 
-function toDirectoryEntries(paths: string[] | undefined): DirectoryEntry[] {
-  const source = paths && paths.length > 0 ? paths : [DEFAULT_PLAN_DIRECTORY];
+function toDirectoryEntries(
+  paths: string[] | undefined,
+  defaultPath = DEFAULT_PLAN_DIRECTORY
+): DirectoryEntry[] {
+  const source = paths && paths.length > 0 ? paths : [defaultPath];
   return source.map((path) => createDirectoryEntry(path));
 }
 
@@ -393,9 +396,7 @@ export function SettingsPage() {
         codexSessionLogDirectories: normalizedCodexDirectories,
       });
       setCodexDirectoryEntries(
-        toDirectoryEntries(
-          updated.codexSessionLogDirectories ?? [DEFAULT_CODEX_SESSION_LOG_DIRECTORY]
-        )
+        toDirectoryEntries(updated.codexSessionLogDirectories, DEFAULT_CODEX_SESSION_LOG_DIRECTORY)
       );
       addToast('Codex session log directories updated', 'success');
     } catch {
