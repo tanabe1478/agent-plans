@@ -1,6 +1,6 @@
 import type { PlanMeta } from '@ccplans/shared';
 import { CornerDownLeft, FileText, Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn, formatDate } from '@/lib/utils';
 
 interface QuickOpenProps {
@@ -20,6 +20,7 @@ export function QuickOpen({
 }: QuickOpenProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const filteredPlans = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -72,6 +73,14 @@ export function QuickOpen({
     setActiveIndex(0);
   }, [open, query]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -91,6 +100,7 @@ export function QuickOpen({
         <div className="relative border-b border-slate-700">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <input
+            ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Type a plan title or filename..."
