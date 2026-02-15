@@ -82,4 +82,8 @@ export interface ViewsListResponse {
  */
 export interface AppSettings {
   frontmatterEnabled: boolean;
+  shortcuts: {
+    openCommandPalette: string;
+    openQuickOpen: string;
+  };
 }

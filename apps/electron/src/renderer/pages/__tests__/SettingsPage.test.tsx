@@ -5,7 +5,13 @@ import { describe, expect, it, vi } from 'vitest';
 // Mock the hooks
 vi.mock('@/lib/hooks/useSettings', () => ({
   useSettings: () => ({
-    data: { frontmatterEnabled: false },
+    data: {
+      frontmatterEnabled: false,
+      shortcuts: {
+        openCommandPalette: 'Mod+K',
+        openQuickOpen: 'Mod+P',
+      },
+    },
     isLoading: false,
     error: null,
   }),
@@ -59,5 +65,12 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { wrapper: createWrapper() });
     expect(screen.getAllByText(/Status management/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Kanban board view/).length).toBeGreaterThan(0);
+  });
+
+  it('should display keyboard shortcuts section', () => {
+    render(<SettingsPage />, { wrapper: createWrapper() });
+    expect(screen.getAllByText('Keyboard Shortcuts').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Command Palette').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Quick Open').length).toBeGreaterThan(0);
   });
 });

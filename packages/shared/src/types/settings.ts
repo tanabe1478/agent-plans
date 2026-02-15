@@ -1,9 +1,23 @@
+export type ShortcutAction = 'openCommandPalette' | 'openQuickOpen';
+
+export type AppShortcuts = Record<ShortcutAction, string>;
+
+/**
+ * Default keyboard shortcuts
+ */
+export const DEFAULT_SHORTCUTS: AppShortcuts = {
+  openCommandPalette: 'Mod+K',
+  openQuickOpen: 'Mod+P',
+};
+
 /**
  * Application settings
  */
 export interface AppSettings {
   /** Enable YAML frontmatter features (status, priority, tags, subtasks, etc.) */
   frontmatterEnabled: boolean;
+  /** Keyboard shortcuts for app actions */
+  shortcuts: AppShortcuts;
 }
 
 /**
@@ -11,6 +25,7 @@ export interface AppSettings {
  */
 export const DEFAULT_SETTINGS: AppSettings = {
   frontmatterEnabled: false,
+  shortcuts: DEFAULT_SHORTCUTS,
 };
 
 /**

@@ -174,7 +174,10 @@ describe('ipcClient', () => {
   describe('settings', () => {
     it('should call settings:get channel', async () => {
       const { ipcClient } = await import('../ipcClient');
-      mockInvoke.mockResolvedValueOnce({ settings: {} });
+      mockInvoke.mockResolvedValueOnce({
+        frontmatterEnabled: true,
+        shortcuts: { openCommandPalette: 'Mod+K', openQuickOpen: 'Mod+P' },
+      });
 
       await ipcClient.settings.get();
 
@@ -183,11 +186,14 @@ describe('ipcClient', () => {
 
     it('should call settings:update channel', async () => {
       const { ipcClient } = await import('../ipcClient');
-      mockInvoke.mockResolvedValueOnce({ settings: { theme: 'dark' } });
+      mockInvoke.mockResolvedValueOnce({
+        frontmatterEnabled: false,
+        shortcuts: { openCommandPalette: 'Mod+K', openQuickOpen: 'Mod+P' },
+      });
 
-      await ipcClient.settings.update({ theme: 'dark' });
+      await ipcClient.settings.update({ frontmatterEnabled: false });
 
-      expect(mockInvoke).toHaveBeenCalledWith('settings:update', { theme: 'dark' });
+      expect(mockInvoke).toHaveBeenCalledWith('settings:update', { frontmatterEnabled: false });
     });
   });
 });

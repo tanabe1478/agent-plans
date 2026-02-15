@@ -10,6 +10,17 @@ const ELECTRON_DEFAULT_SETTINGS: AppSettings = {
   frontmatterEnabled: true,
 };
 
+function normalizeSettings(partial?: Partial<AppSettings>): AppSettings {
+  return {
+    ...ELECTRON_DEFAULT_SETTINGS,
+    ...partial,
+    shortcuts: {
+      ...ELECTRON_DEFAULT_SETTINGS.shortcuts,
+      ...(partial?.shortcuts ?? {}),
+    },
+  };
+}
+
 export interface SettingsServiceConfig {
   plansDir: string;
 }
@@ -34,18 +45,25 @@ export class SettingsService {
     try {
       const content = await readFile(this.getSettingsPath(), 'utf-8');
       const parsed = JSON.parse(content) as Partial<AppSettings>;
-      this.cachedSettings = { ...ELECTRON_DEFAULT_SETTINGS, ...parsed };
+      this.cachedSettings = normalizeSettings(parsed);
       return this.cachedSettings;
     } catch {
       // File doesn't exist or is invalid - return defaults
-      this.cachedSettings = { ...ELECTRON_DEFAULT_SETTINGS };
+      this.cachedSettings = normalizeSettings();
       return this.cachedSettings;
     }
   }
 
   async updateSettings(partial: Partial<AppSettings>): Promise<AppSettings> {
     const current = await this.getSettings();
-    const updated: AppSettings = { ...current, ...partial };
+    const updated: AppSettings = normalizeSettings({
+      ...current,
+      ...partial,
+      shortcuts: {
+        ...current.shortcuts,
+        ...(partial.shortcuts ?? {}),
+      },
+    });
 
     const settingsPath = this.getSettingsPath();
     await mkdir(dirname(settingsPath), { recursive: true });

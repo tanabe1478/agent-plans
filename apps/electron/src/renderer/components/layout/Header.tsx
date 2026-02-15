@@ -21,6 +21,8 @@ const routeTabs = [
 ] as const;
 
 interface HeaderProps {
+  commandShortcutLabel: string;
+  quickOpenShortcutLabel: string;
   onOpenCommandPalette: () => void;
   onOpenQuickOpen: () => void;
 }
@@ -52,7 +54,12 @@ function RouteTabs() {
   );
 }
 
-export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
+export function Header({
+  commandShortcutLabel,
+  quickOpenShortcutLabel,
+  onOpenCommandPalette,
+  onOpenQuickOpen,
+}: HeaderProps) {
   const { theme, setTheme } = useUiStore();
 
   return (
@@ -82,22 +89,22 @@ export function Header({ onOpenCommandPalette, onOpenQuickOpen }: HeaderProps) {
             type="button"
             onClick={onOpenQuickOpen}
             className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[11px] text-slate-300 hover:bg-slate-700/50 dark:hover:bg-slate-900"
-            title="Quick Open (Cmd+P)"
+            title={`Quick Open (${quickOpenShortcutLabel})`}
           >
             <Search className="h-3.5 w-3.5 text-slate-500" />
             Open
-            <span className="font-mono text-[10px] text-slate-500">Cmd+P</span>
+            <span className="font-mono text-[10px] text-slate-500">{quickOpenShortcutLabel}</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenCommandPalette}
             className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[11px] text-slate-300 hover:bg-slate-700/50 dark:hover:bg-slate-900"
-            title="Command Palette (Cmd+K)"
+            title={`Command Palette (${commandShortcutLabel})`}
           >
             <Command className="h-3.5 w-3.5 text-slate-500" />
             Command
-            <span className="font-mono text-[10px] text-slate-500">Cmd+K</span>
+            <span className="font-mono text-[10px] text-slate-500">{commandShortcutLabel}</span>
           </button>
 
           <Link

@@ -6,11 +6,18 @@ import { cn, formatDate } from '@/lib/utils';
 interface QuickOpenProps {
   open: boolean;
   plans: PlanMeta[];
+  shortcutLabel?: string;
   onClose: () => void;
   onOpenPlan: (filename: string) => void;
 }
 
-export function QuickOpen({ open, plans, onClose, onOpenPlan }: QuickOpenProps) {
+export function QuickOpen({
+  open,
+  plans,
+  shortcutLabel = 'Cmd+P',
+  onClose,
+  onOpenPlan,
+}: QuickOpenProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -61,8 +68,9 @@ export function QuickOpen({ open, plans, onClose, onOpenPlan }: QuickOpenProps) 
   }, [activeIndex, filteredPlans, onClose, onOpenPlan, open]);
 
   useEffect(() => {
+    if (!open) return;
     setActiveIndex(0);
-  }, [filteredPlans.length]);
+  }, [open, query]);
 
   if (!open) return null;
 
@@ -77,7 +85,7 @@ export function QuickOpen({ open, plans, onClose, onOpenPlan }: QuickOpenProps) 
       <div className="mx-auto mt-20 w-[min(840px,94vw)] border border-slate-700 bg-slate-900 shadow-2xl">
         <div className="border-b border-slate-700 px-3 py-2">
           <p className="text-[11px] uppercase tracking-[0.08em] text-slate-400">
-            Quick Open (Cmd+P)
+            Quick Open ({shortcutLabel})
           </p>
         </div>
         <div className="relative border-b border-slate-700">

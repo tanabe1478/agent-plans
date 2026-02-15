@@ -1,3 +1,4 @@
+import { DEFAULT_SHORTCUTS } from '@ccplans/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getSettings, updateSettings } from '../../services/settingsService.js';
 import { registerSettingsHandlers } from '../settings.js';
@@ -36,24 +37,30 @@ describe('Settings IPC Handlers', () => {
   });
 
   it('should return plain settings object from settings:get', async () => {
-    vi.mocked(getSettings).mockResolvedValueOnce({ frontmatterEnabled: true });
+    vi.mocked(getSettings).mockResolvedValueOnce({
+      frontmatterEnabled: true,
+      shortcuts: DEFAULT_SHORTCUTS,
+    });
     const handler = getRegisteredHandler('settings:get');
 
     expect(handler).toBeDefined();
     const result = await handler?.({} as never);
 
     expect(getSettings).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ frontmatterEnabled: true });
+    expect(result).toEqual({ frontmatterEnabled: true, shortcuts: DEFAULT_SHORTCUTS });
   });
 
   it('should return plain settings object from settings:update', async () => {
-    vi.mocked(updateSettings).mockResolvedValueOnce({ frontmatterEnabled: false });
+    vi.mocked(updateSettings).mockResolvedValueOnce({
+      frontmatterEnabled: false,
+      shortcuts: DEFAULT_SHORTCUTS,
+    });
     const handler = getRegisteredHandler('settings:update');
 
     expect(handler).toBeDefined();
     const result = await handler?.({} as never, { frontmatterEnabled: false });
 
     expect(updateSettings).toHaveBeenCalledWith({ frontmatterEnabled: false });
-    expect(result).toEqual({ frontmatterEnabled: false });
+    expect(result).toEqual({ frontmatterEnabled: false, shortcuts: DEFAULT_SHORTCUTS });
   });
 });

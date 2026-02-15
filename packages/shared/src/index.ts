@@ -72,8 +72,10 @@ export type {
 export { isPlanStatus, normalizePlanStatus, STATUS_TRANSITIONS } from './types/plan.js';
 export type {
   AppSettings,
+  AppShortcuts,
   GetSettingsResponse,
+  ShortcutAction,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
 } from './types/settings.js';
-export { DEFAULT_SETTINGS } from './types/settings.js';
+export { DEFAULT_SETTINGS, DEFAULT_SHORTCUTS } from './types/settings.js';

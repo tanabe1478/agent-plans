@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAppShortcuts } from '@/contexts/SettingsContext';
 import { usePlans } from '@/lib/hooks/usePlans';
+import { formatShortcutLabel, isMacOS, matchesShortcut } from '@/lib/shortcuts';
 import { getNextToggleTheme } from '@/lib/theme';
 import { useUiStore } from '@/stores/uiStore';
 import { Toasts } from '../ui/Toasts';
@@ -13,8 +15,12 @@ export function Layout() {
   const location = useLocation();
   const { data: plans = [] } = usePlans();
   const { theme, setTheme } = useUiStore();
+  const shortcuts = useAppShortcuts();
   const [commandOpen, setCommandOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const macOS = isMacOS();
+  const commandShortcutLabel = formatShortcutLabel(shortcuts.openCommandPalette, macOS);
+  const quickOpenShortcutLabel = formatShortcutLabel(shortcuts.openQuickOpen, macOS);
 
   const commands = useMemo<CommandItem[]>(
     () => [
@@ -62,13 +68,13 @@ export function Layout() {
         target?.tagName === 'INPUT' ||
         target?.tagName === 'TEXTAREA' ||
         target?.isContentEditable === true;
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !isTyping) {
+      if (!isTyping && matchesShortcut(event, shortcuts.openCommandPalette)) {
         event.preventDefault();
         setQuickOpen(false);
         setCommandOpen(true);
         return;
       }
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'p' && !isTyping) {
+      if (!isTyping && matchesShortcut(event, shortcuts.openQuickOpen)) {
         event.preventDefault();
         setCommandOpen(false);
         setQuickOpen(true);
@@ -76,11 +82,13 @@ export function Layout() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [shortcuts.openCommandPalette, shortcuts.openQuickOpen]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <Header
+        commandShortcutLabel={commandShortcutLabel}
+        quickOpenShortcutLabel={quickOpenShortcutLabel}
         onOpenCommandPalette={() => {
           setQuickOpen(false);
           setCommandOpen(true);
@@ -97,6 +105,7 @@ export function Layout() {
       <QuickOpen
         open={quickOpen}
         plans={plans}
+        shortcutLabel={quickOpenShortcutLabel}
         onClose={() => setQuickOpen(false)}
         onOpenPlan={(filename) => navigate(`/plan/${encodeURIComponent(filename)}`)}
       />
