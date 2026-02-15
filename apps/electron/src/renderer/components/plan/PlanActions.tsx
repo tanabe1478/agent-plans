@@ -13,6 +13,16 @@ interface PlanActionsProps {
   onDeleted?: () => void;
 }
 
+function toErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  try {
+    const serialized = JSON.stringify(err);
+    if (serialized) return serialized;
+  } catch {}
+  return String(err);
+}
+
 export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showOpenMenu, setShowOpenMenu] = useState(false);
@@ -44,6 +54,9 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   };
 
   const handleOpen = async (app: ExternalApp) => {
+    setShowOpenMenu(false);
+    if (openPlan.isPending) return;
+
     try {
       await openPlan.mutateAsync({ filename, app });
       if (app === 'copy-path') {
@@ -52,13 +65,13 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
         addToast(`Opened in ${appLabels[app]}`, 'success');
       }
     } catch (err) {
+      const message = toErrorMessage(err);
       if (app === 'copy-path') {
-        addToast(`Failed to copy path: ${err}`, 'error');
+        addToast(`Failed to copy path: ${message}`, 'error');
       } else {
-        addToast(`Failed to open in ${appLabels[app]}: ${err}`, 'error');
+        addToast(`Failed to open in ${appLabels[app]}: ${message}`, 'error');
       }
     }
-    setShowOpenMenu(false);
   };
 
   const handleDelete = async () => {

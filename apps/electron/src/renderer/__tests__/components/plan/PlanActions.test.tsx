@@ -4,6 +4,7 @@ import { PlanActions } from '@/components/plan/PlanActions';
 
 const mockOpenMutateAsync = vi.fn();
 const mockAddToast = vi.fn();
+let mockOpenIsPending = false;
 
 vi.mock('@/lib/hooks', () => ({
   useDeletePlan: () => ({
@@ -16,6 +17,7 @@ vi.mock('@/lib/hooks', () => ({
   }),
   useOpenPlan: () => ({
     mutateAsync: mockOpenMutateAsync,
+    isPending: mockOpenIsPending,
   }),
 }));
 
@@ -57,6 +59,7 @@ describe('PlanActions', () => {
     mockOpenMutateAsync.mockReset();
     mockOpenMutateAsync.mockResolvedValue(undefined);
     mockAddToast.mockReset();
+    mockOpenIsPending = false;
   });
 
   it('shows multi-option external app picker', () => {
@@ -84,5 +87,32 @@ describe('PlanActions', () => {
       });
     });
     expect(mockAddToast).toHaveBeenCalledWith('Path copied to clipboard', 'success');
+  });
+
+  it('skips duplicate open while mutation is pending', async () => {
+    mockOpenIsPending = true;
+    render(<PlanActions filename="example.md" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Open in/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy path' }));
+
+    await waitFor(() => {
+      expect(mockOpenMutateAsync).not.toHaveBeenCalled();
+    });
+  });
+
+  it('normalizes non-Error values in open failure toast', async () => {
+    mockOpenMutateAsync.mockRejectedValue({ reason: 'boom' });
+    render(<PlanActions filename="example.md" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Open in/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ghostty' }));
+
+    await waitFor(() => {
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.stringContaining('{"reason":"boom"}'),
+        'error'
+      );
+    });
   });
 });

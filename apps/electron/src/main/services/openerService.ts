@@ -17,7 +17,7 @@ export class OpenerService {
         await this.openWithVSCode(filePath);
         break;
       case 'zed':
-        await this.openWithNamedApp(filePath, 'Zed');
+        await this.openWithNamedApp(filePath, this.getZedAppCandidates());
         break;
       case 'ghostty':
         await this.openInGhostty(filePath);
@@ -119,16 +119,21 @@ export class OpenerService {
   /**
    * Open file with a named application
    */
-  private async openWithNamedApp(filePath: string, appName: string): Promise<void> {
+  private async openWithNamedApp(filePath: string, appNames: string[]): Promise<void> {
+    const [primaryAppName] = appNames;
+    if (!primaryAppName) {
+      throw new Error('No application name provided');
+    }
+
     if (platform() === 'darwin') {
       return new Promise((resolve, reject) => {
-        const childProcess = spawn('open', ['-a', appName, filePath], {
+        const childProcess = spawn('open', ['-a', primaryAppName, filePath], {
           detached: true,
           stdio: 'ignore',
         });
 
         childProcess.on('error', (err) => {
-          reject(new Error(`Failed to open ${appName}: ${err.message}`));
+          reject(new Error(`Failed to open ${primaryAppName}: ${err.message}`));
         });
 
         childProcess.unref();
@@ -137,7 +142,18 @@ export class OpenerService {
     }
 
     const open = await import('open');
-    await open.default(filePath, { app: { name: appName } });
+    await open.default(filePath, { app: { name: appNames } });
+  }
+
+  private getZedAppCandidates(): string[] {
+    switch (platform()) {
+      case 'darwin':
+        return ['Zed', 'zed'];
+      case 'win32':
+        return ['zed.exe', 'zed'];
+      default:
+        return ['zed', 'Zed'];
+    }
   }
 
   /**
