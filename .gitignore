@@ -44,6 +44,8 @@ playwright/.cache/
 .claude/*
 !.claude/skills/
 .mcp.json
+.codex/state/
+.codex/logs/
 
 # Python
 __pycache__/
