@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/plan-metadata-inject.py"
+            "command": "python3 ~/.agent-plans/hooks/plan-metadata-inject.py"
           }
         ]
       }

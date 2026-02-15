@@ -33,7 +33,7 @@ const FRONTMATTER_FEATURES = [
   { icon: Clock, label: 'Due date tracking with deadline alerts' },
 ];
 
-const DEFAULT_PLAN_DIRECTORY = '~/.claude/plans';
+const DEFAULT_PLAN_DIRECTORY = '~/.agent-plans/plans';
 
 interface DirectoryEntry {
   id: string;
@@ -374,7 +374,7 @@ export function SettingsPage() {
                   type="text"
                   value={entry.path}
                   onChange={(event) => handleDirectoryChange(entry.id, event.target.value)}
-                  placeholder={index === 0 ? '~/.claude/plans' : '/path/to/another/plans'}
+                  placeholder={index === 0 ? '~/.agent-plans/plans' : '/path/to/another/plans'}
                   className="h-10 w-full rounded border border-border bg-background pl-9 pr-3 text-sm outline-none transition focus:border-primary"
                 />
               </div>

@@ -18,7 +18,7 @@ agent-plans/
 ## Data Flow
 
 ```text
-~/.claude/plans/*.md
+~/.agent-plans/plans/*.md (legacy: ~/.claude/plans/*.md)
    ↑            ↓
 main/services (file I/O, parsing, status transitions)
    ↑            ↓

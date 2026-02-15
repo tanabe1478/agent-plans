@@ -12,7 +12,7 @@ This spec defines the current Electron-only product baseline.
 
 ## Source of Truth
 
-- Plan files in `PLANS_DIR` (default: `~/.claude/plans`)
+- Plan files in `PLANS_DIR` (default: `~/.agent-plans/plans`, legacy fallback: `~/.claude/plans`)
 - YAML frontmatter is enabled by default in Electron settings
 
 ## Behavioral Requirements
