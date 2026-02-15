@@ -2,7 +2,7 @@
  * React Query hooks for plans operations via IPC
  */
 
-import type { PlanStatus, SubtaskActionRequest } from '@ccplans/shared';
+import type { ExternalApp, PlanStatus, SubtaskActionRequest } from '@ccplans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ipcClient } from '../api/ipcClient';
 import { useSettings } from './useSettings';
@@ -90,7 +90,7 @@ export function useRenamePlan() {
 
 export function useOpenPlan() {
   return useMutation({
-    mutationFn: ({ filename, app }: { filename: string; app: 'vscode' | 'terminal' | 'default' }) =>
+    mutationFn: ({ filename, app }: { filename: string; app: ExternalApp }) =>
       ipcClient.plans.open(filename, app),
   });
 }

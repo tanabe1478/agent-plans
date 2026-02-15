@@ -271,7 +271,7 @@ export interface BackupInfo {
 /**
  * External app options for opening files
  */
-export type ExternalApp = 'vscode' | 'terminal' | 'default';
+export type ExternalApp = 'vscode' | 'zed' | 'ghostty' | 'terminal' | 'copy-path' | 'default';
 
 /**
  * A saved version of a plan file

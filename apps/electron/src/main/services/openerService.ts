@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { platform } from 'node:os';
 import type { ExternalApp } from '@ccplans/shared';
+import { clipboard } from 'electron';
 
 /**
  * Open a file with an external application
@@ -14,8 +15,17 @@ export class OpenerService {
       case 'vscode':
         await this.openWithVSCode(filePath);
         break;
+      case 'zed':
+        await this.openWithNamedApp(filePath, 'Zed');
+        break;
+      case 'ghostty':
+        await this.openWithNamedApp(filePath, 'Ghostty');
+        break;
       case 'terminal':
         await this.openInTerminal(filePath);
+        break;
+      case 'copy-path':
+        this.copyPath(filePath);
         break;
       case 'default':
         await this.openWithDefault(filePath);
@@ -101,6 +111,37 @@ export class OpenerService {
       process.unref();
       resolve();
     });
+  }
+
+  /**
+   * Open file with a named application
+   */
+  private async openWithNamedApp(filePath: string, appName: string): Promise<void> {
+    if (platform() === 'darwin') {
+      return new Promise((resolve, reject) => {
+        const process = spawn('open', ['-a', appName, filePath], {
+          detached: true,
+          stdio: 'ignore',
+        });
+
+        process.on('error', (err) => {
+          reject(new Error(`Failed to open ${appName}: ${err.message}`));
+        });
+
+        process.unref();
+        resolve();
+      });
+    }
+
+    const open = await import('open');
+    await open.default(filePath, { app: { name: appName } });
+  }
+
+  /**
+   * Copy file path to clipboard
+   */
+  private copyPath(filePath: string): void {
+    clipboard.writeText(filePath);
   }
 
   /**

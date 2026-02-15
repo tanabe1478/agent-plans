@@ -15,6 +15,7 @@ import type {
   CreatePlanRequest,
   DependencyGraphResponse,
   ExportFormat,
+  ExternalApp,
   GetSettingsResponse,
   ImportMarkdownRequest,
   ImportMarkdownResponse,
@@ -82,7 +83,7 @@ export const ipcClient = {
     rename: (filename: string, newFilename: string): Promise<PlanMeta> =>
       invoke<PlanMeta>('plans:rename', { filename, newFilename } as RenamePlanRequest),
 
-    open: (filename: string, app: 'vscode' | 'terminal' | 'default'): Promise<void> =>
+    open: (filename: string, app: ExternalApp): Promise<void> =>
       invoke<void>('plans:open', filename, app),
 
     updateStatus: (filename: string, status: PlanStatus): Promise<PlanMeta> =>

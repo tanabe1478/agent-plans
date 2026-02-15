@@ -1,6 +1,15 @@
 import type { ExternalApp } from '@ccplans/shared';
-import { Code, Edit3, ExternalLink, MoreVertical, Terminal, Trash2 } from 'lucide-react';
-import { useId, useState } from 'react';
+import {
+  ChevronDown,
+  Code,
+  Copy,
+  Edit3,
+  ExternalLink,
+  MoreVertical,
+  Terminal,
+  Trash2,
+} from 'lucide-react';
+import { type ReactNode, useId, useState } from 'react';
 import { useDeletePlan, useOpenPlan, useRenamePlan } from '../../lib/hooks';
 import { useUiStore } from '../../stores/uiStore';
 import { Button } from '../ui/Button';
@@ -15,6 +24,7 @@ interface PlanActionsProps {
 
 export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [showOpenMenu, setShowOpenMenu] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [newFilename, setNewFilename] = useState(filename);
@@ -25,14 +35,39 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   const openPlan = useOpenPlan();
   const { addToast } = useUiStore();
 
+  const openTargets: Array<{ app: ExternalApp; label: string; icon: ReactNode }> = [
+    { app: 'vscode', label: 'VSCode', icon: <Code className="h-4 w-4" /> },
+    { app: 'zed', label: 'Zed', icon: <ExternalLink className="h-4 w-4" /> },
+    { app: 'ghostty', label: 'Ghostty', icon: <Terminal className="h-4 w-4" /> },
+    { app: 'terminal', label: 'Terminal', icon: <Terminal className="h-4 w-4" /> },
+    { app: 'copy-path', label: 'Copy path', icon: <Copy className="h-4 w-4" /> },
+  ];
+
+  const appLabels: Record<ExternalApp, string> = {
+    vscode: 'VSCode',
+    zed: 'Zed',
+    ghostty: 'Ghostty',
+    terminal: 'Terminal',
+    'copy-path': 'Copy path',
+    default: 'Default app',
+  };
+
   const handleOpen = async (app: ExternalApp) => {
     try {
       await openPlan.mutateAsync({ filename, app });
-      addToast(`${app}で開きました`, 'success');
+      if (app === 'copy-path') {
+        addToast('Path copied to clipboard', 'success');
+      } else {
+        addToast(`Opened in ${appLabels[app]}`, 'success');
+      }
     } catch (err) {
-      addToast(`開けませんでした: ${err}`, 'error');
+      if (app === 'copy-path') {
+        addToast(`Failed to copy path: ${err}`, 'error');
+      } else {
+        addToast(`Failed to open in ${appLabels[app]}: ${err}`, 'error');
+      }
     }
-    setShowMenu(false);
+    setShowOpenMenu(false);
   };
 
   const handleDelete = async () => {
@@ -66,39 +101,52 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
   return (
     <div className="relative">
       <div className="flex items-center gap-2">
-        {/* Quick actions */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleOpen('vscode')}
-          title="Open in VSCode"
-        >
-          <Code className="h-4 w-4 mr-1" />
-          VSCode
-        </Button>
+        <div className="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setShowOpenMenu(!showOpenMenu);
+              setShowMenu(false);
+            }}
+            title="Open in external app"
+          >
+            <ExternalLink className="h-4 w-4 mr-1" />
+            Open in...
+            <ChevronDown className="h-3 w-3 ml-1" />
+          </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleOpen('terminal')}
-          title="Open in Terminal"
-        >
-          <Terminal className="h-4 w-4 mr-1" />
-          Terminal
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleOpen('default')}
-          title="Open in default app"
-        >
-          <ExternalLink className="h-4 w-4" />
-        </Button>
+          {showOpenMenu && (
+            <div className="absolute left-0 top-full mt-1 w-52 rounded-md border bg-card shadow-lg z-10">
+              <div className="py-1">
+                {openTargets.map((target) => (
+                  <button
+                    key={target.app}
+                    type="button"
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
+                    onClick={() => {
+                      void handleOpen(target.app);
+                    }}
+                  >
+                    {target.icon}
+                    {target.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* More actions menu */}
         <div className="relative">
-          <Button variant="ghost" size="icon" onClick={() => setShowMenu(!showMenu)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setShowMenu(!showMenu);
+              setShowOpenMenu(false);
+            }}
+          >
             <MoreVertical className="h-4 w-4" />
           </Button>
 
@@ -136,13 +184,14 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
         </div>
       </div>
 
-      {showMenu && (
+      {(showMenu || showOpenMenu) && (
         <button
           type="button"
-          aria-label="Close actions menu"
+          aria-label="Close action menus"
           className="fixed inset-0 z-0"
           onClick={() => {
             setShowMenu(false);
+            setShowOpenMenu(false);
           }}
         />
       )}
