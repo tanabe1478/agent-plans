@@ -105,18 +105,9 @@ Generated file:
 
 ## End-user first launch (unsigned)
 
-Gatekeeper may block unsigned apps.
+Gatekeeper handling steps are documented in `docs/operations.md`:
 
-Users should do one of the following:
-
-1. Finder: right-click app -> `Open`
-2. System Settings -> `Privacy & Security` -> `Open Anyway`
-
-Advanced fallback:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/agent-plans.app
-```
+- `docs/operations.md#unsigned-macos-builds`
 
 ## Pre-publish smoke check (recommended)
 

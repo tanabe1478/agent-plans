@@ -2,6 +2,8 @@
 
 This document contains operational workflows that are intentionally kept out of the top-level `README.md`.
 
+For release workflow itself, see `docs/release.md`.
+
 ## Unsigned macOS Builds
 
 This project currently distributes unsigned macOS builds by default.
