@@ -16,7 +16,7 @@ Automated macOS smoke test for distributed DMG artifacts.
 
 ```bash
 pnpm release:smoke
-pnpm release:smoke -- --dmg apps/electron/release/agent-plans-0.2.2-mac-arm64.dmg
+pnpm release:smoke -- --dmg apps/electron/release/agent-plans-0.2.3-mac-arm64.dmg
 pnpm release:smoke -- --url "https://github.com/<owner>/<repo>/releases/download/vX.Y.Z/<artifact>.dmg"
 ```
 

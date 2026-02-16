@@ -12,7 +12,7 @@ Use `unsigned` for engineer-focused OSS distribution.
 ## Versioning
 
 - Tag format: `vX.Y.Z`
-- Example: `v0.2.2`
+- Example: `v0.2.3`
 
 ## One-time setup
 
@@ -35,8 +35,8 @@ If you choose `signed`, configure these repository secrets:
 git fetch origin
 git checkout main
 git pull --rebase origin main
-git tag v0.2.2
-git push origin v0.2.2
+git tag v0.2.3
+git push origin v0.2.3
 ```
 
 For tag-triggered runs, release mode defaults to `unsigned`.
