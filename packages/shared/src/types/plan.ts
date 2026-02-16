@@ -139,6 +139,12 @@ export interface ArchivedPlan {
 export interface PlanMeta {
   /** Filename including extension (e.g., "splendid-watching-mountain.md") */
   filename: string;
+  /** Data source of this plan */
+  source?: 'markdown' | 'codex';
+  /** Whether the plan is immutable in the UI */
+  readOnly?: boolean;
+  /** Original source path for traceability */
+  sourcePath?: string;
   /** Title extracted from first H1 in markdown */
   title: string;
   /** File creation timestamp (ISO 8601) */

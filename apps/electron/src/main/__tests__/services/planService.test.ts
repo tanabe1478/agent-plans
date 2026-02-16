@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ArchiveService } from '../../services/archiveService.js';
+import { CodexSessionService } from '../../services/codexSessionService.js';
 import {
   PlanService,
   type PlanServiceConfig,
@@ -14,6 +15,7 @@ describe('PlanService', () => {
   let tempDir: string;
   let plansDir: string;
   let secondaryPlansDir: string;
+  let codexSessionsDir: string;
   let archiveDir: string;
   let planService: PlanService;
   let archiveService: ArchiveService;
@@ -23,9 +25,11 @@ describe('PlanService', () => {
     tempDir = join(tmpdir(), `agent-plans-test-${Date.now()}`);
     plansDir = join(tempDir, 'plans');
     secondaryPlansDir = join(plansDir, 'secondary');
+    codexSessionsDir = join(tempDir, 'codex-sessions');
     archiveDir = join(tempDir, 'archive');
     await mkdir(plansDir, { recursive: true });
     await mkdir(secondaryPlansDir, { recursive: true });
+    await mkdir(codexSessionsDir, { recursive: true });
     await mkdir(archiveDir, { recursive: true });
 
     // Create services with DI
@@ -46,6 +50,7 @@ describe('PlanService', () => {
     const deps: PlanServiceDependencies = {
       archiveService,
       settingsService,
+      codexSessionService: new CodexSessionService({ maxSessionFiles: 50 }),
     };
 
     planService = new PlanService(config, deps);
@@ -121,6 +126,46 @@ describe('PlanService', () => {
       const plan = await planService.getPlan('legacy-status.md');
       expect(plan.frontmatter?.status).toBe('todo');
     });
+
+    it('should load codex plan detail when integration is enabled', async () => {
+      await settingsService.updateSettings({
+        codexIntegrationEnabled: true,
+        codexSessionLogDirectories: [codexSessionsDir],
+      });
+
+      const sessionPath = join(codexSessionsDir, 'session-a.jsonl');
+      await writeFile(
+        sessionPath,
+        [
+          JSON.stringify({
+            timestamp: '2026-02-16T08:10:00.000Z',
+            type: 'response_item',
+            payload: {
+              type: 'message',
+              role: 'assistant',
+              content: [
+                {
+                  type: 'output_text',
+                  text: '<proposed_plan>\n# Codex ReadOnly Plan\n\n## Step\n- [ ] verify\n</proposed_plan>',
+                },
+              ],
+            },
+          }),
+        ].join('\n'),
+        'utf-8'
+      );
+
+      const plans = await planService.listPlans();
+      const codexPlan = plans.find((plan) => plan.source === 'codex');
+
+      expect(codexPlan).toBeDefined();
+      if (!codexPlan) {
+        throw new Error('Expected Codex plan');
+      }
+      const detail = await planService.getPlan(codexPlan.filename);
+      expect(detail.readOnly).toBe(true);
+      expect(detail.content).toContain('Codex ReadOnly Plan');
+    });
   });
 
   describe('createPlan', () => {
@@ -165,6 +210,46 @@ describe('PlanService', () => {
 
       const updated = await planService.getPlan('secondary-plan.md');
       expect(updated.title).toBe('Updated Secondary');
+    });
+
+    it('should reject updating codex read-only plans', async () => {
+      await settingsService.updateSettings({
+        codexIntegrationEnabled: true,
+        codexSessionLogDirectories: [codexSessionsDir],
+      });
+
+      const sessionPath = join(codexSessionsDir, 'session-readonly.jsonl');
+      await writeFile(
+        sessionPath,
+        [
+          JSON.stringify({
+            timestamp: '2026-02-16T10:10:00.000Z',
+            type: 'response_item',
+            payload: {
+              type: 'message',
+              role: 'assistant',
+              content: [
+                {
+                  type: 'output_text',
+                  text: '<proposed_plan>\n# ReadOnly Target\n\n- body\n</proposed_plan>',
+                },
+              ],
+            },
+          }),
+        ].join('\n'),
+        'utf-8'
+      );
+
+      const plans = await planService.listPlans();
+      const target = plans.find((plan) => plan.source === 'codex');
+      expect(target).toBeDefined();
+      if (!target) {
+        throw new Error('Expected read-only target plan');
+      }
+
+      await expect(planService.updatePlan(target.filename, '# New Body')).rejects.toThrow(
+        'read-only'
+      );
     });
   });
 

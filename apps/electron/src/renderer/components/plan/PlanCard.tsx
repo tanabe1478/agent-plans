@@ -56,7 +56,7 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
       )}
 
       {/* Status dropdown - outside Link to prevent navigation */}
-      {fmEnabled && (
+      {fmEnabled && !plan.readOnly && (
         <div className="absolute right-3 top-3 z-10">
           <StatusDropdown
             currentStatus={status}
@@ -77,6 +77,11 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
             <div className="flex-1 min-w-0 pr-16">
               <h3 className="font-medium truncate group-hover:text-primary">{plan.title}</h3>
               <p className="text-xs text-muted-foreground truncate mt-0.5">{plan.filename}</p>
+              {plan.source === 'codex' && (
+                <span className="mt-1 inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Codex
+                </span>
+              )}
             </div>
           </div>
 
@@ -165,6 +170,11 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
             <div className="flex-1 min-w-0 pr-16">
               <h3 className="font-medium truncate group-hover:text-primary">{plan.title}</h3>
               <p className="text-xs text-muted-foreground truncate mt-0.5">{plan.filename}</p>
+              {plan.source === 'codex' && (
+                <span className="mt-1 inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Codex
+                </span>
+              )}
             </div>
           </div>
 

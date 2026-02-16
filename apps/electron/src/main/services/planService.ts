@@ -11,6 +11,7 @@ import type {
 import { normalizePlanStatus } from '@agent-plans/shared';
 import { config } from '../config.js';
 import { ArchiveService } from './archiveService.js';
+import { type CodexSessionService, codexSessionService } from './codexSessionService.js';
 import { generatePlanName } from './nameGenerator.js';
 import { type SettingsService, settingsService } from './settingsService.js';
 
@@ -369,6 +370,7 @@ function extractRelatedProject(content: string): string | undefined {
 export interface PlanServiceDependencies {
   archiveService: ArchiveService;
   settingsService: SettingsService;
+  codexSessionService?: CodexSessionService;
   auditLogger?: AuditLogger;
   conflictChecker?: ConflictChecker;
   migrationHandler?: MigrationHandler;
@@ -380,6 +382,7 @@ export class PlanService {
   private previewLength: number;
   private archiveService: ArchiveService;
   private settingsService: SettingsService;
+  private codexSessionService?: CodexSessionService;
   private auditLogger?: AuditLogger;
   private conflictChecker?: ConflictChecker;
   private migrationHandler?: MigrationHandler;
@@ -390,9 +393,39 @@ export class PlanService {
     this.previewLength = config.previewLength;
     this.archiveService = deps.archiveService;
     this.settingsService = deps.settingsService;
+    this.codexSessionService = deps.codexSessionService;
     this.auditLogger = deps.auditLogger;
     this.conflictChecker = deps.conflictChecker;
     this.migrationHandler = deps.migrationHandler;
+  }
+
+  private async getCodexSessionDirectories(): Promise<string[]> {
+    const settings = await this.settingsService.getSettings();
+    if (!settings.codexIntegrationEnabled) {
+      return [];
+    }
+    return settings.codexSessionLogDirectories ?? [];
+  }
+
+  private async getCodexPlanMetas(): Promise<PlanMeta[]> {
+    if (!this.codexSessionService) return [];
+    const directories = await this.getCodexSessionDirectories();
+    if (directories.length === 0) return [];
+    return this.codexSessionService.listPlanMetas(directories);
+  }
+
+  private async getCodexPlanDetail(filename: string): Promise<PlanDetail | null> {
+    if (!this.codexSessionService) return null;
+    if (!this.codexSessionService.isVirtualFilename(filename)) return null;
+    const directories = await this.getCodexSessionDirectories();
+    if (directories.length === 0) return null;
+    return this.codexSessionService.getPlanByFilename(filename, directories);
+  }
+
+  private ensureMutablePlan(filename: string): void {
+    if (this.codexSessionService?.isVirtualFilename(filename)) {
+      throw new Error(`Plan is read-only: ${filename}`);
+    }
   }
 
   private async getConfiguredPlanDirectories(): Promise<string[]> {
@@ -439,6 +472,9 @@ export class PlanService {
 
     return {
       filename,
+      source: 'markdown',
+      readOnly: false,
+      sourcePath: filePath,
       title: extractTitle(body),
       createdAt: stats.birthtime.toISOString(),
       modifiedAt: stats.mtime.toISOString(),
@@ -481,9 +517,22 @@ export class PlanService {
       })
     );
 
-    return plans
-      .filter((p): p is PlanMeta => p !== null)
-      .sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
+    const markdownPlans = plans.filter((p): p is PlanMeta => p !== null);
+    const codexPlans = await this.getCodexPlanMetas();
+    const merged = new Map<string, PlanMeta>();
+
+    for (const plan of markdownPlans) {
+      merged.set(plan.filename, plan);
+    }
+    for (const plan of codexPlans) {
+      if (!merged.has(plan.filename)) {
+        merged.set(plan.filename, plan);
+      }
+    }
+
+    return Array.from(merged.values()).sort(
+      (a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime()
+    );
   }
 
   /**
@@ -499,6 +548,11 @@ export class PlanService {
    * Get full plan details including content
    */
   async getPlan(filename: string): Promise<PlanDetail> {
+    const codexPlan = await this.getCodexPlanDetail(filename);
+    if (codexPlan) {
+      return codexPlan;
+    }
+
     const filePath = await this.resolvePlanPath(filename);
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
 
@@ -520,6 +574,9 @@ export class PlanService {
 
     return {
       filename,
+      source: 'markdown',
+      readOnly: false,
+      sourcePath: filePath,
       title: extractTitle(body),
       createdAt: stats.birthtime.toISOString(),
       modifiedAt: stats.mtime.toISOString(),
@@ -556,6 +613,7 @@ export class PlanService {
    * Update an existing plan
    */
   async updatePlan(filename: string, content: string): Promise<PlanMeta> {
+    this.ensureMutablePlan(filename);
     const filePath = await this.resolvePlanPath(filename);
     const planDirectory = dirname(filePath);
 
@@ -584,6 +642,7 @@ export class PlanService {
    * Delete a plan (permanently by default)
    */
   async deletePlan(filename: string, archive = false): Promise<void> {
+    this.ensureMutablePlan(filename);
     const filePath = await this.resolvePlanPath(filename);
     const planDirectory = dirname(filePath);
 
@@ -617,6 +676,7 @@ export class PlanService {
    * Rename a plan
    */
   async renamePlan(filename: string, newFilename: string): Promise<PlanMeta> {
+    this.ensureMutablePlan(filename);
     this.validateFilename(filename);
     this.validateFilename(newFilename);
 
@@ -631,6 +691,7 @@ export class PlanService {
    * Update plan status
    */
   async updateStatus(filename: string, status: PlanStatus): Promise<PlanMeta> {
+    this.ensureMutablePlan(filename);
     const filePath = await this.resolvePlanPath(filename);
     const content = await readFile(filePath, 'utf-8');
 
@@ -664,6 +725,7 @@ export class PlanService {
     field: keyof PlanFrontmatter,
     value: unknown
   ): Promise<PlanMeta> {
+    this.ensureMutablePlan(filename);
     const filePath = await this.resolvePlanPath(filename);
     const content = await readFile(filePath, 'utf-8');
 
@@ -684,6 +746,7 @@ export class PlanService {
    * Get full file path for a plan
    */
   async getFilePath(filename: string): Promise<string> {
+    this.ensureMutablePlan(filename);
     return this.resolvePlanPath(filename);
   }
 
@@ -721,6 +784,7 @@ export const planService = new PlanService(
   {
     archiveService: defaultArchiveService,
     settingsService,
+    codexSessionService,
     auditLogger: undefined,
     conflictChecker: undefined,
     migrationHandler: undefined,

@@ -152,7 +152,7 @@ export function KanbanPage() {
     );
   }
 
-  const plans = data || [];
+  const plans = (data || []).filter((plan) => !plan.readOnly);
 
   const plansByStatus = KANBAN_COLUMNS.reduce(
     (acc, col) => {

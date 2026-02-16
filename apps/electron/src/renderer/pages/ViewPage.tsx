@@ -65,10 +65,15 @@ export function ViewPage() {
               <h1 className="truncate text-[18px] font-semibold tracking-tight text-slate-100">
                 {plan.title}
               </h1>
+              {plan.source === 'codex' && (
+                <span className="inline-flex rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
+                  Codex
+                </span>
+              )}
               <span className="font-mono text-[10px] text-slate-500">{plan.filename}</span>
             </div>
 
-            {fmEnabled && (
+            {fmEnabled && !plan.readOnly && (
               <StatusDropdown
                 currentStatus={status}
                 onStatusChange={(nextStatus: PlanStatus) =>
@@ -121,11 +126,13 @@ export function ViewPage() {
               <MessageSquareText className="h-3.5 w-3.5" />
               Review
             </Link>
-            <PlanActions
-              filename={plan.filename}
-              title={plan.title}
-              onDeleted={() => navigate('/')}
-            />
+            {!plan.readOnly && (
+              <PlanActions
+                filename={plan.filename}
+                title={plan.title}
+                onDeleted={() => navigate('/')}
+              />
+            )}
           </div>
         </div>
       </div>

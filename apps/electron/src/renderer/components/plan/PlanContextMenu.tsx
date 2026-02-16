@@ -4,6 +4,7 @@ interface PlanContextMenuProps {
   open: boolean;
   x: number;
   y: number;
+  canDelete?: boolean;
   onClose: () => void;
   onOpenDetail: () => void;
   onOpenReview: () => void;
@@ -15,6 +16,7 @@ export function PlanContextMenu({
   open,
   x,
   y,
+  canDelete = true,
   onClose,
   onOpenDetail,
   onOpenReview,
@@ -59,15 +61,19 @@ export function PlanContextMenu({
           <ClipboardCopy className="h-3.5 w-3.5 text-slate-400" />
           Copy Filename
         </button>
-        <div className="my-1 h-px bg-slate-700" />
-        <button
-          type="button"
-          onClick={onDelete}
-          className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-rose-300 hover:bg-slate-800"
-        >
-          <Trash2 className="h-3.5 w-3.5 text-rose-400" />
-          Delete Permanently
-        </button>
+        {canDelete && (
+          <>
+            <div className="my-1 h-px bg-slate-700" />
+            <button
+              type="button"
+              onClick={onDelete}
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-rose-300 hover:bg-slate-800"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+              Delete Permanently
+            </button>
+          </>
+        )}
       </div>
     </>
   );

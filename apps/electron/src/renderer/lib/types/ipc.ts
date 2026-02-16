@@ -4,11 +4,11 @@
  */
 
 import type {
-  AppShortcuts,
   PlanStatus as BasePlanStatus,
   UpdateViewRequest as BaseUpdateViewRequest,
   SavedView,
   SavedViewFilters,
+  AppSettings as SharedAppSettings,
   Subtask,
 } from '@agent-plans/shared';
 
@@ -78,11 +78,4 @@ export interface ViewsListResponse {
   views: SavedView[];
 }
 
-/**
- * Settings type for Electron
- */
-export interface AppSettings {
-  frontmatterEnabled: boolean;
-  planDirectories: string[];
-  shortcuts: AppShortcuts;
-}
+export type AppSettings = SharedAppSettings;
