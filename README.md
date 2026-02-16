@@ -38,22 +38,6 @@ Prebuilt binaries are distributed on GitHub Releases:
 
 macOS users can download the latest `.dmg` from the assets section.
 
-## Unsigned macOS Builds
-
-This project currently distributes unsigned macOS builds by default.
-On first launch, Gatekeeper may block the app.
-
-Use either method below:
-
-1. Finder: right-click the app and choose `Open`.
-2. System Settings: `Privacy & Security` -> allow blocked app -> `Open Anyway`.
-
-Advanced users can also clear quarantine metadata manually:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/agent-plans.app
-```
-
 ## Project Structure
 
 ```text
@@ -76,13 +60,6 @@ hooks/          # Hook scripts
 | `pnpm test:e2e` | Run Electron Playwright E2E |
 | `pnpm lint` | Type-check shared + Electron |
 | `pnpm check` | Biome check |
-| `pnpm release:smoke` | Smoke-test a DMG install + launch on macOS |
-| `pnpm codex:pr-loop:status -- --pr <PR>` | Fetch PR loop snapshot for this session |
-| `pnpm codex:pr-loop:watch -- --pr <PR>` | Wait until checks leave pending state |
-| `pnpm codex:pr-loop:submit -- --message "<msg>"` | Stage + commit + push via helper |
-| `pnpm codex:pr-loop:ack -- --pr <PR> --comment-id <ID>` | Mark comment as handled |
-| `pnpm codex:pr-loop:create-pr -- --title "<title>" --body "<body>"` | Create PR via helper |
-| `pnpm codex:pr-loop:merge -- --pr <PR>` | Merge PR via GitHub GraphQL |
 
 ## Environment Variables
 
@@ -100,39 +77,12 @@ This repository includes a plan-metadata hook script for agent workflows (Claude
 - `hooks/plan-metadata/inject.py`
 - See `hooks/plan-metadata/README.md` for setup.
 
-## Release
+## Operational Docs
 
-Release is tag-based and fully automated by GitHub Actions:
+Operational runbooks are maintained under `docs/`:
 
-1. Push a `vX.Y.Z` tag (example: `v0.2.1`)
-2. `Release` workflow builds macOS arm64 `.dmg` in `unsigned` (default) or `signed` mode
-3. Artifact is attached to a GitHub Release page
-
-Detailed runbook: `docs/release.md`
-
-Before publishing, run a local smoke check:
-
-```bash
-pnpm release:smoke -- --dmg apps/electron/release/<artifact>.dmg
-```
-
-## Session PR Loop
-
-This repository includes a session-scoped PR loop helper:
-
-- Entrypoint: `tools/session-pr-loop/index.mjs`
-- Companion docs: `tools/session-pr-loop/README.md`
-
-Use this when you want the current Codex conversation to continuously:
-1. watch PR checks
-2. fetch CodeRabbit comments
-3. apply fixes in this same session
-4. commit/push
-5. repeat until merge-ready
-
-State is stored in `.codex/state/session-pr-loop/` (ignored by git).
-
-For lower-friction automation, prefer `codex:pr-loop:submit` and `codex:pr-loop:create-pr` instead of raw `git` / `gh` commands.
+- Release and distribution: `docs/release.md`
+- PR loop automation and review workflow: `docs/operations.md`
 
 ## License
 

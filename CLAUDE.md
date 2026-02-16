@@ -45,6 +45,12 @@ hooks/            # Hook scripts
 - Review mode and clipboard prompt copy are critical paths
 - Keep docs and CI Electron-oriented
 
+## Runbooks
+
+- Release and distribution: `docs/release.md`
+- Operational workflows (PR loop, unsigned launch guidance): `docs/operations.md`
+- Session PR loop tool details: `tools/session-pr-loop/README.md`
+
 ## Conventions
 
 - Write code comments, commit messages, and PR descriptions in English.
