@@ -76,6 +76,12 @@ hooks/            # Hook scripts
 - Archive/restore/import/export/backup/notification UI is removed
 - Review prompt generation and clipboard copy are required features
 
+## Runbooks
+
+- Release and distribution: `docs/release.md`
+- Operational workflows (PR loop, unsigned launch guidance): `docs/operations.md`
+- Session PR loop tool details: `tools/session-pr-loop/README.md`
+
 ## Conventions
 
 - Write all code comments, commit messages, and PR descriptions in English.
