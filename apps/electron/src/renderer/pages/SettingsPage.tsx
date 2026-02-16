@@ -634,6 +634,11 @@ export function SettingsPage() {
                 </button>
               </div>
             ))}
+            {codexDirectoryEntries.length === 0 && (
+              <p className="rounded border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
+                No Codex log directory configured yet. Add at least one directory.
+              </p>
+            )}
           </div>
 
           <div className="mt-4 flex items-center justify-between border-t pt-4">
