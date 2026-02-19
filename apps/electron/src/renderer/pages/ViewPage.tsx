@@ -46,9 +46,13 @@ export function ViewPage() {
   }, [filename]);
 
   // Reset draft when plan content changes (external file edit or post-save refetch).
-  // This prevents stale draftContent from triggering false unsaved-changes detection.
+  // Also clear any pending debounce to prevent stale content from being saved.
   useEffect(() => {
     setDraftContent(null);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
   }, [plan?.content]);
 
   const saveContent = useCallback(
