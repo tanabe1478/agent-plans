@@ -1,6 +1,6 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface MilkdownEditorProps {
   initialContent: string;
@@ -14,75 +14,83 @@ export function MilkdownEditor({
   readOnly = false,
 }: MilkdownEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const crepeRef = useRef<Crepe | null>(null);
   const onChangeRef = useRef(onChange);
 
   onChangeRef.current = onChange;
 
-  const initEditor = useCallback(() => {
+  useEffect(() => {
     const root = containerRef.current;
     if (!root) return undefined;
 
-    const crepe = new Crepe({
-      root,
-      defaultValue: initialContent,
-      features: {
-        [CrepeFeature.Latex]: false,
-        [CrepeFeature.ImageBlock]: false,
-      },
-    });
+    let cancelled = false;
+    let destroyCrepe: (() => void) | undefined;
 
-    // Assign ref immediately so cleanup always works, even if
-    // the component unmounts before create() resolves.
-    crepeRef.current = crepe;
-    let disposed = false;
+    // Defer creation to the next animation frame so that React
+    // StrictMode's synchronous mount → unmount → remount cycle
+    // completes before we instantiate Milkdown.  This prevents
+    // two Crepe instances from competing over the same container.
+    const rafId = requestAnimationFrame(() => {
+      if (cancelled) return;
 
-    crepe.setReadonly(readOnly);
-
-    // Suppress onChange during initial create() and after disposal
-    // to avoid treating normalization or destroy events as user edits.
-    let initialized = false;
-
-    crepe.on((api) => {
-      api.markdownUpdated((_ctx, markdown, prevMarkdown) => {
-        if (initialized && !disposed && markdown !== prevMarkdown) {
-          onChangeRef.current(markdown);
-        }
+      const crepe = new Crepe({
+        root,
+        defaultValue: initialContent,
+        features: {
+          [CrepeFeature.Latex]: false,
+          [CrepeFeature.ImageBlock]: false,
+        },
       });
-    });
 
-    void crepe.create().then(() => {
-      if (disposed) {
-        crepe.destroy();
-        return;
-      }
-      // Delay enabling onChange to let ProseMirror's deferred
-      // view updates (normalization) settle before treating
-      // subsequent markdownUpdated events as user edits.
-      requestAnimationFrame(() => {
-        if (!disposed) {
-          initialized = true;
-        }
+      let createDone = false;
+      let initialized = false;
+
+      crepe.on((api) => {
+        api.markdownUpdated((_ctx, markdown, prevMarkdown) => {
+          if (initialized && !cancelled && markdown !== prevMarkdown) {
+            onChangeRef.current(markdown);
+          }
+        });
       });
+
+      crepe
+        .create()
+        .then(() => {
+          createDone = true;
+          if (cancelled) {
+            crepe.destroy();
+            return;
+          }
+          crepe.setReadonly(readOnly);
+          // Delay enabling onChange to let ProseMirror's deferred
+          // view updates (normalization) settle before treating
+          // subsequent markdownUpdated events as user edits.
+          requestAnimationFrame(() => {
+            if (!cancelled) {
+              initialized = true;
+            }
+          });
+        })
+        .catch((err: unknown) => {
+          createDone = true;
+          if (!cancelled) throw err;
+        });
+
+      // Expose a destroy handler for the cleanup function.
+      destroyCrepe = () => {
+        if (createDone) {
+          crepe.destroy();
+        }
+        // If create() is still running, the .then() handler will
+        // call destroy() once it resolves and sees cancelled=true.
+      };
     });
 
     return () => {
-      disposed = true;
-      crepe.destroy();
-      crepeRef.current = null;
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      destroyCrepe?.();
     };
   }, [initialContent, readOnly]);
-
-  useEffect(() => {
-    const cleanup = initEditor();
-    return () => cleanup?.();
-  }, [initEditor]);
-
-  useEffect(() => {
-    if (crepeRef.current) {
-      crepeRef.current.setReadonly(readOnly);
-    }
-  }, [readOnly]);
 
   return (
     <div ref={containerRef} className="milkdown-editor-container" data-testid="milkdown-editor" />
