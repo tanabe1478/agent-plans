@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { ColorPalette } from '@/components/ui/ColorPalette';
-import { ipcClient } from '@/lib/api/ipcClient';
 import { useSettings, useUpdateSettings } from '@/lib/hooks/useSettings';
 import { getColorClassName } from '@/lib/hooks/useStatusColumns';
 import {
@@ -141,8 +140,6 @@ export function SettingsPage() {
   const [newStatusLabel, setNewStatusLabel] = useState('');
   const [newStatusColor, setNewStatusColor] = useState('amber');
   const [themeModeDraft, setThemeModeDraft] = useState<ThemeMode>('system');
-  const [customStylesheetPathDraft, setCustomStylesheetPathDraft] = useState('');
-  const [appearanceNote, setAppearanceNote] = useState<string | null>(null);
   const macOS = isMacOS();
   const codexToggleAriaLabel = settings?.codexIntegrationEnabled
     ? 'Disable Codex integration'
@@ -173,9 +170,8 @@ export function SettingsPage() {
     savedCodexDirectories
   );
   const savedThemeMode = settings?.themeMode ?? 'system';
-  const savedStylesheetPath = settings?.customStylesheetPath?.trim() ?? '';
-  const hasAppearanceChanges =
-    themeModeDraft !== savedThemeMode || customStylesheetPathDraft.trim() !== savedStylesheetPath;
+  const hasLegacyCustomStylesheet = Boolean(settings?.customStylesheetPath?.trim());
+  const hasAppearanceChanges = themeModeDraft !== savedThemeMode || hasLegacyCustomStylesheet;
 
   const currentShortcuts: AppShortcuts = useMemo(
     () => mergeShortcuts(settings?.shortcuts),
@@ -242,10 +238,6 @@ export function SettingsPage() {
     const nextThemeMode = settings?.themeMode ?? 'system';
     setThemeModeDraft(nextThemeMode);
   }, [settings?.themeMode]);
-
-  useEffect(() => {
-    setCustomStylesheetPathDraft(settings?.customStylesheetPath ?? '');
-  }, [settings?.customStylesheetPath]);
 
   useEffect(() => {
     if (!editingShortcut) return undefined;
@@ -423,46 +415,13 @@ export function SettingsPage() {
     }
   };
 
-  const handlePickStylesheet = async () => {
-    try {
-      const selectedPath = await ipcClient.settings.selectStylesheet(customStylesheetPathDraft);
-      if (!selectedPath) return;
-      setCustomStylesheetPathDraft(selectedPath);
-      setAppearanceNote(null);
-    } catch {
-      addToast('Failed to open stylesheet picker', 'error');
-    }
-  };
-
   const handleSaveAppearance = async () => {
-    const draftPath = customStylesheetPathDraft.trim();
-    let validatedPath: string | null = null;
-    if (draftPath) {
-      try {
-        const result = await ipcClient.settings.loadStylesheet(draftPath);
-        if (!result.ok) {
-          const message = result.error ?? 'Invalid stylesheet.';
-          setAppearanceNote(message);
-          addToast(message, 'error');
-          return;
-        }
-        validatedPath = result.path;
-      } catch {
-        const message = 'Failed to validate stylesheet.';
-        setAppearanceNote(message);
-        addToast(message, 'error');
-        return;
-      }
-    }
-
     try {
       await updateSettings.mutateAsync({
         themeMode: themeModeDraft,
-        customStylesheetPath: validatedPath,
+        customStylesheetPath: null,
       });
       setTheme(themeModeDraft);
-      setCustomStylesheetPathDraft(validatedPath ?? '');
-      setAppearanceNote(validatedPath ? 'Stylesheet validated and saved.' : null);
       addToast('Appearance settings updated', 'success');
     } catch {
       addToast('Failed to update appearance settings', 'error');
@@ -552,13 +511,11 @@ export function SettingsPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold">Appearance</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Choose a theme mode and optionally load a per-user custom stylesheet.
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Choose a theme mode.</p>
           </div>
         </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4">
           <div>
             <label htmlFor="theme-mode" className="text-xs text-muted-foreground">
               Theme Mode
@@ -568,7 +525,6 @@ export function SettingsPage() {
               value={themeModeDraft}
               onChange={(event) => {
                 setThemeModeDraft(event.target.value as ThemeMode);
-                setAppearanceNote(null);
               }}
               className="mt-1 h-10 w-full rounded border border-border bg-background px-3 text-sm outline-none transition focus:border-primary"
             >
@@ -578,49 +534,10 @@ export function SettingsPage() {
               <option value="monokai">Monokai</option>
             </select>
           </div>
-
-          <div>
-            <label htmlFor="custom-stylesheet" className="text-xs text-muted-foreground">
-              Custom Stylesheet (.css)
-            </label>
-            <div className="mt-1 flex items-center gap-2">
-              <input
-                id="custom-stylesheet"
-                type="text"
-                value={customStylesheetPathDraft}
-                onChange={(event) => {
-                  setCustomStylesheetPathDraft(event.target.value);
-                  setAppearanceNote(null);
-                }}
-                placeholder="/absolute/path/to/user-theme.css"
-                className="h-10 flex-1 rounded border border-border bg-background px-3 text-sm outline-none transition focus:border-primary"
-              />
-              <button
-                type="button"
-                onClick={() => void handlePickStylesheet()}
-                className="inline-flex h-10 items-center rounded border border-border px-3 text-xs hover:bg-muted"
-              >
-                Browse
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomStylesheetPathDraft('');
-                  setAppearanceNote(null);
-                }}
-                className="inline-flex h-10 items-center rounded border border-border px-3 text-xs hover:bg-muted"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t pt-4">
-          <p className="text-xs text-muted-foreground">
-            Use the same token format as built-in themes (`:root` / `.dark` / `.theme-monokai` with
-            known `--tokens` only). Invalid stylesheets are rejected.
-          </p>
+          <p className="text-xs text-muted-foreground">Theme changes are applied app-wide.</p>
           <button
             type="button"
             onClick={() => void handleSaveAppearance()}
@@ -631,8 +548,6 @@ export function SettingsPage() {
             Save Appearance
           </button>
         </div>
-
-        {appearanceNote && <p className="mt-3 text-xs text-muted-foreground">{appearanceNote}</p>}
       </div>
 
       <div className="rounded-lg border bg-card p-6 mb-4">

@@ -17,8 +17,6 @@ It does **not** require a separate web server or API process.
 - Bulk selection + bulk status update + permanent delete
 - Open plan files in external apps (VSCode / Terminal / default app)
 - Editor-style theme mode switching (`light` / `dark` / `monokai` / `system`)
-- Optional per-user custom stylesheet loading with validation + safe fallback
-  - User stylesheet must follow the same token contract as built-in themes (`:root` / `.dark` / `.theme-monokai` + known `--tokens`)
 
 ## Prerequisites
 

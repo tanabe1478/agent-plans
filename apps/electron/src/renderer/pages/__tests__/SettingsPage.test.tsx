@@ -89,7 +89,6 @@ describe('SettingsPage', () => {
     const { container } = render(<SettingsPage />, { wrapper: createWrapper() });
     expect(screen.getAllByText('Appearance').length).toBeGreaterThan(0);
     expect(container.querySelector('#theme-mode')).not.toBeNull();
-    expect(container.querySelector('#custom-stylesheet')).not.toBeNull();
   });
 
   it('should keep a newly added empty plan directory row', async () => {
@@ -152,20 +151,13 @@ describe('SettingsPage', () => {
     const { container } = render(<SettingsPage />, { wrapper: createWrapper() });
     const view = within(container);
     const themeModeSelect = container.querySelector('#theme-mode') as HTMLSelectElement | null;
-    const stylesheetInput = container.querySelector(
-      '#custom-stylesheet'
-    ) as HTMLInputElement | null;
     const saveButton = view.getByRole('button', { name: 'Save Appearance' });
 
     if (!themeModeSelect) {
       throw new Error('Theme mode select was not found');
     }
-    if (!stylesheetInput) {
-      throw new Error('Custom stylesheet input was not found');
-    }
 
     fireEvent.change(themeModeSelect, { target: { value: 'dark' } });
-    fireEvent.change(stylesheetInput, { target: { value: '' } });
     fireEvent.click(saveButton);
 
     await waitFor(() => {
