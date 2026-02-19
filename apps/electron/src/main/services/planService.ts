@@ -536,7 +536,7 @@ export class PlanService {
   /**
    * Update plan status via DB
    */
-  async updateStatus(filename: string, status: PlanStatus): Promise<PlanMeta> {
+  async updateStatus(filename: string, status: PlanStatus | string): Promise<PlanMeta> {
     if (!this.metadataService) {
       throw new Error('MetadataService not available');
     }

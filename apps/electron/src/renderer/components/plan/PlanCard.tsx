@@ -1,4 +1,4 @@
-import { normalizePlanStatus, type PlanMeta, type PlanStatus } from '@agent-plans/shared';
+import { getRawPlanStatus, type PlanMeta } from '@agent-plans/shared';
 import { Calendar, Clock, FileText, HardDrive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUpdateStatus } from '../../lib/hooks';
@@ -24,12 +24,12 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
   const selected = isSelected(plan.filename);
   const updateStatus = useUpdateStatus();
   const meta = plan.metadata ?? plan.frontmatter;
-  const status = normalizePlanStatus(meta?.status);
+  const status = getRawPlanStatus(meta?.status);
   const subtasks = meta?.subtasks ?? [];
   const dueDate = meta?.dueDate;
   const deadlineColor = getDeadlineColor(dueDate);
 
-  const handleStatusChange = (status: PlanStatus) => {
+  const handleStatusChange = (status: string) => {
     updateStatus.mutate({ filename: plan.filename, status });
   };
 

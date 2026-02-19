@@ -17,13 +17,6 @@ vi.mock('../../services/planService.js', () => ({
   },
 }));
 
-vi.mock('../../services/statusTransitionService.js', () => ({
-  statusTransitionService: {
-    isValidTransition: vi.fn(() => true),
-    getAvailableTransitions: vi.fn(() => ['in_progress', 'review', 'completed']),
-  },
-}));
-
 vi.mock('../../services/subtaskService.js', () => ({
   subtaskService: {
     addSubtask: vi.fn(),

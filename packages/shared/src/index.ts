@@ -71,13 +71,19 @@ export type {
   Subtask,
   ViewMode,
 } from './types/plan.js';
-export { isPlanStatus, normalizePlanStatus, STATUS_TRANSITIONS } from './types/plan.js';
+export { getRawPlanStatus, isPlanStatus, normalizePlanStatus } from './types/plan.js';
 export type {
   AppSettings,
   AppShortcuts,
   FileChangeEvent,
   GetSettingsResponse,
   ShortcutAction,
+  StatusColumnDef,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
+} from './types/settings.js';
+export {
+  AVAILABLE_STATUS_COLORS,
+  DEFAULT_STATUS_COLUMNS,
+  generateStatusId,
 } from './types/settings.js';

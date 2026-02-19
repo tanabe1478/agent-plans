@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 export interface PlanMetadataRow {
   filename: string;
   source: 'markdown' | 'codex';
-  status: PlanStatus;
+  status: PlanStatus | string;
   priority: PlanPriority | null;
   dueDate: string | null;
   estimate: string | null;
@@ -19,7 +19,7 @@ export interface PlanMetadataRow {
 
 export interface UpsertMetadataInput {
   source: 'markdown' | 'codex';
-  status: PlanStatus;
+  status: PlanStatus | string;
   priority?: PlanPriority | null;
   dueDate?: string | null;
   estimate?: string | null;

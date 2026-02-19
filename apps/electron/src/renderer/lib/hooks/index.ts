@@ -7,3 +7,4 @@ export * from './useFileChangeListener';
 export * from './usePlans';
 export * from './useSearch';
 export * from './useSettings';
+export * from './useStatusColumns';

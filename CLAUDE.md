@@ -106,12 +106,6 @@ hooks/            # Hook scripts
 - Operational workflows (PR loop, unsigned launch guidance): `docs/operations.md`
 - Session PR loop tool details: `tools/session-pr-loop/README.md`
 
-## Runbooks
-
-- Release and distribution: `docs/release.md`
-- Operational workflows (PR loop, unsigned launch guidance): `docs/operations.md`
-- Session PR loop tool details: `tools/session-pr-loop/README.md`
-
 ## Conventions
 
 - Write code comments, commit messages, and PR descriptions in English.

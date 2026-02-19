@@ -1,4 +1,4 @@
-import { normalizePlanStatus, type PlanStatus } from '@agent-plans/shared';
+import { getRawPlanStatus } from '@agent-plans/shared';
 import {
   AlertCircle,
   ArrowLeft,
@@ -24,7 +24,7 @@ export function ViewPage() {
   const { data: plan, isLoading, error } = usePlan(filename || '');
   const updateStatus = useUpdateStatus();
   const meta = plan?.metadata ?? plan?.frontmatter;
-  const status = normalizePlanStatus(meta?.status);
+  const status = getRawPlanStatus(meta?.status);
 
   if (isLoading) {
     return (
@@ -74,7 +74,7 @@ export function ViewPage() {
             {!plan.readOnly && (
               <StatusDropdown
                 currentStatus={status}
-                onStatusChange={(nextStatus: PlanStatus) =>
+                onStatusChange={(nextStatus: string) =>
                   updateStatus.mutate({ filename: plan.filename, status: nextStatus })
                 }
                 disabled={updateStatus.isPending}

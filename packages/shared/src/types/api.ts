@@ -69,7 +69,7 @@ export interface OpenPlanRequest {
  * PATCH /api/plans/:filename/status request body
  */
 export interface UpdateStatusRequest {
-  status: PlanStatus;
+  status: PlanStatus | string;
 }
 
 /**
@@ -77,7 +77,7 @@ export interface UpdateStatusRequest {
  */
 export interface BulkStatusRequest {
   filenames: string[];
-  status: PlanStatus;
+  status: PlanStatus | string;
 }
 
 /**
