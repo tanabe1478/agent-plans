@@ -623,7 +623,8 @@ export function SettingsPage() {
 
         <div className="mt-4 flex items-center justify-between border-t pt-4">
           <p className="text-xs text-muted-foreground">
-            Invalid stylesheet paths are rejected and safely ignored at runtime.
+            Use the same token format as built-in themes (`:root` / `.dark` with known `--tokens`
+            only). Invalid stylesheets are rejected.
           </p>
           <button
             type="button"
