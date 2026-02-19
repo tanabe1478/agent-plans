@@ -27,7 +27,10 @@ vi.mock('@/contexts/SettingsContext', () => ({
 vi.mock('@/stores/uiStore', () => ({
   useUiStore: () => ({
     addToast: vi.fn(),
+    itemsPerPage: 20,
+    setItemsPerPage: vi.fn(),
   }),
+  ITEMS_PER_PAGE_OPTIONS: [10, 20, 50, 100],
 }));
 
 vi.mock('@/components/ui/Button', () => ({

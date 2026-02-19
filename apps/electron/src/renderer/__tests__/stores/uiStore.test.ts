@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useUiStore } from '../../stores/uiStore';
+import { ITEMS_PER_PAGE_OPTIONS, useUiStore } from '../../stores/uiStore';
 
 // Mock localStorage
 const localStorageMock = {
@@ -26,6 +26,7 @@ describe('uiStore', () => {
       theme: 'system',
       modalOpen: null,
       toasts: [],
+      itemsPerPage: 20,
     });
   });
 
@@ -115,6 +116,33 @@ describe('uiStore', () => {
       });
       const { toasts } = useUiStore.getState();
       expect(toasts[0].type).toBe('info');
+    });
+  });
+
+  describe('itemsPerPage', () => {
+    it('should export ITEMS_PER_PAGE_OPTIONS', () => {
+      expect(ITEMS_PER_PAGE_OPTIONS).toEqual([10, 20, 50, 100]);
+    });
+
+    it('should have default itemsPerPage as 20', () => {
+      const { itemsPerPage } = useUiStore.getState();
+      expect(itemsPerPage).toBe(20);
+    });
+
+    it('should update itemsPerPage', () => {
+      const { setItemsPerPage } = useUiStore.getState();
+      act(() => {
+        setItemsPerPage(50);
+      });
+      expect(useUiStore.getState().itemsPerPage).toBe(50);
+    });
+
+    it('should save itemsPerPage to localStorage', () => {
+      const { setItemsPerPage } = useUiStore.getState();
+      act(() => {
+        setItemsPerPage(100);
+      });
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('itemsPerPage', '100');
     });
   });
 });
