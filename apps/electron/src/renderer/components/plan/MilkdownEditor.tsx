@@ -19,9 +19,9 @@ export function MilkdownEditor({
 
   onChangeRef.current = onChange;
 
-  const initEditor = useCallback(async () => {
+  const initEditor = useCallback(() => {
     const root = containerRef.current;
-    if (!root) return;
+    if (!root) return undefined;
 
     const crepe = new Crepe({
       root,
@@ -32,32 +32,43 @@ export function MilkdownEditor({
       },
     });
 
+    // Assign ref immediately so cleanup always works, even if
+    // the component unmounts before create() resolves.
+    crepeRef.current = crepe;
+    let disposed = false;
+
     crepe.setReadonly(readOnly);
 
-    // Suppress onChange during initial create() to avoid treating
-    // Milkdown's markdown normalization as a user edit.
+    // Suppress onChange during initial create() and after disposal
+    // to avoid treating normalization or destroy events as user edits.
     let initialized = false;
 
     crepe.on((api) => {
       api.markdownUpdated((_ctx, markdown, prevMarkdown) => {
-        if (initialized && markdown !== prevMarkdown) {
+        if (initialized && !disposed && markdown !== prevMarkdown) {
           onChangeRef.current(markdown);
         }
       });
     });
 
-    await crepe.create();
-    initialized = true;
-    crepeRef.current = crepe;
+    void crepe.create().then(() => {
+      if (disposed) {
+        crepe.destroy();
+        return;
+      }
+      initialized = true;
+    });
+
+    return () => {
+      disposed = true;
+      crepe.destroy();
+      crepeRef.current = null;
+    };
   }, [initialContent, readOnly]);
 
   useEffect(() => {
-    initEditor();
-
-    return () => {
-      crepeRef.current?.destroy();
-      crepeRef.current = null;
-    };
+    const cleanup = initEditor();
+    return () => cleanup?.();
   }, [initEditor]);
 
   useEffect(() => {

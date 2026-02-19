@@ -39,15 +39,17 @@ export function ViewPage() {
   const hasUnsavedChanges = isEditable && draftContent !== null && draftContent !== plan?.content;
 
   const saveContent = useCallback(
-    async (content: string) => {
-      if (!filename || !plan) return;
+    async (content: string): Promise<boolean> => {
+      if (!filename || !plan) return false;
       setSaveStatus('saving');
       try {
         await updatePlan.mutateAsync({ filename: plan.filename, content });
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus((prev) => (prev === 'saved' ? 'idle' : prev)), 2000);
+        return true;
       } catch {
         setSaveStatus('idle');
+        return false;
       }
     },
     [filename, plan, updatePlan]
@@ -91,6 +93,7 @@ export function ViewPage() {
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
+      e.returnValue = '';
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -117,7 +120,8 @@ export function ViewPage() {
 
   const handleSaveAndNavigate = async () => {
     if (draftContent !== null && plan) {
-      await saveContent(draftContent);
+      const didSave = await saveContent(draftContent);
+      if (!didSave) return;
     }
     setShowUnsavedDialog(false);
     setDraftContent(null);
