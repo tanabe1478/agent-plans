@@ -27,12 +27,16 @@ export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
 
     // Filter by status
     if (statusFilter !== 'all') {
-      result = result.filter((plan) => getRawPlanStatus(plan.frontmatter?.status) === statusFilter);
+      result = result.filter(
+        (plan) => getRawPlanStatus((plan.metadata ?? plan.frontmatter)?.status) === statusFilter
+      );
     }
 
     // Filter by project
     if (projectFilter !== 'all') {
-      result = result.filter((plan) => plan.frontmatter?.projectPath === projectFilter);
+      result = result.filter(
+        (plan) => (plan.metadata ?? plan.frontmatter)?.projectPath === projectFilter
+      );
     }
 
     // Sort
