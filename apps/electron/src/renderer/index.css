@@ -531,6 +531,12 @@
   padding: 2px 0;
 }
 
+/* CodeMirror active-line gutter: override default dark/light theme
+   colors that don't match our app theme system. */
+.milkdown-editor-container .milkdown .cm-activeLineGutter {
+  background-color: hsl(var(--accent));
+}
+
 /* Prevent ProseMirror scroll jump on focus/selection change */
 .milkdown-editor-container .ProseMirror .ProseMirror-gapcursor {
   display: none;
