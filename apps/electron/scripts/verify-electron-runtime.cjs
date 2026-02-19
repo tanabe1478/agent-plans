@@ -1,3 +1,4 @@
+/* biome-ignore-file lint/suspicious/noConsole: CLI script uses console for user-facing output */
 /**
  * Verify the Electron app starts correctly and the renderer loads.
  *

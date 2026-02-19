@@ -1,3 +1,4 @@
+/* biome-ignore-file lint/suspicious/noConsole: CLI script uses console for user-facing output */
 /**
  * Verify native modules load correctly inside the Electron runtime.
  *

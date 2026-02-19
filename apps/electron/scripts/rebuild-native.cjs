@@ -1,3 +1,4 @@
+/* biome-ignore-file lint/suspicious/noConsole: CLI script uses console for user-facing output */
 /**
  * Rebuild native Node.js modules for Electron.
  *
@@ -16,13 +17,7 @@ const path = require('path');
 const NATIVE_MODULES = ['better-sqlite3'];
 
 function getElectronVersion() {
-  const electronPkg = path.join(
-    __dirname,
-    '..',
-    'node_modules',
-    'electron',
-    'package.json',
-  );
+  const electronPkg = path.join(__dirname, '..', 'node_modules', 'electron', 'package.json');
   const resolved = fs.realpathSync(electronPkg);
   return JSON.parse(fs.readFileSync(resolved, 'utf-8')).version;
 }
@@ -46,7 +41,7 @@ for (const mod of NATIVE_MODULES) {
   console.log(`[rebuild-native] rebuilding ${mod} at ${realDir}`);
   execSync(
     `npx node-gyp rebuild --runtime=electron --target=${electronVersion} --dist-url=https://electronjs.org/headers`,
-    { cwd: realDir, stdio: 'inherit' },
+    { cwd: realDir, stdio: 'inherit' }
   );
   console.log(`[rebuild-native] ${mod}: done`);
 }
