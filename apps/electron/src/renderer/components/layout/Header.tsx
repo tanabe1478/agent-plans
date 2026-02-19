@@ -1,4 +1,4 @@
-import { Command, FileText, Search, Settings2 } from 'lucide-react';
+import { Command, Search, Settings2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
@@ -60,18 +60,12 @@ export function Header({
       <div className="electron-drag-region h-7 border-b border-slate-900">
         <div className={cn('mx-auto h-full max-w-[1400px] px-4', macLeftInsetClass)} />
       </div>
-      <div
-        className={cn(
-          'mx-auto flex h-12 max-w-[1400px] items-center gap-3 px-4 electron-no-drag',
-          macLeftInsetClass
-        )}
-      >
+      <div className="mx-auto flex h-12 max-w-[1400px] items-center gap-3 px-4 electron-no-drag">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 border border-slate-700 px-2.5 py-1.5 text-[12px] font-medium text-slate-100 hover:bg-slate-700/50 dark:hover:bg-slate-900"
+          className="text-[14px] font-bold tracking-tight text-slate-100 hover:text-white"
         >
-          <FileText className="h-3.5 w-3.5 text-slate-400" />
-          Agent Plans
+          AgentPlans
         </Link>
 
         <RouteTabs />
