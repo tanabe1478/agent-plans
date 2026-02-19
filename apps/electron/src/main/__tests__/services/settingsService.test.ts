@@ -61,6 +61,8 @@ describe('settingsService', () => {
 
       expect(settings.codexIntegrationEnabled).toBe(false);
       expect(settings.codexSessionLogDirectories?.[0]).toContain('/.codex/sessions');
+      expect(settings.themeMode).toBe('system');
+      expect(settings.customStylesheetPath).toBeNull();
     });
 
     it('should normalize codex session directories', async () => {
@@ -71,6 +73,18 @@ describe('settingsService', () => {
 
       const settings = await service.getSettings();
       expect(settings.codexSessionLogDirectories).toEqual(['/tmp/codex-logs']);
+    });
+
+    it('should normalize appearance settings', async () => {
+      const service = createService();
+      await service.updateSettings({
+        themeMode: 'dark',
+        customStylesheetPath: '~/styles/custom.css',
+      });
+
+      const settings = await service.getSettings();
+      expect(settings.themeMode).toBe('dark');
+      expect(settings.customStylesheetPath).toContain('/styles/custom.css');
     });
   });
 });

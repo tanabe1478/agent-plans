@@ -79,6 +79,8 @@ export type {
   GetSettingsResponse,
   ShortcutAction,
   StatusColumnDef,
+  StylesheetLoadResult,
+  ThemeMode,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
 } from './types/settings.js';

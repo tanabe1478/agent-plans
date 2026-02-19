@@ -4,6 +4,7 @@ import {
   generateStatusId,
   type ShortcutAction,
   type StatusColumnDef,
+  type ThemeMode,
 } from '@agent-plans/shared';
 import {
   AlertCircle,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { ColorPalette } from '@/components/ui/ColorPalette';
+import { ipcClient } from '@/lib/api/ipcClient';
 import { useSettings, useUpdateSettings } from '@/lib/hooks/useSettings';
 import { getColorClassName } from '@/lib/hooks/useStatusColumns';
 import {
@@ -130,7 +132,10 @@ function areShortcutsEqual(left: AppShortcuts, right: AppShortcuts): boolean {
 export function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
   const updateSettings = useUpdateSettings();
-  const { addToast } = useUiStore();
+  const { addToast, setTheme } = useUiStore((state) => ({
+    addToast: state.addToast,
+    setTheme: state.setTheme,
+  }));
   const fileWatcherHeadingId = useId();
   const [directoryEntries, setDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [pickingDirectoryId, setPickingDirectoryId] = useState<string | null>(null);
@@ -141,6 +146,9 @@ export function SettingsPage() {
   const [statusColumns, setStatusColumns] = useState<StatusColumnDef[]>(DEFAULT_STATUS_COLUMNS);
   const [newStatusLabel, setNewStatusLabel] = useState('');
   const [newStatusColor, setNewStatusColor] = useState('amber');
+  const [themeModeDraft, setThemeModeDraft] = useState<ThemeMode>('system');
+  const [customStylesheetPathDraft, setCustomStylesheetPathDraft] = useState('');
+  const [appearanceNote, setAppearanceNote] = useState<string | null>(null);
   const macOS = isMacOS();
   const codexToggleAriaLabel = settings?.codexIntegrationEnabled
     ? 'Disable Codex integration'
@@ -170,6 +178,10 @@ export function SettingsPage() {
     draftCodexDirectories,
     savedCodexDirectories
   );
+  const savedThemeMode = settings?.themeMode ?? 'system';
+  const savedStylesheetPath = settings?.customStylesheetPath?.trim() ?? '';
+  const hasAppearanceChanges =
+    themeModeDraft !== savedThemeMode || customStylesheetPathDraft.trim() !== savedStylesheetPath;
 
   const currentShortcuts: AppShortcuts = useMemo(
     () => mergeShortcuts(settings?.shortcuts),
@@ -231,6 +243,15 @@ export function SettingsPage() {
       setStatusColumns(DEFAULT_STATUS_COLUMNS);
     }
   }, [settings?.statusColumns]);
+
+  useEffect(() => {
+    const nextThemeMode = settings?.themeMode ?? 'system';
+    setThemeModeDraft(nextThemeMode);
+  }, [settings?.themeMode]);
+
+  useEffect(() => {
+    setCustomStylesheetPathDraft(settings?.customStylesheetPath ?? '');
+  }, [settings?.customStylesheetPath]);
 
   useEffect(() => {
     if (!editingShortcut) return undefined;
@@ -408,6 +429,52 @@ export function SettingsPage() {
     }
   };
 
+  const handlePickStylesheet = async () => {
+    try {
+      const selectedPath = await ipcClient.settings.selectStylesheet(customStylesheetPathDraft);
+      if (!selectedPath) return;
+      setCustomStylesheetPathDraft(selectedPath);
+      setAppearanceNote(null);
+    } catch {
+      addToast('Failed to open stylesheet picker', 'error');
+    }
+  };
+
+  const handleSaveAppearance = async () => {
+    const draftPath = customStylesheetPathDraft.trim();
+    let validatedPath: string | null = null;
+    if (draftPath) {
+      try {
+        const result = await ipcClient.settings.loadStylesheet(draftPath);
+        if (!result.ok) {
+          const message = result.error ?? 'Invalid stylesheet.';
+          setAppearanceNote(message);
+          addToast(message, 'error');
+          return;
+        }
+        validatedPath = result.path;
+      } catch {
+        const message = 'Failed to validate stylesheet.';
+        setAppearanceNote(message);
+        addToast(message, 'error');
+        return;
+      }
+    }
+
+    try {
+      await updateSettings.mutateAsync({
+        themeMode: themeModeDraft,
+        customStylesheetPath: validatedPath,
+      });
+      setTheme(themeModeDraft);
+      setCustomStylesheetPathDraft(validatedPath ?? '');
+      setAppearanceNote(validatedPath ? 'Stylesheet validated and saved.' : null);
+      addToast('Appearance settings updated', 'success');
+    } catch {
+      addToast('Failed to update appearance settings', 'error');
+    }
+  };
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
@@ -485,6 +552,91 @@ export function SettingsPage() {
             Save Directories
           </button>
         </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 mb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Appearance</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Choose a theme mode and optionally load a per-user custom stylesheet.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <div>
+            <label htmlFor="theme-mode" className="text-xs text-muted-foreground">
+              Theme Mode
+            </label>
+            <select
+              id="theme-mode"
+              value={themeModeDraft}
+              onChange={(event) => {
+                setThemeModeDraft(event.target.value as ThemeMode);
+                setAppearanceNote(null);
+              }}
+              className="mt-1 h-10 w-full rounded border border-border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="custom-stylesheet" className="text-xs text-muted-foreground">
+              Custom Stylesheet (.css)
+            </label>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                id="custom-stylesheet"
+                type="text"
+                value={customStylesheetPathDraft}
+                onChange={(event) => {
+                  setCustomStylesheetPathDraft(event.target.value);
+                  setAppearanceNote(null);
+                }}
+                placeholder="/absolute/path/to/user-theme.css"
+                className="h-10 flex-1 rounded border border-border bg-background px-3 text-sm outline-none transition focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={() => void handlePickStylesheet()}
+                className="inline-flex h-10 items-center rounded border border-border px-3 text-xs hover:bg-muted"
+              >
+                Browse
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomStylesheetPathDraft('');
+                  setAppearanceNote(null);
+                }}
+                className="inline-flex h-10 items-center rounded border border-border px-3 text-xs hover:bg-muted"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            Invalid stylesheet paths are rejected and safely ignored at runtime.
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleSaveAppearance()}
+            disabled={updateSettings.isPending || !hasAppearanceChanges}
+            className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save Appearance
+          </button>
+        </div>
+
+        {appearanceNote && <p className="mt-3 text-xs text-muted-foreground">{appearanceNote}</p>}
       </div>
 
       <div className="rounded-lg border bg-card p-6 mb-4">

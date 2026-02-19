@@ -1,11 +1,18 @@
 import type {
   GetSettingsResponse,
+  StylesheetLoadResult,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
 } from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import type { FileWatcherService } from '../services/fileWatcherService.js';
-import { getSettings, selectPlanDirectory, updateSettings } from '../services/settingsService.js';
+import {
+  getSettings,
+  selectPlanDirectory,
+  selectStylesheetFile,
+  updateSettings,
+} from '../services/settingsService.js';
+import { loadStylesheet } from '../services/stylesheetService.js';
 
 /**
  * Register settings-related IPC handlers
@@ -57,5 +64,17 @@ export function registerSettingsHandlers(ipcMain: IpcMain, fileWatcher?: FileWat
     'settings:selectDirectory',
     async (_event: IpcMainInvokeEvent, initialPath?: string): Promise<string | null> =>
       selectPlanDirectory(initialPath)
+  );
+
+  ipcMain.handle(
+    'settings:selectStylesheet',
+    async (_event: IpcMainInvokeEvent, initialPath?: string): Promise<string | null> =>
+      selectStylesheetFile(initialPath)
+  );
+
+  ipcMain.handle(
+    'settings:loadStylesheet',
+    async (_event: IpcMainInvokeEvent, stylesheetPath: string): Promise<StylesheetLoadResult> =>
+      loadStylesheet(stylesheetPath)
   );
 }

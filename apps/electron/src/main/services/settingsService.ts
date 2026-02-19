@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import type { AppSettings } from '@agent-plans/shared';
+import type { AppSettings, ThemeMode } from '@agent-plans/shared';
 import { DEFAULT_SHORTCUTS, mergeShortcuts } from '../../shared/shortcutDefaults.js';
 import { config } from '../config.js';
 
@@ -13,6 +13,8 @@ const ELECTRON_DEFAULT_SETTINGS: AppSettings = {
   codexSessionLogDirectories: [DEFAULT_CODEX_SESSIONS_DIR],
   shortcuts: DEFAULT_SHORTCUTS,
   fileWatcherEnabled: false,
+  themeMode: 'system',
+  customStylesheetPath: null,
 };
 
 export interface SettingsServiceConfig {
@@ -37,6 +39,16 @@ export class SettingsService {
     if (trimmed === '~') return homedir();
     if (trimmed.startsWith('~/')) return join(homedir(), trimmed.slice(2));
     return resolve(trimmed);
+  }
+
+  private normalizeThemeMode(value: unknown): ThemeMode {
+    return value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
+  }
+
+  private normalizeStylesheetPath(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const normalized = this.normalizeDirectory(value);
+    return normalized || null;
   }
 
   private normalizeDirectories(value: unknown): string[] {
@@ -68,6 +80,8 @@ export class SettingsService {
         parsed.codexSessionLogDirectories
       ),
       shortcuts: mergeShortcuts(parsed.shortcuts),
+      themeMode: this.normalizeThemeMode(parsed.themeMode),
+      customStylesheetPath: this.normalizeStylesheetPath(parsed.customStylesheetPath),
     };
   }
 
@@ -148,6 +162,22 @@ export async function selectPlanDirectory(initialPath?: string): Promise<string 
     title: 'Select Plan Directory',
     defaultPath: initialPath?.trim() ? initialPath : undefined,
     properties: ['openDirectory', 'createDirectory', 'dontAddToRecent'],
+  });
+
+  if (canceled || filePaths.length === 0) {
+    return null;
+  }
+
+  return filePaths[0] ?? null;
+}
+
+export async function selectStylesheetFile(initialPath?: string): Promise<string | null> {
+  const { dialog } = await import('electron');
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Select User Stylesheet',
+    defaultPath: initialPath?.trim() ? initialPath : undefined,
+    properties: ['openFile', 'dontAddToRecent'],
+    filters: [{ name: 'Stylesheet', extensions: ['css'] }],
   });
 
   if (canceled || filePaths.length === 0) {

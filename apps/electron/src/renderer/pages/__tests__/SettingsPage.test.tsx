@@ -8,6 +8,8 @@ const defaultSettings = {
   codexIntegrationEnabled: false,
   codexSessionLogDirectories: ['~/.codex/sessions'],
   shortcuts: DEFAULT_SHORTCUTS,
+  themeMode: 'system',
+  customStylesheetPath: null,
 };
 
 let currentSettings = { ...defaultSettings };
@@ -34,6 +36,7 @@ vi.mock('@/lib/hooks/useSettings', () => ({
 vi.mock('@/stores/uiStore', () => ({
   useUiStore: () => ({
     addToast: vi.fn(),
+    setTheme: vi.fn(),
   }),
 }));
 
@@ -80,6 +83,13 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { wrapper: createWrapper() });
     expect(screen.getAllByText('Codex Integration').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Session Log Directories').length).toBeGreaterThan(0);
+  });
+
+  it('should display appearance section', () => {
+    const { container } = render(<SettingsPage />, { wrapper: createWrapper() });
+    expect(screen.getAllByText('Appearance').length).toBeGreaterThan(0);
+    expect(container.querySelector('#theme-mode')).not.toBeNull();
+    expect(container.querySelector('#custom-stylesheet')).not.toBeNull();
   });
 
   it('should keep a newly added empty plan directory row', async () => {
@@ -134,6 +144,34 @@ describe('SettingsPage', () => {
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
         codexSessionLogDirectories: ['~/.codex/sessions', '/tmp/codex/sessions'],
+      });
+    });
+  });
+
+  it('should save appearance settings', async () => {
+    const { container } = render(<SettingsPage />, { wrapper: createWrapper() });
+    const view = within(container);
+    const themeModeSelect = container.querySelector('#theme-mode') as HTMLSelectElement | null;
+    const stylesheetInput = container.querySelector(
+      '#custom-stylesheet'
+    ) as HTMLInputElement | null;
+    const saveButton = view.getByRole('button', { name: 'Save Appearance' });
+
+    if (!themeModeSelect) {
+      throw new Error('Theme mode select was not found');
+    }
+    if (!stylesheetInput) {
+      throw new Error('Custom stylesheet input was not found');
+    }
+
+    fireEvent.change(themeModeSelect, { target: { value: 'dark' } });
+    fireEvent.change(stylesheetInput, { target: { value: '' } });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        themeMode: 'dark',
+        customStylesheetPath: null,
       });
     });
   });

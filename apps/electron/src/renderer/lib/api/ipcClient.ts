@@ -26,6 +26,7 @@ import type {
   PlanStatus,
   RenamePlanRequest,
   SearchResponse,
+  StylesheetLoadResult,
   SubtaskActionRequest,
   UpdatePlanRequest,
   UpdateSettingsRequest,
@@ -204,6 +205,12 @@ export const ipcClient = {
 
     selectDirectory: (initialPath?: string): Promise<string | null> =>
       invoke<string | null>('settings:selectDirectory', initialPath),
+
+    selectStylesheet: (initialPath?: string): Promise<string | null> =>
+      invoke<string | null>('settings:selectStylesheet', initialPath),
+
+    loadStylesheet: (stylesheetPath: string): Promise<StylesheetLoadResult> =>
+      invoke<StylesheetLoadResult>('settings:loadStylesheet', stylesheetPath),
   },
 };
 

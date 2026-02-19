@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppShortcuts } from '@/contexts/SettingsContext';
 import { usePlans } from '@/lib/hooks/usePlans';
+import { useUpdateSettings } from '@/lib/hooks/useSettings';
 import { formatShortcutLabel, isMacOS, matchesShortcut } from '@/lib/shortcuts';
 import { getNextToggleTheme } from '@/lib/theme';
 import { useUiStore } from '@/stores/uiStore';
@@ -49,13 +50,28 @@ export function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: plans = [] } = usePlans();
-  const { theme, setTheme } = useUiStore();
+  const updateSettings = useUpdateSettings();
+  const { theme, setTheme, addToast } = useUiStore((state) => ({
+    theme: state.theme,
+    setTheme: state.setTheme,
+    addToast: state.addToast,
+  }));
   const shortcuts = useAppShortcuts();
   const [commandOpen, setCommandOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const macOS = isMacOS();
   const commandShortcutLabel = formatShortcutLabel(shortcuts.openCommandPalette, macOS);
   const quickOpenShortcutLabel = formatShortcutLabel(shortcuts.openQuickOpen, macOS);
+
+  const applyTheme = useCallback(
+    (nextTheme: 'light' | 'dark' | 'system') => {
+      setTheme(nextTheme);
+      void updateSettings.mutateAsync({ themeMode: nextTheme }).catch(() => {
+        addToast('Failed to save theme setting.', 'error');
+      });
+    },
+    [addToast, setTheme, updateSettings]
+  );
 
   const runPaletteCommand = useCallback(
     (action: PaletteShortcutAction) => {
@@ -70,7 +86,7 @@ export function Layout() {
           navigate('/settings');
           return;
         case 'commandToggleTheme':
-          setTheme(getNextToggleTheme(theme));
+          applyTheme(getNextToggleTheme(theme));
           return;
         case 'commandOpenQuickOpen':
           setCommandOpen(false);
@@ -83,7 +99,7 @@ export function Layout() {
         }
       }
     },
-    [location.pathname, navigate, setTheme, theme]
+    [applyTheme, location.pathname, navigate, theme]
   );
 
   const commands = useMemo<CommandItem[]>(
@@ -95,17 +111,7 @@ export function Layout() {
         shortcut: formatShortcutLabel(shortcuts[command.action], macOS),
         run: () => runPaletteCommand(command.action),
       })),
-    [
-      macOS,
-      runPaletteCommand,
-      shortcuts.commandGoHome,
-      shortcuts.commandGoSearch,
-      shortcuts.commandOpenCurrentReview,
-      shortcuts.commandOpenQuickOpen,
-      shortcuts.commandOpenSettings,
-      shortcuts.commandToggleTheme,
-      theme,
-    ]
+    [macOS, runPaletteCommand, shortcuts, theme]
   );
 
   useEffect(() => {
@@ -138,21 +144,12 @@ export function Layout() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    runPaletteCommand,
-    shortcuts.commandGoHome,
-    shortcuts.commandGoSearch,
-    shortcuts.commandOpenCurrentReview,
-    shortcuts.commandOpenQuickOpen,
-    shortcuts.commandOpenSettings,
-    shortcuts.commandToggleTheme,
-    shortcuts.openCommandPalette,
-    shortcuts.openQuickOpen,
-  ]);
+  }, [runPaletteCommand, shortcuts]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <Header
+        theme={theme}
         commandShortcutLabel={commandShortcutLabel}
         quickOpenShortcutLabel={quickOpenShortcutLabel}
         onOpenCommandPalette={() => {
@@ -163,6 +160,7 @@ export function Layout() {
           setCommandOpen(false);
           setQuickOpen(true);
         }}
+        onCycleTheme={() => applyTheme(getNextToggleTheme(theme))}
       />
       <main className="mx-auto w-full max-w-[1400px] px-4 py-4">
         <Outlet />

@@ -1,7 +1,7 @@
 import { Command, FileText, Monitor, Moon, Search, Settings2, Sun } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
-import { type Theme, useUiStore } from '../../stores/uiStore';
+import type { Theme } from '../../stores/uiStore';
 
 const themeIcons: Record<Theme, typeof Sun> = {
   light: Sun,
@@ -22,10 +22,12 @@ const routeTabs = [
 ] as const;
 
 interface HeaderProps {
+  theme: Theme;
   commandShortcutLabel: string;
   quickOpenShortcutLabel: string;
   onOpenCommandPalette: () => void;
   onOpenQuickOpen: () => void;
+  onCycleTheme: () => void;
 }
 
 function RouteTabs() {
@@ -56,12 +58,13 @@ function RouteTabs() {
 }
 
 export function Header({
+  theme,
   commandShortcutLabel,
   quickOpenShortcutLabel,
   onOpenCommandPalette,
   onOpenQuickOpen,
+  onCycleTheme,
 }: HeaderProps) {
-  const { theme, setTheme } = useUiStore();
   const platform = typeof window !== 'undefined' ? window.electronAPI?.getPlatform?.() : undefined;
   const hasMacTrafficLights =
     platform != null
@@ -122,9 +125,9 @@ export function Header({
           </Link>
           <button
             type="button"
-            onClick={() => setTheme(nextTheme[theme] ?? 'system')}
+            onClick={onCycleTheme}
             className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1.5 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-900"
-            title={`Theme: ${theme}`}
+            title={`Theme: ${theme} (next: ${nextTheme[theme] ?? 'system'})`}
           >
             {(() => {
               const Icon = themeIcons[theme] ?? Sun;
