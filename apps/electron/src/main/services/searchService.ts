@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PlanFrontmatter, SearchMatch, SearchResult } from '@agent-plans/shared';
+import type { MetadataService } from './metadataService.js';
 import { parseQuery, type QueryFilter } from './queryParser.js';
 import type { SettingsService } from './settingsService.js';
 import { settingsService } from './settingsService.js';
@@ -161,15 +162,35 @@ function compareDates(actual: string, target: string, operator: string): boolean
 export interface SearchServiceConfig {
   plansDir: string;
   settingsService?: SettingsService;
+  metadataService?: MetadataService;
 }
 
 export class SearchService {
   private plansDir: string;
   private settingsService?: SettingsService;
+  private metadataService?: MetadataService;
 
   constructor(config: SearchServiceConfig) {
     this.plansDir = config.plansDir;
     this.settingsService = config.settingsService;
+    this.metadataService = config.metadataService;
+  }
+
+  private getDbMetadata(filename: string): PlanFrontmatter | undefined {
+    if (!this.metadataService) return undefined;
+    const row = this.metadataService.getMetadata(filename);
+    if (!row) return undefined;
+    const deps = this.metadataService.getDependencies(filename);
+    return {
+      status: row.status,
+      priority: row.priority ?? undefined,
+      dueDate: row.dueDate ?? undefined,
+      estimate: row.estimate ?? undefined,
+      assignee: row.assignee ?? undefined,
+      tags: row.tags.length > 0 ? row.tags : undefined,
+      projectPath: row.projectPath ?? undefined,
+      blockedBy: deps.blockedBy.length > 0 ? deps.blockedBy : undefined,
+    };
   }
 
   private async getPlanDirectories(): Promise<string[]> {
@@ -254,7 +275,7 @@ export class SearchService {
 
         for (const clause of parsed.clauses) {
           if (clause.filters.length > 0 && !frontmatter) {
-            frontmatter = extractFrontmatter(content);
+            frontmatter = extractFrontmatter(content) ?? this.getDbMetadata(filename);
           }
           const clauseMatchesResult = this.clauseMatches(content, clause, frontmatter);
           if (clauseMatchesResult === null) continue;
@@ -309,7 +330,9 @@ export class SearchService {
 
 // Default instance for function-based exports
 import { config } from '../config.js';
+import { getDefaultMetadataService } from './planService.js';
 export const searchService = new SearchService({
   plansDir: config.plansDir,
   settingsService,
+  metadataService: getDefaultMetadataService(),
 });
