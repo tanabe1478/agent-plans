@@ -17,6 +17,7 @@ const nextTheme: Record<Theme, Theme> = {
 
 const routeTabs = [
   { path: '/', label: 'Home' },
+  { path: '/kanban', label: 'Kanban' },
   { path: '/search', label: 'Search' },
 ] as const;
 
