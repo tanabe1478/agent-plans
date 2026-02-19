@@ -23,6 +23,9 @@
   },
   "dependencies": {
     "@agent-plans/shared": "workspace:*",
+    "@milkdown/crepe": "^7.18.0",
+    "@milkdown/ctx": "^7.18.0",
+    "@milkdown/kit": "^7.18.0",
     "@tanstack/react-query": "^5.59.0",
     "better-sqlite3": "^12.6.2",
     "highlight.js": "^11.11.1",

@@ -9,13 +9,15 @@ import {
   Loader2,
   MessageSquareText,
 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { MilkdownEditor } from '@/components/plan/MilkdownEditor';
 import { PlanActions } from '@/components/plan/PlanActions';
-import { PlanViewer } from '@/components/plan/PlanViewer';
 import { ProjectBadge } from '@/components/plan/ProjectBadge';
 import { SectionNav } from '@/components/plan/SectionNav';
 import { StatusDropdown } from '@/components/plan/StatusDropdown';
-import { usePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
+import { Dialog } from '@/components/ui/Dialog';
+import { usePlan, useUpdatePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
 import { formatDate, formatFileSize } from '@/lib/utils';
 
 export function ViewPage() {
@@ -23,8 +25,107 @@ export function ViewPage() {
   const navigate = useNavigate();
   const { data: plan, isLoading, error } = usePlan(filename || '');
   const updateStatus = useUpdateStatus();
+  const updatePlan = useUpdatePlan();
   const meta = plan?.metadata ?? plan?.frontmatter;
   const status = getRawPlanStatus(meta?.status);
+
+  const [draftContent, setDraftContent] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const pendingNavigationRef = useRef<string | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isEditable = !plan?.readOnly;
+  const hasUnsavedChanges = isEditable && draftContent !== null && draftContent !== plan?.content;
+
+  const saveContent = useCallback(
+    async (content: string) => {
+      if (!filename || !plan) return;
+      setSaveStatus('saving');
+      try {
+        await updatePlan.mutateAsync({ filename: plan.filename, content });
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus((prev) => (prev === 'saved' ? 'idle' : prev)), 2000);
+      } catch {
+        setSaveStatus('idle');
+      }
+    },
+    [filename, plan, updatePlan]
+  );
+
+  // Auto-save with debounce
+  useEffect(() => {
+    if (!isEditable || draftContent === null || draftContent === plan?.content) return undefined;
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      saveContent(draftContent);
+    }, 2000);
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [draftContent, isEditable, plan?.content, saveContent]);
+
+  // Cmd+S handler
+  useEffect(() => {
+    if (!isEditable) return undefined;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (draftContent !== null && draftContent !== plan?.content) {
+          if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+          saveContent(draftContent);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isEditable, draftContent, plan?.content, saveContent]);
+
+  // beforeunload guard
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const handleNavigateAway = (path: string) => {
+    if (hasUnsavedChanges) {
+      pendingNavigationRef.current = path;
+      setShowUnsavedDialog(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleDiscardAndNavigate = () => {
+    setShowUnsavedDialog(false);
+    setDraftContent(null);
+    if (pendingNavigationRef.current) {
+      navigate(pendingNavigationRef.current);
+      pendingNavigationRef.current = null;
+    }
+  };
+
+  const handleSaveAndNavigate = async () => {
+    if (draftContent !== null && plan) {
+      await saveContent(draftContent);
+    }
+    setShowUnsavedDialog(false);
+    setDraftContent(null);
+    if (pendingNavigationRef.current) {
+      navigate(pendingNavigationRef.current);
+      pendingNavigationRef.current = null;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -49,13 +150,14 @@ export function ViewPage() {
   return (
     <div className="space-y-3">
       <div className="border border-slate-800 bg-slate-900/50 p-3">
-        <Link
-          to="/"
+        <button
+          type="button"
+          onClick={() => handleNavigateAway('/')}
           className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.08em] text-slate-500 hover:text-slate-200"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back
-        </Link>
+        </button>
 
         <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
@@ -115,13 +217,19 @@ export function ViewPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              to={`/plan/${plan.filename}/review`}
+            {saveStatus !== 'idle' && (
+              <span className="text-[11px] text-slate-500" data-testid="save-status">
+                {saveStatus === 'saving' ? 'Saving...' : 'Saved'}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => handleNavigateAway(`/plan/${plan.filename}/review`)}
               className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-slate-200 hover:bg-slate-700/50 dark:hover:bg-slate-800"
             >
               <MessageSquareText className="h-3.5 w-3.5" />
               Review
-            </Link>
+            </button>
             {!plan.readOnly && (
               <PlanActions
                 filename={plan.filename}
@@ -140,8 +248,12 @@ export function ViewPage() {
               Document
             </span>
           </div>
-          <div className="p-4">
-            <PlanViewer plan={plan} />
+          <div className="px-3 py-2">
+            <MilkdownEditor
+              initialContent={plan.content}
+              onChange={isEditable ? setDraftContent : () => {}}
+              readOnly={!isEditable}
+            />
           </div>
         </div>
 
@@ -172,6 +284,39 @@ export function ViewPage() {
           ) : null}
         </aside>
       </div>
+
+      <Dialog
+        open={showUnsavedDialog}
+        onClose={() => setShowUnsavedDialog(false)}
+        title="Unsaved changes"
+      >
+        <p className="mb-4 text-[13px] text-muted-foreground">
+          You have unsaved changes. Do you want to save before leaving?
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setShowUnsavedDialog(false)}
+            className="border border-slate-700 px-3 py-1.5 text-[12px] text-slate-200 hover:bg-slate-700/50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleDiscardAndNavigate}
+            className="border border-slate-700 px-3 py-1.5 text-[12px] text-slate-200 hover:bg-slate-700/50"
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveAndNavigate}
+            className="border border-primary bg-primary px-3 py-1.5 text-[12px] text-primary-foreground hover:bg-primary/90"
+          >
+            Save & Leave
+          </button>
+        </div>
+      </Dialog>
     </div>
   );
 }
