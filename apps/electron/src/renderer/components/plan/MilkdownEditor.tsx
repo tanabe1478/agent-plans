@@ -34,15 +34,20 @@ export function MilkdownEditor({
 
     crepe.setReadonly(readOnly);
 
+    // Suppress onChange during initial create() to avoid treating
+    // Milkdown's markdown normalization as a user edit.
+    let initialized = false;
+
     crepe.on((api) => {
       api.markdownUpdated((_ctx, markdown, prevMarkdown) => {
-        if (markdown !== prevMarkdown) {
+        if (initialized && markdown !== prevMarkdown) {
           onChangeRef.current(markdown);
         }
       });
     });
 
     await crepe.create();
+    initialized = true;
     crepeRef.current = crepe;
   }, [initialContent, readOnly]);
 

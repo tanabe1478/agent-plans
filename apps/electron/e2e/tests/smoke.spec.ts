@@ -29,7 +29,7 @@ test.describe('Electron smoke', () => {
     await row.getByRole('button', { name: 'Open detail' }).click();
     await expect(page).toHaveURL(/#\/plan\//);
 
-    await page.getByRole('link', { name: 'Review' }).click();
+    await page.getByRole('button', { name: 'Review' }).click();
     await expect(page.getByRole('heading', { name: 'CLI Tool Refactoring' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy All Prompts' })).toBeVisible();
 
