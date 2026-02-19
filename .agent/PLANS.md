@@ -70,3 +70,41 @@
 - Risk: User CSS can create unreadable UI or override critical styles.
 - Mitigation: strict path/type checks, robust loader error handling, and quick reset/clear action.
 - Rollback: remove appearance-field usage and stylesheet loader; keep baseline light/dark/system class behavior.
+
+## Revision 3
+
+### Objective
+- Stabilize Settings > Plan Directories behavior so saved values are consistently persisted and reflected after navigation/reload.
+- Verify multi-directory scenarios (including real populated directory) and eliminate regressions that cause value drift or non-applied saves.
+
+### Context
+- User reports unstable behavior in plan directory settings:
+  - Entered values sometimes do not apply.
+  - Values can change unexpectedly after leaving and returning to Settings.
+- A known real directory with many plans exists: `/Users/tanabe.nobuyuki/.claude/plans`.
+- The settings screen supports multiple directory rows with add/remove/browse/save interactions and normalization logic.
+
+### Implementation Steps
+- [x] Step 1: Reproduce issues manually on `feature/debug-plandirectory` with current app behavior (single/multi directories, navigation round-trip, reload/restart).
+- [x] Step 2: Add temporary debug logs or focused tests (if needed) to pinpoint state sync issues between draft rows and persisted settings.
+- [x] Step 3: Fix root cause in settings draft-state synchronization and/or save-normalization flow.
+- [x] Step 4: Add or update automated tests for unstable cases (save, re-open settings, order/persistence consistency, duplicate/empty handling).
+- [x] Step 5: Run manual verification matrix using:
+- [x] Step 5a: `/Users/tanabe.nobuyuki/.claude/plans` as primary directory.
+- [x] Step 5b: additional temporary directories with dummy markdown plans.
+- [x] Step 5c: mixed valid/invalid/empty/duplicate rows and save/reopen checks.
+- [x] Step 6: Run lint/tests and report validated scenarios + residual risks.
+
+### Verification
+- `pnpm --filter @agent-plans/electron lint`
+- `pnpm --filter @agent-plans/electron test src/renderer/pages/__tests__/SettingsPage.test.tsx`
+- `pnpm --filter @agent-plans/electron test` (if behavior-affecting changes are broad)
+- Manual checks:
+- Save one directory (`/Users/tanabe.nobuyuki/.claude/plans`) and confirm plan list reflects it.
+- Save two+ directories (including temp dirs with dummy plans), navigate away/back to Settings, confirm values remain identical.
+- Restart app and confirm persisted directories are unchanged.
+
+### Risks / Rollback
+- Risk: State synchronization fix may affect directory picker UX and current unsaved draft behavior.
+- Risk: Normalization/order changes can surprise existing users if order is not preserved as expected.
+- Rollback: revert settings-page synchronization changes and re-enable previous logic, keeping test evidence for follow-up redesign.
