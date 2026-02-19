@@ -152,9 +152,15 @@ describe('Electron runtime debug infrastructure', () => {
   const mcpJsonPath = resolve(__dirname, '../../../../.mcp.json');
   const hasMcpJson = existsSync(mcpJsonPath);
 
-  it('should have dev:debug script with remoteDebuggingPort', () => {
+  it('should use worktree-aware dev script', () => {
+    expect(pkg.scripts?.dev).toBeDefined();
+    expect(pkg.scripts.dev).toContain('dev-worktree.cjs');
+  });
+
+  it('should have dev:debug script routed through worktree launcher', () => {
     expect(pkg.scripts?.['dev:debug']).toBeDefined();
-    expect(pkg.scripts['dev:debug']).toContain('remoteDebuggingPort');
+    expect(pkg.scripts['dev:debug']).toContain('dev-worktree.cjs');
+    expect(pkg.scripts['dev:debug']).toContain('--debug');
   });
 
   it('should have verify:runtime script', () => {
@@ -164,6 +170,11 @@ describe('Electron runtime debug infrastructure', () => {
 
   it('should have verify-electron-runtime script file', () => {
     const scriptPath = resolve(__dirname, '../../scripts/verify-electron-runtime.cjs');
+    expect(existsSync(scriptPath)).toBe(true);
+  });
+
+  it('should have worktree dev launcher script file', () => {
+    const scriptPath = resolve(__dirname, '../../scripts/dev-worktree.cjs');
     expect(existsSync(scriptPath)).toBe(true);
   });
 

@@ -7,8 +7,8 @@
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "dev:debug": "electron-vite dev --remoteDebuggingPort 9222",
+    "dev": "node scripts/dev-worktree.cjs",
+    "dev:debug": "node scripts/dev-worktree.cjs --debug",
     "build": "electron-vite build",
     "dist:mac": "pnpm build && electron-builder --mac dmg --arm64 --publish never",
     "dist:mac:unsigned": "pnpm build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64 --publish never",
