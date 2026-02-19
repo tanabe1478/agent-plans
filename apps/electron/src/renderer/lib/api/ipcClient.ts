@@ -87,7 +87,7 @@ export const ipcClient = {
     open: (filename: string, app: ExternalApp): Promise<void> =>
       invoke<void>('plans:open', filename, app),
 
-    updateStatus: (filename: string, status: PlanStatus): Promise<PlanMeta> =>
+    updateStatus: (filename: string, status: PlanStatus | string): Promise<PlanMeta> =>
       invoke<PlanMeta>('plans:updateStatus', { filename, status } as UpdateStatusRequest),
 
     updateMetadata: (filename: string, field: string, value: unknown): Promise<PlanMeta> =>
@@ -113,7 +113,10 @@ export const ipcClient = {
       invoke<void>('plans:toggleSubtask', request),
 
     // Bulk operations
-    bulkStatus: (filenames: string[], status: PlanStatus): Promise<BulkOperationResponse> =>
+    bulkStatus: (
+      filenames: string[],
+      status: PlanStatus | string
+    ): Promise<BulkOperationResponse> =>
       invoke<BulkOperationResponse>('plans:bulkStatus', { filenames, status } as BulkStatusRequest),
 
     // Status transitions

@@ -16,7 +16,6 @@ import type {
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { openerService } from '../services/openerService.js';
 import { planService } from '../services/planService.js';
-import { statusTransitionService } from '../services/statusTransitionService.js';
 import { subtaskService } from '../services/subtaskService.js';
 
 interface UpdatePlanRequestWithFilename extends UpdatePlanRequest {
@@ -120,13 +119,6 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
       _event: IpcMainInvokeEvent,
       request: UpdateStatusRequestWithFilename
     ): Promise<PlanMeta> => {
-      const plan = await planService.getPlan(request.filename);
-      const currentStatus = plan.metadata?.status ?? plan.frontmatter?.status ?? 'todo';
-
-      if (!statusTransitionService.isValidTransition(currentStatus, request.status)) {
-        throw new Error(`Invalid status transition from ${currentStatus} to ${request.status}`);
-      }
-
       return planService.updateStatus(request.filename, request.status);
     }
   );
@@ -219,13 +211,6 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
       request: BulkStatusRequest
     ): Promise<BulkOperationResponse> => {
       return runBulkOperation(request.filenames, async (filename) => {
-        const plan = await planService.getPlan(filename);
-        const currentStatus = plan.metadata?.status ?? plan.frontmatter?.status ?? 'todo';
-
-        if (!statusTransitionService.isValidTransition(currentStatus, request.status)) {
-          throw new Error(`Invalid transition from ${currentStatus} to ${request.status}`);
-        }
-
         await planService.updateStatus(filename, request.status);
       });
     }
@@ -241,10 +226,9 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle(
     'plans:availableTransitions',
-    async (_event: IpcMainInvokeEvent, filename: string): Promise<PlanStatus[]> => {
-      const plan = await planService.getPlan(filename);
-      const currentStatus = plan.metadata?.status ?? plan.frontmatter?.status ?? 'todo';
-      return statusTransitionService.getAvailableTransitions(currentStatus);
+    async (_event: IpcMainInvokeEvent, _filename: string): Promise<PlanStatus[]> => {
+      // All transitions are now allowed
+      return ['todo', 'in_progress', 'review', 'completed'];
     }
   );
 }

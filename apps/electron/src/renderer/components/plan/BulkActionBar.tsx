@@ -1,12 +1,12 @@
-import type { PlanStatus } from '@agent-plans/shared';
 import { ArrowRightCircle, CheckSquare, XSquare } from 'lucide-react';
-import { useBulkUpdateStatus } from '../../lib/hooks';
+import { useBulkUpdateStatus, useStatusColumns } from '../../lib/hooks';
 import { usePlanStore } from '../../stores/planStore';
 import { useUiStore } from '../../stores/uiStore';
 
 export function BulkActionBar() {
   const { selectedPlans, clearSelection } = usePlanStore();
   const { addToast } = useUiStore();
+  const { columns } = useStatusColumns();
   const count = selectedPlans.size;
 
   const bulkStatus = useBulkUpdateStatus();
@@ -14,7 +14,7 @@ export function BulkActionBar() {
   const filenames = Array.from(selectedPlans);
   const isPending = bulkStatus.isPending;
 
-  const handleBulkStatus = async (status: PlanStatus) => {
+  const handleBulkStatus = async (status: string) => {
     try {
       const result = await bulkStatus.mutateAsync({ filenames, status });
       const msg = `${result.succeeded.length} plans updated`;
@@ -60,7 +60,7 @@ export function BulkActionBar() {
             <ArrowRightCircle className="h-3.5 w-3.5 text-muted-foreground" />
             <select
               onChange={(e) => {
-                if (e.target.value) handleBulkStatus(e.target.value as PlanStatus);
+                if (e.target.value) handleBulkStatus(e.target.value);
                 e.target.value = '';
               }}
               disabled={isPending}
@@ -70,10 +70,11 @@ export function BulkActionBar() {
               <option value="" disabled>
                 Status...
               </option>
-              <option value="todo">ToDo</option>
-              <option value="in_progress">In Progress</option>
-              <option value="review">Review</option>
-              <option value="completed">Completed</option>
+              {columns.map((col) => (
+                <option key={col.id} value={col.id}>
+                  {col.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>

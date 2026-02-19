@@ -2,7 +2,7 @@
  * React Query hooks for plans operations via IPC
  */
 
-import type { ExternalApp, PlanStatus, SubtaskActionRequest } from '@agent-plans/shared';
+import type { ExternalApp, SubtaskActionRequest } from '@agent-plans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ipcClient } from '../api/ipcClient';
 
@@ -91,7 +91,7 @@ export function useUpdateStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filename, status }: { filename: string; status: PlanStatus }) =>
+    mutationFn: ({ filename, status }: { filename: string; status: string }) =>
       ipcClient.plans.updateStatus(filename, status),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });
@@ -191,7 +191,7 @@ export function useBulkUpdateStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ filenames, status }: { filenames: string[]; status: PlanStatus }) =>
+    mutationFn: ({ filenames, status }: { filenames: string[]; status: string }) =>
       ipcClient.plans.bulkStatus(filenames, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans'] });

@@ -43,6 +43,20 @@ export function normalizePlanStatus(value: unknown, fallback: PlanStatus = 'todo
 }
 
 /**
+ * Return the effective status string, preserving custom (non-built-in) values.
+ * Unlike `normalizePlanStatus`, this does NOT fall back to 'todo' for unknown
+ * statuses — it returns the original string as-is after alias resolution.
+ */
+export function getRawPlanStatus(value: unknown, fallback = 'todo'): string {
+  if (typeof value !== 'string' || value.trim() === '') return fallback;
+  const trimmed = value.trim();
+  if (isPlanStatus(trimmed)) return trimmed;
+  const lowered = trimmed.toLowerCase();
+  if (PLAN_STATUS_ALIASES[lowered]) return PLAN_STATUS_ALIASES[lowered];
+  return trimmed;
+}
+
+/**
  * Subtask within a plan
  */
 export interface Subtask {
@@ -54,16 +68,6 @@ export interface Subtask {
 }
 
 /**
- * Valid status transitions
- */
-export const STATUS_TRANSITIONS: Record<PlanStatus, PlanStatus[]> = {
-  todo: ['in_progress'],
-  in_progress: ['todo', 'review'],
-  review: ['in_progress', 'completed'],
-  completed: ['todo'],
-};
-
-/**
  * Plan metadata stored in SQLite DB.
  * Previously extracted from YAML frontmatter; now DB is the single source of truth.
  */
@@ -72,8 +76,8 @@ export interface PlanMetadata {
   projectPath?: string;
   /** Agent session ID (e.g. Claude Code/Codex) */
   sessionId?: string;
-  /** Plan status */
-  status?: PlanStatus;
+  /** Plan status (built-in or custom) */
+  status?: PlanStatus | string;
   /** Priority value */
   priority?: PlanPriority;
   /** Due date (ISO 8601) */
@@ -355,7 +359,7 @@ export interface MigrationResult {
 export interface DependencyNode {
   filename: string;
   title: string;
-  status: PlanStatus;
+  status: PlanStatus | string;
   blockedBy: string[];
   blocks: string[];
 }

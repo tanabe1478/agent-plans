@@ -1,4 +1,4 @@
-import { normalizePlanStatus, type PlanMeta, type PlanStatus } from '@agent-plans/shared';
+import { normalizePlanStatus, type PlanMeta } from '@agent-plans/shared';
 import {
   AlertCircle,
   CheckSquare,
@@ -21,16 +21,9 @@ import { Dialog } from '@/components/ui/Dialog';
 import { useSettingsLoading } from '@/contexts/SettingsContext';
 import { writeClipboard } from '@/lib/clipboard';
 import { useBulkDelete, usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
+import { useStatusColumns } from '@/lib/hooks/useStatusColumns';
 import { cn, formatDate, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
 import { useUiStore } from '@/stores/uiStore';
-
-const statusTabs: Array<{ key: PlanStatus | 'all'; label: string }> = [
-  { key: 'all', label: 'All' },
-  { key: 'todo', label: 'Todo' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'review', label: 'Review' },
-  { key: 'completed', label: 'Completed' },
-];
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -39,8 +32,9 @@ export function HomePage() {
   const updateStatus = useUpdateStatus();
   const { addToast } = useUiStore();
   const settingsLoading = useSettingsLoading();
+  const { columns } = useStatusColumns();
   const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PlanStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -197,19 +191,31 @@ export function HomePage() {
             />
           </div>
           <div className="flex items-center gap-1 border border-slate-700 bg-slate-950 p-1">
-            {statusTabs.map((tab) => (
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={cn(
+                'px-2 py-1 text-[11px] tracking-wide',
+                statusFilter === 'all'
+                  ? 'bg-slate-700 text-slate-100'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              )}
+            >
+              All
+            </button>
+            {columns.map((col) => (
               <button
-                key={tab.key}
+                key={col.id}
                 type="button"
-                onClick={() => setStatusFilter(tab.key)}
+                onClick={() => setStatusFilter(col.id)}
                 className={cn(
                   'px-2 py-1 text-[11px] tracking-wide',
-                  statusFilter === tab.key
+                  statusFilter === col.id
                     ? 'bg-slate-700 text-slate-100'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                 )}
               >
-                {tab.label}
+                {col.label}
               </button>
             ))}
           </div>

@@ -1,20 +1,19 @@
 import type { PlanStatus } from '@agent-plans/shared';
-import { STATUS_TRANSITIONS } from '@agent-plans/shared';
 
 /**
- * Check if a status transition is valid
+ * Check if a status transition is valid.
+ * All transitions are now allowed (free transitions).
  */
-export function isValidTransition(from: PlanStatus, to: PlanStatus): boolean {
-  if (from === to) return true;
-  const allowed = STATUS_TRANSITIONS[from];
-  return allowed.includes(to);
+export function isValidTransition(_from: PlanStatus | string, _to: PlanStatus | string): boolean {
+  return true;
 }
 
 /**
- * Get the list of statuses that can be transitioned to from the current status
+ * Get the list of statuses that can be transitioned to.
+ * Returns all known statuses since transitions are unrestricted.
  */
-export function getAvailableTransitions(current: PlanStatus): PlanStatus[] {
-  return STATUS_TRANSITIONS[current] ?? [];
+export function getAvailableTransitions(_current: PlanStatus | string): Array<PlanStatus | string> {
+  return ['todo', 'in_progress', 'review', 'completed'];
 }
 
 // Object export for IPC handlers

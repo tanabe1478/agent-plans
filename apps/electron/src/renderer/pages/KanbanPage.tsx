@@ -1,30 +1,19 @@
-import {
-  normalizePlanStatus,
-  type PlanMeta,
-  type PlanStatus,
-  STATUS_TRANSITIONS,
-} from '@agent-plans/shared';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { getRawPlanStatus, type PlanMeta, type StatusColumnDef } from '@agent-plans/shared';
+import { AlertCircle, GripVertical, Loader2 } from 'lucide-react';
 import { type DragEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AddColumnButton } from '@/components/kanban/AddColumnButton';
 import { StatusBadge } from '@/components/plan/StatusBadge';
 import { usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
+import { useUpdateSettings } from '@/lib/hooks/useSettings';
+import { useStatusColumns } from '@/lib/hooks/useStatusColumns';
 import { cn, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
 
-const KANBAN_COLUMNS: { status: PlanStatus; label: string }[] = [
-  { status: 'todo', label: 'ToDo' },
-  { status: 'in_progress', label: 'In Progress' },
-  { status: 'review', label: 'Review' },
-  { status: 'completed', label: 'Completed' },
-];
+const COLUMN_DRAG_TYPE = 'application/x-kanban-column';
 
-function canTransition(from: PlanStatus, to: PlanStatus): boolean {
-  return STATUS_TRANSITIONS[from]?.includes(to) ?? false;
-}
-
-function getPlanStatus(plan: PlanMeta): PlanStatus {
+function getPlanStatus(plan: PlanMeta): string {
   const meta = plan.metadata ?? plan.frontmatter;
-  return normalizePlanStatus(meta?.status);
+  return getRawPlanStatus(meta?.status);
 }
 
 interface KanbanCardProps {
@@ -72,46 +61,83 @@ function KanbanCard({ plan, onDragStart }: KanbanCardProps) {
 }
 
 interface KanbanColumnProps {
-  status: PlanStatus;
-  label: string;
+  statusId: string;
   plans: PlanMeta[];
-  dragOverStatus: PlanStatus | null;
-  canDrop: boolean;
-  onDragStart: (e: DragEvent, plan: PlanMeta) => void;
-  onDragOver: (e: DragEvent, status: PlanStatus) => void;
-  onDragLeave: () => void;
-  onDrop: (e: DragEvent, status: PlanStatus) => void;
+  dragOverStatus: string | null;
+  columnDragOverId: string | null;
+  onCardDragStart: (e: DragEvent, plan: PlanMeta) => void;
+  onCardDragOver: (e: DragEvent, statusId: string) => void;
+  onCardDragLeave: () => void;
+  onCardDrop: (e: DragEvent, statusId: string) => void;
+  onColumnDragStart: (e: DragEvent, statusId: string) => void;
+  onColumnDragOver: (e: DragEvent, statusId: string) => void;
+  onColumnDragLeave: () => void;
+  onColumnDrop: (e: DragEvent, statusId: string) => void;
 }
 
 function KanbanColumn({
-  status,
-  label,
+  statusId,
   plans,
   dragOverStatus,
-  canDrop,
-  onDragStart,
-  onDragOver,
-  onDragLeave,
-  onDrop,
+  columnDragOverId,
+  onCardDragStart,
+  onCardDragOver,
+  onCardDragLeave,
+  onCardDrop,
+  onColumnDragStart,
+  onColumnDragOver,
+  onColumnDragLeave,
+  onColumnDrop,
 }: KanbanColumnProps) {
-  const isDragOver = dragOverStatus === status;
+  const isCardDragOver = dragOverStatus === statusId;
+  const isColumnDragOver = columnDragOverId === statusId;
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes(COLUMN_DRAG_TYPE)) {
+      onColumnDragOver(e, statusId);
+    } else {
+      onCardDragOver(e, statusId);
+    }
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes(COLUMN_DRAG_TYPE)) {
+      onColumnDrop(e, statusId);
+    } else {
+      onCardDrop(e, statusId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    onCardDragLeave();
+    onColumnDragLeave();
+  };
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: drop zone container
     <div
       className={cn(
         'flex-shrink-0 w-72 flex flex-col rounded-lg border bg-muted/30 transition-colors',
-        isDragOver && canDrop && 'border-primary bg-primary/5',
-        isDragOver && !canDrop && 'border-red-400 bg-red-50 dark:bg-red-950/20'
+        isCardDragOver && 'border-primary bg-primary/5',
+        isColumnDragOver && 'border-l-4 border-l-primary'
       )}
-      onDragOver={(e) => onDragOver(e, status)}
-      onDragLeave={onDragLeave}
-      onDrop={(e) => onDrop(e, status)}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div className="p-3 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <StatusBadge status={status} />
-          <span className="text-xs text-muted-foreground">{label}</span>
+        <div className="flex items-center gap-1.5">
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: column drag handle */}
+          <span
+            draggable
+            onDragStart={(e) => onColumnDragStart(e, statusId)}
+            className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </span>
+          <StatusBadge status={statusId} />
         </div>
         <span className="text-xs font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5">
           {plans.length}
@@ -119,7 +145,7 @@ function KanbanColumn({
       </div>
       <div className="p-2 flex-1 overflow-y-auto space-y-2 min-h-[200px]">
         {plans.map((plan) => (
-          <KanbanCard key={plan.filename} plan={plan} onDragStart={onDragStart} />
+          <KanbanCard key={plan.filename} plan={plan} onDragStart={onCardDragStart} />
         ))}
         {plans.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-8">No plans</p>
@@ -132,8 +158,12 @@ function KanbanColumn({
 export function KanbanPage() {
   const { data, isLoading, error } = usePlans();
   const updateStatus = useUpdateStatus();
+  const updateSettings = useUpdateSettings();
+  const { columns } = useStatusColumns();
   const [draggedPlan, setDraggedPlan] = useState<PlanMeta | null>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<PlanStatus | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+  const [columnDragOverId, setColumnDragOverId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -154,61 +184,91 @@ export function KanbanPage() {
 
   const plans = (data || []).filter((plan) => !plan.readOnly);
 
-  const plansByStatus = KANBAN_COLUMNS.reduce(
-    (acc, col) => {
-      acc[col.status] = plans.filter((p) => getPlanStatus(p) === col.status);
-      return acc;
-    },
-    {} as Record<PlanStatus, PlanMeta[]>
-  );
+  const plansByStatus: Record<string, PlanMeta[]> = {};
+  for (const col of columns) {
+    plansByStatus[col.id] = plans.filter((p) => getPlanStatus(p) === col.id);
+  }
 
-  const handleDragStart = (e: DragEvent, plan: PlanMeta) => {
+  // Card DnD handlers
+  const handleCardDragStart = (e: DragEvent, plan: PlanMeta) => {
     setDraggedPlan(plan);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', plan.filename);
   };
 
-  const handleDragOver = (e: DragEvent, status: PlanStatus) => {
+  const handleCardDragOver = (e: DragEvent, statusId: string) => {
     e.preventDefault();
-    setDragOverStatus(status);
-    if (draggedPlan) {
-      const fromStatus = getPlanStatus(draggedPlan);
-      e.dataTransfer.dropEffect = canTransition(fromStatus, status) ? 'move' : 'none';
-    }
+    setDragOverStatus(statusId);
+    e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDragLeave = () => {
+  const handleCardDragLeave = () => {
     setDragOverStatus(null);
   };
 
-  const handleDrop = (e: DragEvent, targetStatus: PlanStatus) => {
+  const handleCardDrop = (e: DragEvent, targetStatusId: string) => {
     e.preventDefault();
     setDragOverStatus(null);
 
     if (!draggedPlan) return;
 
     const fromStatus = getPlanStatus(draggedPlan);
-    if (fromStatus === targetStatus) {
-      setDraggedPlan(null);
-      return;
-    }
-
-    if (!canTransition(fromStatus, targetStatus)) {
+    if (fromStatus === targetStatusId) {
       setDraggedPlan(null);
       return;
     }
 
     updateStatus.mutate({
       filename: draggedPlan.filename,
-      status: targetStatus,
+      status: targetStatusId,
     });
     setDraggedPlan(null);
   };
 
-  const canDropOnCurrent =
-    draggedPlan && dragOverStatus
-      ? canTransition(getPlanStatus(draggedPlan), dragOverStatus)
-      : false;
+  // Column DnD handlers
+  const handleColumnDragStart = (e: DragEvent, statusId: string) => {
+    setDraggedColumnId(statusId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData(COLUMN_DRAG_TYPE, statusId);
+  };
+
+  const handleColumnDragOver = (e: DragEvent, statusId: string) => {
+    e.preventDefault();
+    setColumnDragOverId(statusId);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleColumnDragLeave = () => {
+    setColumnDragOverId(null);
+  };
+
+  const handleColumnDrop = (e: DragEvent, targetStatusId: string) => {
+    e.preventDefault();
+    setColumnDragOverId(null);
+
+    const sourceId = draggedColumnId || e.dataTransfer.getData(COLUMN_DRAG_TYPE);
+    if (!sourceId || sourceId === targetStatusId) {
+      setDraggedColumnId(null);
+      return;
+    }
+
+    const newColumns = [...columns];
+    const fromIndex = newColumns.findIndex((c) => c.id === sourceId);
+    const toIndex = newColumns.findIndex((c) => c.id === targetStatusId);
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggedColumnId(null);
+      return;
+    }
+
+    const [moved] = newColumns.splice(fromIndex, 1);
+    newColumns.splice(toIndex, 0, moved);
+    updateSettings.mutate({ statusColumns: newColumns });
+    setDraggedColumnId(null);
+  };
+
+  const handleAddColumn = (column: StatusColumnDef) => {
+    updateSettings.mutate({ statusColumns: [...columns, column] });
+  };
 
   return (
     <div>
@@ -220,20 +280,24 @@ export function KanbanPage() {
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {KANBAN_COLUMNS.map((col) => (
+        {columns.map((col) => (
           <KanbanColumn
-            key={col.status}
-            status={col.status}
-            label={col.label}
-            plans={plansByStatus[col.status] || []}
+            key={col.id}
+            statusId={col.id}
+            plans={plansByStatus[col.id] || []}
             dragOverStatus={dragOverStatus}
-            canDrop={canDropOnCurrent}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+            columnDragOverId={columnDragOverId}
+            onCardDragStart={handleCardDragStart}
+            onCardDragOver={handleCardDragOver}
+            onCardDragLeave={handleCardDragLeave}
+            onCardDrop={handleCardDrop}
+            onColumnDragStart={handleColumnDragStart}
+            onColumnDragOver={handleColumnDragOver}
+            onColumnDragLeave={handleColumnDragLeave}
+            onColumnDrop={handleColumnDrop}
           />
         ))}
+        <AddColumnButton existingIds={columns.map((c) => c.id)} onAdd={handleAddColumn} />
       </div>
     </div>
   );

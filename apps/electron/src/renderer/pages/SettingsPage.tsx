@@ -1,9 +1,18 @@
-import type { AppShortcuts, ShortcutAction } from '@agent-plans/shared';
+import {
+  type AppShortcuts,
+  DEFAULT_STATUS_COLUMNS,
+  generateStatusId,
+  type ShortcutAction,
+  type StatusColumnDef,
+} from '@agent-plans/shared';
 import {
   AlertCircle,
+  ArrowDown,
+  ArrowUp,
   Eye,
   Folder,
   FolderOpen,
+  GripVertical,
   Keyboard,
   Loader2,
   Minus,
@@ -11,7 +20,9 @@ import {
   Save,
 } from 'lucide-react';
 import { useEffect, useId, useMemo, useState } from 'react';
+import { ColorPalette } from '@/components/ui/ColorPalette';
 import { useSettings, useUpdateSettings } from '@/lib/hooks/useSettings';
+import { getColorClassName } from '@/lib/hooks/useStatusColumns';
 import {
   formatShortcutLabel,
   getShortcutFromKeyboardEvent,
@@ -127,6 +138,9 @@ export function SettingsPage() {
   const [pickingCodexDirectoryId, setPickingCodexDirectoryId] = useState<string | null>(null);
   const [editingShortcut, setEditingShortcut] = useState<ShortcutAction | null>(null);
   const [localShortcuts, setLocalShortcuts] = useState<AppShortcuts>(DEFAULT_SHORTCUTS);
+  const [statusColumns, setStatusColumns] = useState<StatusColumnDef[]>(DEFAULT_STATUS_COLUMNS);
+  const [newStatusLabel, setNewStatusLabel] = useState('');
+  const [newStatusColor, setNewStatusColor] = useState('amber');
   const macOS = isMacOS();
   const codexToggleAriaLabel = settings?.codexIntegrationEnabled
     ? 'Disable Codex integration'
@@ -208,6 +222,15 @@ export function SettingsPage() {
       return currentShortcuts;
     });
   }, [currentShortcuts]);
+
+  useEffect(() => {
+    const saved = settings?.statusColumns;
+    if (saved && saved.length > 0) {
+      setStatusColumns(saved);
+    } else {
+      setStatusColumns(DEFAULT_STATUS_COLUMNS);
+    }
+  }, [settings?.statusColumns]);
 
   useEffect(() => {
     if (!editingShortcut) return undefined;
@@ -614,6 +637,136 @@ export function SettingsPage() {
           When enabled, the app watches plan directories for changes and automatically invalidates
           cached data. Disabled by default.
         </p>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 mb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Status Columns</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Configure Kanban board columns. Reorder or add custom statuses.
+            </p>
+          </div>
+          <GripVertical className="h-5 w-5 text-muted-foreground shrink-0" />
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {statusColumns.map((col, index) => (
+            <div
+              key={col.id}
+              className="flex items-center gap-2 rounded-md border border-border px-3 py-2"
+            >
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getColorClassName(col.color)}`}
+              >
+                {col.label}
+              </span>
+              <span className="flex-1" />
+              <button
+                type="button"
+                disabled={index === 0}
+                onClick={() => {
+                  const next = [...statusColumns];
+                  [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                  setStatusColumns(next);
+                }}
+                className="p-1 text-muted-foreground hover:bg-muted rounded disabled:opacity-30"
+                title="Move up"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                disabled={index === statusColumns.length - 1}
+                onClick={() => {
+                  const next = [...statusColumns];
+                  [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                  setStatusColumns(next);
+                }}
+                className="p-1 text-muted-foreground hover:bg-muted rounded disabled:opacity-30"
+                title="Move down"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                disabled={statusColumns.length <= 1}
+                onClick={() => setStatusColumns((prev) => prev.filter((c) => c.id !== col.id))}
+                className="p-1 text-muted-foreground hover:bg-muted rounded disabled:opacity-30"
+                title={
+                  statusColumns.length <= 1 ? 'At least one status is required' : 'Remove status'
+                }
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 border-t pt-4">
+          <h3 className="text-sm font-medium mb-2">Add Status</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground" htmlFor="new-status-label">
+                Label
+              </label>
+              <input
+                id="new-status-label"
+                type="text"
+                value={newStatusLabel}
+                onChange={(e) => setNewStatusLabel(e.target.value)}
+                placeholder="e.g. Blocked"
+                className="h-8 w-full rounded border border-border bg-background px-2 text-sm outline-none"
+              />
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Color</span>
+              <div className="mt-1">
+                <ColorPalette value={newStatusColor} onChange={setNewStatusColor} />
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={!newStatusLabel.trim()}
+              onClick={() => {
+                const id = generateStatusId(
+                  newStatusLabel,
+                  statusColumns.map((c) => c.id)
+                );
+                setStatusColumns((prev) => [
+                  ...prev,
+                  { id, label: newStatusLabel.trim(), color: newStatusColor },
+                ]);
+                setNewStatusLabel('');
+                setNewStatusColor('amber');
+              }}
+              className="inline-flex h-8 items-center gap-1 rounded border border-border px-3 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t pt-4">
+          <p className="text-xs text-muted-foreground">At least one status column is required.</p>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await updateSettings.mutateAsync({ statusColumns });
+                addToast('Status columns updated', 'success');
+              } catch {
+                addToast('Failed to update status columns', 'error');
+              }
+            }}
+            disabled={updateSettings.isPending}
+            className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save Status Columns
+          </button>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card p-6">
