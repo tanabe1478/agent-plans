@@ -38,6 +38,7 @@ export function MilkdownEditor({
         features: {
           [CrepeFeature.Latex]: false,
           [CrepeFeature.ImageBlock]: false,
+          [CrepeFeature.BlockEdit]: false,
         },
       });
 
