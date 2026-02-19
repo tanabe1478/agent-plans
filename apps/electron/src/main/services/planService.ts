@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs';
 import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { PlanDetail, PlanMeta, PlanMetadata, PlanStatus } from '@agent-plans/shared';
@@ -660,6 +661,8 @@ let defaultMetadataService: MetadataService | undefined;
 
 function getDefaultMetadataService(): MetadataService {
   if (!defaultMetadataService) {
+    // Ensure the plansDir exists before opening the DB
+    mkdirSync(dirname(defaultDbPath), { recursive: true });
     defaultMetadataService = new MetadataService(defaultDbPath);
   }
   return defaultMetadataService;
