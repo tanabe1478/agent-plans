@@ -1,4 +1,4 @@
-import { normalizePlanStatus, type PlanMeta } from '@agent-plans/shared';
+import { getRawPlanStatus, type PlanMeta } from '@agent-plans/shared';
 import {
   AlertCircle,
   CheckSquare,
@@ -50,7 +50,7 @@ export function HomePage() {
       .filter((plan) => {
         if (
           statusFilter !== 'all' &&
-          normalizePlanStatus(plan.metadata?.status ?? plan.frontmatter?.status) !== statusFilter
+          getRawPlanStatus(plan.metadata?.status ?? plan.frontmatter?.status) !== statusFilter
         ) {
           return false;
         }
@@ -242,7 +242,7 @@ export function HomePage() {
                 const isChecked = selectedPlans.has(plan.filename);
                 const fm = plan.metadata ?? plan.frontmatter;
                 const dueDate = fm?.dueDate;
-                const status = normalizePlanStatus(fm?.status);
+                const status = getRawPlanStatus(fm?.status);
                 const readOnly = Boolean(plan.readOnly);
                 return (
                   // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
