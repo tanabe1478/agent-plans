@@ -92,6 +92,10 @@ export const test = base.extend<ElectronFixtures>({
   page: async ({ app }, use) => {
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
+
+    // Auto-accept any beforeunload dialogs to prevent teardown hangs.
+    page.on('dialog', (dialog) => dialog.accept());
+
     await use(page);
   },
 });

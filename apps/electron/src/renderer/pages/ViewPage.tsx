@@ -38,6 +38,12 @@ export function ViewPage() {
   const isEditable = !plan?.readOnly;
   const hasUnsavedChanges = isEditable && draftContent !== null && draftContent !== plan?.content;
 
+  // Reset draft when plan content changes (external file edit or post-save refetch).
+  // This prevents stale draftContent from triggering false unsaved-changes detection.
+  useEffect(() => {
+    setDraftContent(null);
+  }, [plan?.content]);
+
   const saveContent = useCallback(
     async (content: string): Promise<boolean> => {
       if (!filename || !plan) return false;

@@ -56,7 +56,14 @@ export function MilkdownEditor({
         crepe.destroy();
         return;
       }
-      initialized = true;
+      // Delay enabling onChange to let ProseMirror's deferred
+      // view updates (normalization) settle before treating
+      // subsequent markdownUpdated events as user edits.
+      requestAnimationFrame(() => {
+        if (!disposed) {
+          initialized = true;
+        }
+      });
     });
 
     return () => {
