@@ -1,3 +1,4 @@
+import type { ThemeMode } from '@agent-plans/shared';
 import { create } from 'zustand';
 
 interface Toast {
@@ -6,7 +7,7 @@ interface Toast {
   type: 'success' | 'error' | 'info';
 }
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = ThemeMode;
 
 export const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;
 
@@ -33,7 +34,9 @@ interface UiStore {
 const getInitialTheme = (): Theme => {
   if (typeof window === 'undefined') return 'system';
   const stored = localStorage.getItem('theme') as Theme | null;
-  if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+  if (stored === 'light' || stored === 'dark' || stored === 'monokai' || stored === 'system') {
+    return stored;
+  }
   return 'system';
 };
 

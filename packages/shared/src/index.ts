@@ -1,5 +1,7 @@
 // Types
 
+export type { ThemeContractToken } from './themeContract.js';
+export { THEME_CONTRACT_SELECTORS, THEME_CONTRACT_TOKENS } from './themeContract.js';
 export type {
   ApiError,
   ArchiveListResponse,
@@ -79,6 +81,8 @@ export type {
   GetSettingsResponse,
   ShortcutAction,
   StatusColumnDef,
+  StylesheetLoadResult,
+  ThemeMode,
   UpdateSettingsRequest,
   UpdateSettingsResponse,
 } from './types/settings.js';

@@ -211,5 +211,26 @@ describe('ipcClient', () => {
 
       expect(mockInvoke).toHaveBeenCalledWith('settings:selectDirectory', '/tmp/current-plans');
     });
+
+    it('should call settings:selectStylesheet channel', async () => {
+      const { ipcClient } = await import('../ipcClient');
+      mockInvoke.mockResolvedValueOnce('/tmp/theme.css');
+
+      await ipcClient.settings.selectStylesheet('/tmp/current-theme.css');
+
+      expect(mockInvoke).toHaveBeenCalledWith(
+        'settings:selectStylesheet',
+        '/tmp/current-theme.css'
+      );
+    });
+
+    it('should call settings:loadStylesheet channel', async () => {
+      const { ipcClient } = await import('../ipcClient');
+      mockInvoke.mockResolvedValueOnce({ ok: true, path: '/tmp/theme.css', cssText: '' });
+
+      await ipcClient.settings.loadStylesheet('/tmp/theme.css');
+
+      expect(mockInvoke).toHaveBeenCalledWith('settings:loadStylesheet', '/tmp/theme.css');
+    });
   });
 });

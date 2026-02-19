@@ -4,6 +4,7 @@ import {
   generateStatusId,
   type ShortcutAction,
   type StatusColumnDef,
+  type ThemeMode,
 } from '@agent-plans/shared';
 import {
   AlertCircle,
@@ -77,12 +78,6 @@ const SHORTCUT_ITEMS: Array<{
     section: 'Command Palette',
   },
   {
-    action: 'commandToggleTheme',
-    label: 'Toggle Theme',
-    description: 'Run "Toggle Theme" from Command Palette.',
-    section: 'Command Palette',
-  },
-  {
     action: 'commandOpenQuickOpen',
     label: 'Open Quick Open (Command)',
     description: 'Run "Open Quick Open" from Command Palette.',
@@ -130,7 +125,10 @@ function areShortcutsEqual(left: AppShortcuts, right: AppShortcuts): boolean {
 export function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
   const updateSettings = useUpdateSettings();
-  const { addToast } = useUiStore();
+  const { addToast, setTheme } = useUiStore((state) => ({
+    addToast: state.addToast,
+    setTheme: state.setTheme,
+  }));
   const fileWatcherHeadingId = useId();
   const [directoryEntries, setDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [pickingDirectoryId, setPickingDirectoryId] = useState<string | null>(null);
@@ -141,6 +139,7 @@ export function SettingsPage() {
   const [statusColumns, setStatusColumns] = useState<StatusColumnDef[]>(DEFAULT_STATUS_COLUMNS);
   const [newStatusLabel, setNewStatusLabel] = useState('');
   const [newStatusColor, setNewStatusColor] = useState('amber');
+  const [themeModeDraft, setThemeModeDraft] = useState<ThemeMode>('system');
   const macOS = isMacOS();
   const codexToggleAriaLabel = settings?.codexIntegrationEnabled
     ? 'Disable Codex integration'
@@ -170,6 +169,9 @@ export function SettingsPage() {
     draftCodexDirectories,
     savedCodexDirectories
   );
+  const savedThemeMode = settings?.themeMode ?? 'system';
+  const hasLegacyCustomStylesheet = Boolean(settings?.customStylesheetPath?.trim());
+  const hasAppearanceChanges = themeModeDraft !== savedThemeMode || hasLegacyCustomStylesheet;
 
   const currentShortcuts: AppShortcuts = useMemo(
     () => mergeShortcuts(settings?.shortcuts),
@@ -231,6 +233,11 @@ export function SettingsPage() {
       setStatusColumns(DEFAULT_STATUS_COLUMNS);
     }
   }, [settings?.statusColumns]);
+
+  useEffect(() => {
+    const nextThemeMode = settings?.themeMode ?? 'system';
+    setThemeModeDraft(nextThemeMode);
+  }, [settings?.themeMode]);
 
   useEffect(() => {
     if (!editingShortcut) return undefined;
@@ -408,6 +415,19 @@ export function SettingsPage() {
     }
   };
 
+  const handleSaveAppearance = async () => {
+    try {
+      await updateSettings.mutateAsync({
+        themeMode: themeModeDraft,
+        customStylesheetPath: null,
+      });
+      setTheme(themeModeDraft);
+      addToast('Appearance settings updated', 'success');
+    } catch {
+      addToast('Failed to update appearance settings', 'error');
+    }
+  };
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
@@ -483,6 +503,49 @@ export function SettingsPage() {
           >
             <Save className="h-3.5 w-3.5" />
             Save Directories
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-6 mb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Appearance</h2>
+            <p className="text-sm text-muted-foreground mt-1">Choose a theme mode.</p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div>
+            <label htmlFor="theme-mode" className="text-xs text-muted-foreground">
+              Theme Mode
+            </label>
+            <select
+              id="theme-mode"
+              value={themeModeDraft}
+              onChange={(event) => {
+                setThemeModeDraft(event.target.value as ThemeMode);
+              }}
+              className="mt-1 h-10 w-full rounded border border-border bg-background px-3 text-sm outline-none transition focus:border-primary"
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="monokai">Monokai</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t pt-4">
+          <p className="text-xs text-muted-foreground">Theme changes are applied app-wide.</p>
+          <button
+            type="button"
+            onClick={() => void handleSaveAppearance()}
+            disabled={updateSettings.isPending || !hasAppearanceChanges}
+            className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save Appearance
           </button>
         </div>
       </div>

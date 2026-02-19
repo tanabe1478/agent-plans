@@ -4,8 +4,6 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppShortcuts } from '@/contexts/SettingsContext';
 import { usePlans } from '@/lib/hooks/usePlans';
 import { formatShortcutLabel, isMacOS, matchesShortcut } from '@/lib/shortcuts';
-import { getNextToggleTheme } from '@/lib/theme';
-import { useUiStore } from '@/stores/uiStore';
 import { Toasts } from '../ui/Toasts';
 import { type CommandItem, CommandPalette } from '../workbench/CommandPalette';
 import { QuickOpen } from '../workbench/QuickOpen';
@@ -16,7 +14,6 @@ type PaletteShortcutAction = Extract<
   | 'commandGoHome'
   | 'commandGoSearch'
   | 'commandOpenSettings'
-  | 'commandToggleTheme'
   | 'commandOpenQuickOpen'
   | 'commandOpenCurrentReview'
 >;
@@ -30,7 +27,6 @@ const PALETTE_COMMANDS: Array<{
   { id: 'go-home', action: 'commandGoHome', label: 'Go to Home', hint: 'Route' },
   { id: 'go-search', action: 'commandGoSearch', label: 'Go to Search', hint: 'Route' },
   { id: 'go-settings', action: 'commandOpenSettings', label: 'Open Settings', hint: 'Route' },
-  { id: 'toggle-theme', action: 'commandToggleTheme', label: 'Toggle Theme', hint: 'Theme' },
   {
     id: 'open-quick-open',
     action: 'commandOpenQuickOpen',
@@ -49,7 +45,6 @@ export function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: plans = [] } = usePlans();
-  const { theme, setTheme } = useUiStore();
   const shortcuts = useAppShortcuts();
   const [commandOpen, setCommandOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
@@ -69,9 +64,6 @@ export function Layout() {
         case 'commandOpenSettings':
           navigate('/settings');
           return;
-        case 'commandToggleTheme':
-          setTheme(getNextToggleTheme(theme));
-          return;
         case 'commandOpenQuickOpen':
           setCommandOpen(false);
           setQuickOpen(true);
@@ -83,7 +75,7 @@ export function Layout() {
         }
       }
     },
-    [location.pathname, navigate, setTheme, theme]
+    [location.pathname, navigate]
   );
 
   const commands = useMemo<CommandItem[]>(
@@ -91,21 +83,11 @@ export function Layout() {
       PALETTE_COMMANDS.map((command) => ({
         id: command.id,
         label: command.label,
-        hint: command.action === 'commandToggleTheme' ? `Current: ${theme}` : command.hint,
+        hint: command.hint,
         shortcut: formatShortcutLabel(shortcuts[command.action], macOS),
         run: () => runPaletteCommand(command.action),
       })),
-    [
-      macOS,
-      runPaletteCommand,
-      shortcuts.commandGoHome,
-      shortcuts.commandGoSearch,
-      shortcuts.commandOpenCurrentReview,
-      shortcuts.commandOpenQuickOpen,
-      shortcuts.commandOpenSettings,
-      shortcuts.commandToggleTheme,
-      theme,
-    ]
+    [macOS, runPaletteCommand, shortcuts]
   );
 
   useEffect(() => {
@@ -138,17 +120,7 @@ export function Layout() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    runPaletteCommand,
-    shortcuts.commandGoHome,
-    shortcuts.commandGoSearch,
-    shortcuts.commandOpenCurrentReview,
-    shortcuts.commandOpenQuickOpen,
-    shortcuts.commandOpenSettings,
-    shortcuts.commandToggleTheme,
-    shortcuts.openCommandPalette,
-    shortcuts.openQuickOpen,
-  ]);
+  }, [runPaletteCommand, shortcuts]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">

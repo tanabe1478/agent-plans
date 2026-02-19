@@ -16,6 +16,7 @@ It does **not** require a separate web server or API process.
 - Review mode with prompt generation + clipboard copy
 - Bulk selection + bulk status update + permanent delete
 - Open plan files in external apps (VSCode / Terminal / default app)
+- Editor-style theme mode switching (`light` / `dark` / `monokai` / `system`)
 
 ## Prerequisites
 

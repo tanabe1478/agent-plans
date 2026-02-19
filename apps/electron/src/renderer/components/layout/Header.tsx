@@ -1,19 +1,6 @@
-import { Command, FileText, Monitor, Moon, Search, Settings2, Sun } from 'lucide-react';
+import { Command, FileText, Search, Settings2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
-import { type Theme, useUiStore } from '../../stores/uiStore';
-
-const themeIcons: Record<Theme, typeof Sun> = {
-  light: Sun,
-  dark: Moon,
-  system: Monitor,
-};
-
-const nextTheme: Record<Theme, Theme> = {
-  light: 'dark',
-  dark: 'system',
-  system: 'light',
-};
 
 const routeTabs = [
   { path: '/', label: 'Home' },
@@ -61,7 +48,6 @@ export function Header({
   onOpenCommandPalette,
   onOpenQuickOpen,
 }: HeaderProps) {
-  const { theme, setTheme } = useUiStore();
   const platform = typeof window !== 'undefined' ? window.electronAPI?.getPlatform?.() : undefined;
   const hasMacTrafficLights =
     platform != null
@@ -120,17 +106,6 @@ export function Header({
           >
             <Settings2 className="h-3.5 w-3.5" />
           </Link>
-          <button
-            type="button"
-            onClick={() => setTheme(nextTheme[theme] ?? 'system')}
-            className="inline-flex items-center gap-1.5 border border-slate-700 px-2 py-1.5 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-900"
-            title={`Theme: ${theme}`}
-          >
-            {(() => {
-              const Icon = themeIcons[theme] ?? Sun;
-              return <Icon className="h-3.5 w-3.5" />;
-            })()}
-          </button>
         </div>
       </div>
     </header>

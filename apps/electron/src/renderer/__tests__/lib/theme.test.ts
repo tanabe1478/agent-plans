@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getNextToggleTheme, resolveEffectiveTheme } from '@/lib/theme';
+import { resolveEffectiveTheme } from '@/lib/theme';
 
 describe('theme utilities', () => {
   afterEach(() => {
@@ -21,8 +21,7 @@ describe('theme utilities', () => {
     expect(resolveEffectiveTheme('system')).toBe('dark');
   });
 
-  it('toggles from explicit themes', () => {
-    expect(getNextToggleTheme('light')).toBe('dark');
-    expect(getNextToggleTheme('dark')).toBe('light');
+  it('returns monokai as-is for explicit theme', () => {
+    expect(resolveEffectiveTheme('monokai')).toBe('monokai');
   });
 });

@@ -62,11 +62,19 @@ export type ShortcutAction =
   | 'commandGoHome'
   | 'commandGoSearch'
   | 'commandOpenSettings'
-  | 'commandToggleTheme'
   | 'commandOpenQuickOpen'
   | 'commandOpenCurrentReview';
 
 export type AppShortcuts = Record<ShortcutAction, string>;
+
+export type ThemeMode = 'light' | 'dark' | 'monokai' | 'system';
+
+export interface StylesheetLoadResult {
+  ok: boolean;
+  path: string;
+  cssText?: string;
+  error?: string;
+}
 
 /**
  * Application settings
@@ -84,6 +92,10 @@ export interface AppSettings {
   fileWatcherEnabled?: boolean;
   /** Custom status columns for Kanban board */
   statusColumns?: StatusColumnDef[];
+  /** App appearance theme mode */
+  themeMode?: ThemeMode;
+  /** Optional user stylesheet absolute path */
+  customStylesheetPath?: string | null;
 }
 
 /**

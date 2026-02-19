@@ -158,8 +158,27 @@ export class SubtaskService {
   }
 }
 
-// Default singleton instance
-export const subtaskService = new SubtaskService({
-  plansDir: config.plansDir,
-  metadataService: getDefaultMetadataService(),
-});
+type SubtaskServiceFacade = Pick<
+  SubtaskService,
+  'addSubtask' | 'updateSubtask' | 'deleteSubtask' | 'toggleSubtask'
+>;
+
+let defaultSubtaskService: SubtaskService | null = null;
+
+function getSubtaskService(): SubtaskService {
+  if (!defaultSubtaskService) {
+    defaultSubtaskService = new SubtaskService({
+      plansDir: config.plansDir,
+      metadataService: getDefaultMetadataService(),
+    });
+  }
+  return defaultSubtaskService;
+}
+
+// Default singleton facade (lazy-initialized to avoid DB side effects at import time)
+export const subtaskService: SubtaskServiceFacade = {
+  addSubtask: (...args) => getSubtaskService().addSubtask(...args),
+  updateSubtask: (...args) => getSubtaskService().updateSubtask(...args),
+  deleteSubtask: (...args) => getSubtaskService().deleteSubtask(...args),
+  toggleSubtask: (...args) => getSubtaskService().toggleSubtask(...args),
+};

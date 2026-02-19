@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { useFileChangeListener } from '@/lib/hooks/useFileChangeListener';
+import { useSettings } from '@/lib/hooks/useSettings';
 import { DependencyPage } from '@/pages/DependencyPage';
 import { HomePage } from '@/pages/HomePage';
 import { KanbanPage } from '@/pages/KanbanPage';
@@ -12,20 +13,32 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ViewPage } from '@/pages/ViewPage';
 import { useUiStore } from '@/stores/uiStore';
 
+const MONOKAI_THEME_CLASS = 'theme-monokai';
+
 function App() {
-  const theme = useUiStore((state) => state.theme);
+  const { data: settings } = useSettings();
+  const { setTheme, theme } = useUiStore((state) => ({
+    theme: state.theme,
+    setTheme: state.setTheme,
+  }));
   useFileChangeListener();
+
+  useEffect(() => {
+    const nextTheme = settings?.themeMode;
+    if (nextTheme && nextTheme !== theme) {
+      setTheme(nextTheme);
+    }
+  }, [settings?.themeMode, setTheme, theme]);
 
   useEffect(() => {
     const root = document.documentElement;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const applyTheme = () => {
-      if (theme === 'system') {
-        root.classList.toggle('dark', mediaQuery.matches);
-      } else {
-        root.classList.toggle('dark', theme === 'dark');
-      }
+      const isMonokai = theme === 'monokai';
+      const isDark = isMonokai || theme === 'dark' || (theme === 'system' && mediaQuery.matches);
+      root.classList.toggle('dark', isDark);
+      root.classList.toggle(MONOKAI_THEME_CLASS, isMonokai);
     };
 
     applyTheme();
