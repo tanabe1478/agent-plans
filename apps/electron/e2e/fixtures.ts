@@ -92,6 +92,18 @@ export const test = base.extend<ElectronFixtures>({
   page: async ({ app }, use) => {
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
+
+    // Auto-accept beforeunload dialogs to prevent teardown hangs.
+    // Throw on other dialog types so regressions surface immediately.
+    page.on('dialog', async (dialog) => {
+      if (dialog.type() === 'beforeunload') {
+        await dialog.accept();
+        return;
+      }
+      await dialog.dismiss();
+      throw new Error(`Unexpected dialog: ${dialog.type()} - ${dialog.message()}`);
+    });
+
     await use(page);
   },
 });
