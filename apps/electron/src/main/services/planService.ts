@@ -51,7 +51,7 @@ class PlanConflictError extends Error {
  * After DB migration, files should be pure content, but this handles edge cases.
  */
 function stripFrontmatter(content: string): string {
-  const match = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
+  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/);
   return match ? match[1] : content;
 }
 

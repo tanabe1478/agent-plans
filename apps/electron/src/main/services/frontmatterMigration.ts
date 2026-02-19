@@ -34,7 +34,7 @@ function isPlanPriority(value: string): value is PlanPriority {
 
 function parseFrontmatterYaml(yamlStr: string): ParsedFrontmatter {
   const result: ParsedFrontmatter = {};
-  const lines = yamlStr.split('\n');
+  const lines = yamlStr.split(/\r?\n/);
 
   let i = 0;
   while (i < lines.length) {
@@ -256,6 +256,7 @@ export async function migrateFrontmatterToDb(
           metadataService.upsertSubtask(filename, {
             id: st.id,
             title: st.title,
+            // DB subtask status is binary: 'todo' | 'done'
             status: st.status === 'done' ? 'done' : 'todo',
             assignee: st.assignee ?? null,
             dueDate: st.dueDate ?? null,

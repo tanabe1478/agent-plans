@@ -9,9 +9,9 @@
 
 'use strict';
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { execSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const NATIVE_MODULES = ['better-sqlite3'];
 

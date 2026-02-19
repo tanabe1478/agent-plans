@@ -16,8 +16,8 @@
 
 'use strict';
 
-const { execFileSync } = require('child_process');
-const path = require('path');
+const { execFileSync } = require('node:child_process');
+const path = require('node:path');
 
 // Resolve the real Electron binary (follows pnpm symlinks)
 const electronPath = require('electron');
@@ -64,7 +64,9 @@ try {
   });
 
   const report = JSON.parse(stdout.toString());
-  console.log(`[verify-native-modules] Electron ${report.electronVersion} (ABI ${report.electronABI})`);
+  console.log(
+    `[verify-native-modules] Electron ${report.electronVersion} (ABI ${report.electronABI})`
+  );
 
   for (const r of report.results) {
     if (r.ok) {
@@ -88,7 +90,9 @@ try {
     // Try to extract partial report from stdout
     try {
       const report = JSON.parse(err.stdout.toString());
-      console.error(`[verify-native-modules] Electron ${report.electronVersion} (ABI ${report.electronABI})`);
+      console.error(
+        `[verify-native-modules] Electron ${report.electronVersion} (ABI ${report.electronABI})`
+      );
       for (const r of report.results) {
         if (r.ok) {
           console.log(`  ✓ ${r.module}`);
@@ -103,7 +107,9 @@ try {
   if (err.stderr && err.stderr.length > 0) {
     console.error('[verify-native-modules] stderr:', err.stderr.toString());
   }
-  console.error(`\n[verify-native-modules] FAILED — Electron process exited with code ${err.status}`);
+  console.error(
+    `\n[verify-native-modules] FAILED — Electron process exited with code ${err.status}`
+  );
   console.error('[verify-native-modules] Run: node scripts/rebuild-native.cjs');
   process.exit(1);
 }

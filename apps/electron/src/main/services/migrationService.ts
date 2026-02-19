@@ -68,7 +68,7 @@ function parseFrontmatterRaw(content: string): {
 
   // Simple YAML key-value parsing
   const fm: Record<string, unknown> = {};
-  const lines = rawFm.split('\n');
+  const lines = rawFm.split(/\r?\n/);
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];

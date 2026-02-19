@@ -19,9 +19,9 @@
 
 'use strict';
 
-const { spawn } = require('child_process');
-const path = require('path');
-const http = require('http');
+const { spawn } = require('node:child_process');
+const path = require('node:path');
+const http = require('node:http');
 
 const DEBUG_PORT = 9222;
 const POLL_INTERVAL_MS = 1000;
@@ -36,11 +36,13 @@ function fetchJSON(url) {
   return new Promise((resolve, reject) => {
     const req = http.get(url, (res) => {
       let body = '';
-      res.on('data', (chunk) => (body += chunk));
+      res.on('data', (chunk) => {
+        body += chunk;
+      });
       res.on('end', () => {
         try {
           resolve(JSON.parse(body));
-        } catch (e) {
+        } catch (_e) {
           reject(new Error(`Invalid JSON from ${url}: ${body.slice(0, 200)}`));
         }
       });
@@ -134,11 +136,15 @@ async function main() {
   console.log('[verify-runtime] Starting electron-vite dev with CDP on port %d ...', DEBUG_PORT);
 
   // Start electron-vite dev
-  const child = spawn('npx', ['electron-vite', 'dev', `--remoteDebuggingPort`, String(DEBUG_PORT)], {
-    cwd: APP_DIR,
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1' },
-  });
+  const child = spawn(
+    'npx',
+    ['electron-vite', 'dev', `--remoteDebuggingPort`, String(DEBUG_PORT)],
+    {
+      cwd: APP_DIR,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1' },
+    }
+  );
 
   const logs = [];
   child.stdout.on('data', (d) => logs.push(`[stdout] ${d.toString().trimEnd()}`));
@@ -170,7 +176,11 @@ async function main() {
       try {
         const result = await cdpEvaluate(wsUrl, check.expr);
         const value = result?.result?.value;
-        results.push({ name: check.name, value, ok: value !== undefined && value !== '' && value !== 'undefined' });
+        results.push({
+          name: check.name,
+          value,
+          ok: value !== undefined && value !== '' && value !== 'undefined',
+        });
       } catch (err) {
         results.push({ name: check.name, value: null, ok: false, error: err.message });
       }
@@ -182,7 +192,12 @@ async function main() {
       if (r.ok) {
         console.log('  ✓ %s = %s', r.name, JSON.stringify(r.value));
       } else {
-        console.error('  ✗ %s = %s %s', r.name, JSON.stringify(r.value), r.error ? `(${r.error})` : '');
+        console.error(
+          '  ✗ %s = %s %s',
+          r.name,
+          JSON.stringify(r.value),
+          r.error ? `(${r.error})` : ''
+        );
       }
     }
 

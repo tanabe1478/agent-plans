@@ -8,6 +8,7 @@ build/
 !apps/electron/build/
 !apps/electron/build/*.plist
 *.tsbuildinfo
+apps/electron/electron.vite.config.*.mjs
 
 # Environment
 .env
