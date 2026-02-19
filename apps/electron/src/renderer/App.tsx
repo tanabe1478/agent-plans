@@ -15,6 +15,7 @@ import { ViewPage } from '@/pages/ViewPage';
 import { useUiStore } from '@/stores/uiStore';
 
 const USER_STYLESHEET_ID = 'agent-plans-user-stylesheet';
+const MONOKAI_THEME_CLASS = 'theme-monokai';
 
 function ensureUserStylesheetNode(): HTMLStyleElement {
   const existing = document.getElementById(USER_STYLESHEET_ID);
@@ -48,11 +49,10 @@ function App() {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const applyTheme = () => {
-      if (theme === 'system') {
-        root.classList.toggle('dark', mediaQuery.matches);
-      } else {
-        root.classList.toggle('dark', theme === 'dark');
-      }
+      const isMonokai = theme === 'monokai';
+      const isDark = isMonokai || theme === 'dark' || (theme === 'system' && mediaQuery.matches);
+      root.classList.toggle('dark', isDark);
+      root.classList.toggle(MONOKAI_THEME_CLASS, isMonokai);
     };
 
     applyTheme();

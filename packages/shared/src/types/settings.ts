@@ -62,13 +62,12 @@ export type ShortcutAction =
   | 'commandGoHome'
   | 'commandGoSearch'
   | 'commandOpenSettings'
-  | 'commandToggleTheme'
   | 'commandOpenQuickOpen'
   | 'commandOpenCurrentReview';
 
 export type AppShortcuts = Record<ShortcutAction, string>;
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark' | 'monokai' | 'system';
 
 export interface StylesheetLoadResult {
   ok: boolean;

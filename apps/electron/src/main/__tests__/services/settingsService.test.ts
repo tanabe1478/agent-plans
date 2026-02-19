@@ -78,12 +78,12 @@ describe('settingsService', () => {
     it('should normalize appearance settings', async () => {
       const service = createService();
       await service.updateSettings({
-        themeMode: 'dark',
+        themeMode: 'monokai',
         customStylesheetPath: '~/styles/custom.css',
       });
 
       const settings = await service.getSettings();
-      expect(settings.themeMode).toBe('dark');
+      expect(settings.themeMode).toBe('monokai');
       expect(settings.customStylesheetPath).toContain('/styles/custom.css');
     });
   });

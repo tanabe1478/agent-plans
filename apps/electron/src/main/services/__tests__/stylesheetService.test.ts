@@ -10,7 +10,7 @@ describe('stylesheetService', () => {
     const stylesheetPath = join(dir, 'theme.css');
     await writeFile(
       stylesheetPath,
-      ':root { --background: 210 40% 98%; --foreground: 222 47% 11%; } .dark { --background: 222 24% 8%; --foreground: 210 20% 92%; }',
+      ':root { --background: 210 40% 98%; --foreground: 222 47% 11%; } .dark { --background: 222 24% 8%; --foreground: 210 20% 92%; } .theme-monokai { --background: 70 8% 15%; --foreground: 60 30% 96%; }',
       'utf-8'
     );
 

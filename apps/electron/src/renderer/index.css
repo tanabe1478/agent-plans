@@ -109,6 +109,59 @@
     --review-code-text: 208 35% 93%;
     --review-comment-cell-bg: 215 21% 11%;
   }
+
+  .theme-monokai {
+    color-scheme: dark;
+    --background: 70 8% 15%;
+    --foreground: 60 30% 96%;
+    --card: 69 8% 17%;
+    --card-foreground: 60 30% 96%;
+    --popover: 69 8% 17%;
+    --popover-foreground: 60 30% 96%;
+    --primary: 80 76% 53%;
+    --primary-foreground: 70 8% 15%;
+    --secondary: 55 11% 22%;
+    --secondary-foreground: 60 30% 96%;
+    --muted: 55 11% 22%;
+    --muted-foreground: 60 9% 69%;
+    --accent: 190 81% 67%;
+    --accent-foreground: 70 8% 15%;
+    --destructive: 338 95% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 55 8% 26%;
+    --input: 55 8% 26%;
+    --ring: 32 98% 56%;
+
+    --ui-slate-950: 72 8% 12%;
+    --ui-slate-900: 70 8% 15%;
+    --ui-slate-800: 68 8% 19%;
+    --ui-slate-700: 55 8% 26%;
+    --ui-slate-100: 60 30% 96%;
+    --ui-slate-200: 60 15% 88%;
+    --ui-slate-300: 60 8% 74%;
+    --ui-slate-400: 60 7% 60%;
+    --ui-slate-500: 60 5% 52%;
+    --ui-slate-600: 60 5% 41%;
+
+    --scrollbar-track: 72 8% 12%;
+    --scrollbar-thumb: 55 8% 26%;
+    --scrollbar-thumb-hover: 55 8% 34%;
+
+    --review-file-border: 55 8% 26%;
+    --review-file-bg: 70 8% 15%;
+    --review-header-border: 55 8% 26%;
+    --review-header-text: 60 7% 60%;
+    --review-row-border: 68 8% 19%;
+    --review-row-comment-bg: 69 8% 17%;
+    --review-row-select-bg: 55 11% 22%;
+    --review-gutter-border: 55 8% 26%;
+    --review-gutter-bg: 70 8% 15%;
+    --review-gutter-text: 60 7% 60%;
+    --review-gutter-hover-bg: 65 9% 27%;
+    --review-gutter-hover-text: 60 30% 96%;
+    --review-code-text: 60 30% 96%;
+    --review-comment-cell-bg: 69 8% 17%;
+  }
 }
 
 @layer base {

@@ -79,12 +79,6 @@ const SHORTCUT_ITEMS: Array<{
     section: 'Command Palette',
   },
   {
-    action: 'commandToggleTheme',
-    label: 'Toggle Theme',
-    description: 'Run "Toggle Theme" from Command Palette.',
-    section: 'Command Palette',
-  },
-  {
     action: 'commandOpenQuickOpen',
     label: 'Open Quick Open (Command)',
     description: 'Run "Open Quick Open" from Command Palette.',
@@ -581,6 +575,7 @@ export function SettingsPage() {
               <option value="system">System</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
+              <option value="monokai">Monokai</option>
             </select>
           </div>
 
@@ -623,8 +618,8 @@ export function SettingsPage() {
 
         <div className="mt-4 flex items-center justify-between border-t pt-4">
           <p className="text-xs text-muted-foreground">
-            Use the same token format as built-in themes (`:root` / `.dark` with known `--tokens`
-            only). Invalid stylesheets are rejected.
+            Use the same token format as built-in themes (`:root` / `.dark` / `.theme-monokai` with
+            known `--tokens` only). Invalid stylesheets are rejected.
           </p>
           <button
             type="button"

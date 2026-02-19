@@ -42,7 +42,9 @@ export class SettingsService {
   }
 
   private normalizeThemeMode(value: unknown): ThemeMode {
-    return value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
+    return value === 'light' || value === 'dark' || value === 'monokai' || value === 'system'
+      ? value
+      : 'system';
   }
 
   private normalizeStylesheetPath(value: unknown): string | null {

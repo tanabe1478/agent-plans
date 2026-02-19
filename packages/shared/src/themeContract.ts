@@ -1,4 +1,4 @@
-export const THEME_CONTRACT_SELECTORS = [':root', '.dark'] as const;
+export const THEME_CONTRACT_SELECTORS = [':root', '.dark', '.theme-monokai'] as const;
 
 export const THEME_CONTRACT_TOKENS = [
   'accent',

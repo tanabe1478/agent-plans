@@ -6,7 +6,6 @@ const SHORTCUT_ACTIONS: ShortcutAction[] = [
   'commandGoHome',
   'commandGoSearch',
   'commandOpenSettings',
-  'commandToggleTheme',
   'commandOpenQuickOpen',
   'commandOpenCurrentReview',
 ];
@@ -17,7 +16,6 @@ export const DEFAULT_SHORTCUTS: AppShortcuts = {
   commandGoHome: 'Mod+1',
   commandGoSearch: 'Mod+2',
   commandOpenSettings: 'Mod+,',
-  commandToggleTheme: 'Mod+Shift+T',
   commandOpenQuickOpen: 'Mod+Shift+P',
   commandOpenCurrentReview: 'Mod+Shift+R',
 };
