@@ -20,6 +20,16 @@ pnpm test:e2e     # Electron Playwright E2E
 pnpm lint         # shared typecheck + electron typecheck
 ```
 
+## Verification (MUST run before considering work complete)
+
+```bash
+pnpm lint          # TypeScript type check
+pnpm test          # Unit tests
+pnpm build         # Electron bundle build (catches import/bundling issues)
+```
+
+`pnpm lint` (tsc --noEmit) only checks types. `pnpm build` (electron-vite build) also validates bundling, import resolution, and asset processing. Always run all three.
+
 ## Package Layout
 
 ```text
@@ -44,6 +54,7 @@ hooks/            # Hook scripts
 - Deletion is permanent for native app workflows
 - Review mode and clipboard prompt copy are critical paths
 - Keep docs and CI Electron-oriented
+- `pnpm lint` + `pnpm test` alone are NOT sufficient validation; `pnpm build` is required to catch bundling/runtime issues
 
 ## Runbooks
 
