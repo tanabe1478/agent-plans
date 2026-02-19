@@ -18,7 +18,7 @@ import { ProjectBadge } from '@/components/plan/ProjectBadge';
 import { StatusDropdown } from '@/components/plan/StatusDropdown';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
+import { useSettingsLoading } from '@/contexts/SettingsContext';
 import { writeClipboard } from '@/lib/clipboard';
 import { useBulkDelete, usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
 import { cn, formatDate, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
@@ -38,7 +38,6 @@ export function HomePage() {
   const bulkDelete = useBulkDelete();
   const updateStatus = useUpdateStatus();
   const { addToast } = useUiStore();
-  const fmEnabled = useFrontmatterEnabled();
   const settingsLoading = useSettingsLoading();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PlanStatus | 'all'>('all');
@@ -56,9 +55,8 @@ export function HomePage() {
     return plans
       .filter((plan) => {
         if (
-          fmEnabled &&
           statusFilter !== 'all' &&
-          normalizePlanStatus(plan.frontmatter?.status) !== statusFilter
+          normalizePlanStatus(plan.metadata?.status ?? plan.frontmatter?.status) !== statusFilter
         ) {
           return false;
         }
@@ -69,7 +67,7 @@ export function HomePage() {
         return keywords.includes(normalizedQuery);
       })
       .sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
-  }, [fmEnabled, plans, query, statusFilter]);
+  }, [plans, query, statusFilter]);
 
   const activePlan = useMemo(() => {
     const source = filteredPlans.length > 0 ? filteredPlans : plans;
@@ -85,12 +83,6 @@ export function HomePage() {
     }
     setActiveFilename(activePlan.filename);
   }, [activePlan]);
-
-  useEffect(() => {
-    if (!fmEnabled && statusFilter !== 'all') {
-      setStatusFilter('all');
-    }
-  }, [fmEnabled, statusFilter]);
 
   const toggleSelection = (filename: string) => {
     setSelectedPlans((prev) => {
@@ -204,41 +196,32 @@ export function HomePage() {
               className="h-8 w-full border border-slate-700 bg-slate-950 pl-8 pr-3 text-[12px] text-slate-100 outline-none placeholder:text-slate-500"
             />
           </div>
-          {fmEnabled ? (
-            <div className="flex items-center gap-1 border border-slate-700 bg-slate-950 p-1">
-              {statusTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setStatusFilter(tab.key)}
-                  className={cn(
-                    'px-2 py-1 text-[11px] tracking-wide',
-                    statusFilter === tab.key
-                      ? 'bg-slate-700 text-slate-100'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
+          <div className="flex items-center gap-1 border border-slate-700 bg-slate-950 p-1">
+            {statusTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setStatusFilter(tab.key)}
+                className={cn(
+                  'px-2 py-1 text-[11px] tracking-wide',
+                  statusFilter === tab.key
+                    ? 'bg-slate-700 text-slate-100'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
       <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="border border-slate-800 bg-slate-900/50">
-          <div
-            className={cn(
-              'grid border-b border-slate-800 px-2 py-1.5 text-[10px] uppercase tracking-[0.08em] text-slate-500',
-              fmEnabled
-                ? 'grid-cols-[28px_minmax(0,1fr)_120px_170px_68px]'
-                : 'grid-cols-[28px_minmax(0,1fr)_170px_68px]'
-            )}
-          >
+          <div className="grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] border-b border-slate-800 px-2 py-1.5 text-[10px] uppercase tracking-[0.08em] text-slate-500">
             <span />
             <span>Plan</span>
-            {fmEnabled ? <span>Status</span> : null}
+            <span>Status</span>
             <span>Modified</span>
             <span />
           </div>
@@ -251,8 +234,9 @@ export function HomePage() {
               filteredPlans.map((plan) => {
                 const isActive = plan.filename === activePlan?.filename;
                 const isChecked = selectedPlans.has(plan.filename);
-                const dueDate = fmEnabled ? plan.frontmatter?.dueDate : undefined;
-                const status = normalizePlanStatus(plan.frontmatter?.status);
+                const fm = plan.metadata ?? plan.frontmatter;
+                const dueDate = fm?.dueDate;
+                const status = normalizePlanStatus(fm?.status);
                 const readOnly = Boolean(plan.readOnly);
                 return (
                   // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
@@ -265,10 +249,7 @@ export function HomePage() {
                       setContextPos({ x: event.clientX, y: event.clientY });
                     }}
                     className={cn(
-                      'grid items-center border-b border-slate-800 px-2 py-1.5 text-[12px] text-slate-300',
-                      fmEnabled
-                        ? 'grid-cols-[28px_minmax(0,1fr)_120px_170px_68px]'
-                        : 'grid-cols-[28px_minmax(0,1fr)_170px_68px]',
+                      'grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] items-center border-b border-slate-800 px-2 py-1.5 text-[12px] text-slate-300',
                       isActive
                         ? 'bg-slate-800/70'
                         : 'hover:bg-slate-700/30 dark:hover:bg-slate-800/40'
@@ -313,17 +294,15 @@ export function HomePage() {
                         </span>
                       ) : null}
                     </button>
-                    {fmEnabled ? (
-                      <div className="pr-2">
-                        <StatusDropdown
-                          currentStatus={status}
-                          disabled={updateStatus.isPending || readOnly}
-                          onStatusChange={(next) =>
-                            updateStatus.mutate({ filename: plan.filename, status: next })
-                          }
-                        />
-                      </div>
-                    ) : null}
+                    <div className="pr-2">
+                      <StatusDropdown
+                        currentStatus={status}
+                        disabled={updateStatus.isPending || readOnly}
+                        onStatusChange={(next) =>
+                          updateStatus.mutate({ filename: plan.filename, status: next })
+                        }
+                      />
+                    </div>
                     <div className="text-[11px] text-slate-500">
                       {formatDate(plan.modifiedAt)}
                       {dueDate ? (
@@ -379,8 +358,13 @@ export function HomePage() {
                   {activePlan.filename}
                 </p>
               </div>
-              {fmEnabled && activePlan.frontmatter?.projectPath ? (
-                <ProjectBadge projectPath={activePlan.frontmatter.projectPath} />
+              {(activePlan.metadata?.projectPath ?? activePlan.frontmatter?.projectPath) ? (
+                <ProjectBadge
+                  projectPath={
+                    (activePlan.metadata?.projectPath ??
+                      activePlan.frontmatter?.projectPath) as string
+                  }
+                />
               ) : null}
               <p className="line-clamp-8 break-all text-[12px] leading-5 text-slate-300">
                 {activePlan.preview}

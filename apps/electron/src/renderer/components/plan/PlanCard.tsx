@@ -1,7 +1,6 @@
 import { normalizePlanStatus, type PlanMeta, type PlanStatus } from '@agent-plans/shared';
 import { Calendar, Clock, FileText, HardDrive } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useFrontmatterEnabled } from '../../contexts/SettingsContext';
 import { useUpdateStatus } from '../../lib/hooks';
 import {
   cn,
@@ -24,15 +23,107 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
   const { isSelected, toggleSelect } = usePlanStore();
   const selected = isSelected(plan.filename);
   const updateStatus = useUpdateStatus();
-  const fmEnabled = useFrontmatterEnabled();
-  const status = normalizePlanStatus(plan.frontmatter?.status);
-  const subtasks = plan.frontmatter?.subtasks ?? [];
-  const dueDate = fmEnabled ? plan.frontmatter?.dueDate : undefined;
+  const meta = plan.metadata ?? plan.frontmatter;
+  const status = normalizePlanStatus(meta?.status);
+  const subtasks = meta?.subtasks ?? [];
+  const dueDate = meta?.dueDate;
   const deadlineColor = getDeadlineColor(dueDate);
 
   const handleStatusChange = (status: PlanStatus) => {
     updateStatus.mutate({ filename: plan.filename, status });
   };
+
+  const cardContent = (
+    <>
+      <div className="flex items-start gap-3">
+        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-16">
+          <h3 className="font-medium truncate group-hover:text-primary">{plan.title}</h3>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">{plan.filename}</p>
+          {plan.source === 'codex' && (
+            <span className="mt-1 inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+              Codex
+            </span>
+          )}
+        </div>
+      </div>
+
+      <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{plan.preview}</p>
+
+      <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Calendar className="h-3 w-3" />
+          {formatDate(plan.modifiedAt)}
+        </span>
+        <span className="flex items-center gap-1">
+          <HardDrive className="h-3 w-3" />
+          {formatFileSize(plan.size)}
+        </span>
+        {dueDate && (
+          <span
+            className={cn(
+              'flex items-center gap-1 font-medium',
+              deadlineColor.includes('red')
+                ? 'text-red-600 dark:text-red-400'
+                : deadlineColor.includes('orange')
+                  ? 'text-orange-600 dark:text-orange-400'
+                  : deadlineColor.includes('yellow')
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : ''
+            )}
+          >
+            <Clock className="h-3 w-3" />
+            {formatRelativeDeadline(dueDate)}
+          </span>
+        )}
+        {meta?.projectPath && <ProjectBadge projectPath={meta.projectPath} />}
+      </div>
+
+      {meta?.blockedBy && meta.blockedBy.length > 0 && (
+        <div className="mt-2">
+          <DependencyBadge blockedByCount={meta.blockedBy.length} blocksCount={0} />
+        </div>
+      )}
+
+      {subtasks.length > 0 &&
+        (() => {
+          const done = subtasks.filter((s) => s.status === 'done').length;
+          const total = subtasks.length;
+          const pct = Math.round((done / total) * 100);
+          return (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex-1 h-1.5 rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {done}/{total}
+              </span>
+            </div>
+          );
+        })()}
+
+      {plan.sections.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1">
+          {plan.sections.slice(0, 4).map((section) => (
+            <span
+              key={section}
+              className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs"
+            >
+              {section}
+            </span>
+          ))}
+          {plan.sections.length > 4 && (
+            <span className="inline-flex items-center text-xs text-muted-foreground">
+              +{plan.sections.length - 4}
+            </span>
+          )}
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div
@@ -56,7 +147,7 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
       )}
 
       {/* Status dropdown - outside Link to prevent navigation */}
-      {fmEnabled && !plan.readOnly && (
+      {!plan.readOnly && (
         <div className="absolute right-3 top-3 z-10">
           <StatusDropdown
             currentStatus={status}
@@ -72,189 +163,11 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
           className="block w-full text-left"
           onClick={() => toggleSelect(plan.filename)}
         >
-          <div className="flex items-start gap-3">
-            <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0 pr-16">
-              <h3 className="font-medium truncate group-hover:text-primary">{plan.title}</h3>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{plan.filename}</p>
-              {plan.source === 'codex' && (
-                <span className="mt-1 inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Codex
-                </span>
-              )}
-            </div>
-          </div>
-
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{plan.preview}</p>
-
-          <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {formatDate(plan.modifiedAt)}
-            </span>
-            <span className="flex items-center gap-1">
-              <HardDrive className="h-3 w-3" />
-              {formatFileSize(plan.size)}
-            </span>
-            {dueDate && (
-              <span
-                className={cn(
-                  'flex items-center gap-1 font-medium',
-                  deadlineColor.includes('red')
-                    ? 'text-red-600 dark:text-red-400'
-                    : deadlineColor.includes('orange')
-                      ? 'text-orange-600 dark:text-orange-400'
-                      : deadlineColor.includes('yellow')
-                        ? 'text-yellow-600 dark:text-yellow-400'
-                        : ''
-                )}
-              >
-                <Clock className="h-3 w-3" />
-                {formatRelativeDeadline(dueDate)}
-              </span>
-            )}
-            {fmEnabled && plan.frontmatter?.projectPath && (
-              <ProjectBadge projectPath={plan.frontmatter.projectPath} />
-            )}
-          </div>
-
-          {fmEnabled && plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
-            <div className="mt-2">
-              <DependencyBadge blockedByCount={plan.frontmatter.blockedBy.length} blocksCount={0} />
-            </div>
-          )}
-
-          {fmEnabled &&
-            subtasks.length > 0 &&
-            (() => {
-              const done = subtasks.filter((s) => s.status === 'done').length;
-              const total = subtasks.length;
-              const pct = Math.round((done / total) * 100);
-              return (
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-secondary">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {done}/{total}
-                  </span>
-                </div>
-              );
-            })()}
-
-          {plan.sections.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {plan.sections.slice(0, 4).map((section) => (
-                <span
-                  key={section}
-                  className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs"
-                >
-                  {section}
-                </span>
-              ))}
-              {plan.sections.length > 4 && (
-                <span className="inline-flex items-center text-xs text-muted-foreground">
-                  +{plan.sections.length - 4}
-                </span>
-              )}
-            </div>
-          )}
+          {cardContent}
         </button>
       ) : (
         <Link to={`/plan/${encodeURIComponent(plan.filename)}`} className="block">
-          <div className="flex items-start gap-3">
-            <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0 pr-16">
-              <h3 className="font-medium truncate group-hover:text-primary">{plan.title}</h3>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{plan.filename}</p>
-              {plan.source === 'codex' && (
-                <span className="mt-1 inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Codex
-                </span>
-              )}
-            </div>
-          </div>
-
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{plan.preview}</p>
-
-          <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {formatDate(plan.modifiedAt)}
-            </span>
-            <span className="flex items-center gap-1">
-              <HardDrive className="h-3 w-3" />
-              {formatFileSize(plan.size)}
-            </span>
-            {dueDate && (
-              <span
-                className={cn(
-                  'flex items-center gap-1 font-medium',
-                  deadlineColor.includes('red')
-                    ? 'text-red-600 dark:text-red-400'
-                    : deadlineColor.includes('orange')
-                      ? 'text-orange-600 dark:text-orange-400'
-                      : deadlineColor.includes('yellow')
-                        ? 'text-yellow-600 dark:text-yellow-400'
-                        : ''
-                )}
-              >
-                <Clock className="h-3 w-3" />
-                {formatRelativeDeadline(dueDate)}
-              </span>
-            )}
-            {fmEnabled && plan.frontmatter?.projectPath && (
-              <ProjectBadge projectPath={plan.frontmatter.projectPath} />
-            )}
-          </div>
-
-          {fmEnabled && plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
-            <div className="mt-2">
-              <DependencyBadge blockedByCount={plan.frontmatter.blockedBy.length} blocksCount={0} />
-            </div>
-          )}
-
-          {fmEnabled &&
-            subtasks.length > 0 &&
-            (() => {
-              const done = subtasks.filter((s) => s.status === 'done').length;
-              const total = subtasks.length;
-              const pct = Math.round((done / total) * 100);
-              return (
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-secondary">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {done}/{total}
-                  </span>
-                </div>
-              );
-            })()}
-
-          {plan.sections.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {plan.sections.slice(0, 4).map((section) => (
-                <span
-                  key={section}
-                  className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs"
-                >
-                  {section}
-                </span>
-              ))}
-              {plan.sections.length > 4 && (
-                <span className="inline-flex items-center text-xs text-muted-foreground">
-                  +{plan.sections.length - 4}
-                </span>
-              )}
-            </div>
-          )}
+          {cardContent}
         </Link>
       )}
     </div>

@@ -4,7 +4,6 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
-import { useFrontmatterEnabled } from '../../contexts/SettingsContext';
 import { SubtaskList } from './SubtaskList';
 
 interface PlanViewerProps {
@@ -60,13 +59,11 @@ for (const tag of blockTags) {
 }
 
 export function PlanViewer({ plan, showLineNumbers = false }: PlanViewerProps) {
-  const fmEnabled = useFrontmatterEnabled();
+  const meta = plan.metadata ?? plan.frontmatter;
 
   return (
     <div>
-      {fmEnabled && (
-        <SubtaskList filename={plan.filename} subtasks={plan.frontmatter?.subtasks || []} />
-      )}
+      <SubtaskList filename={plan.filename} subtasks={meta?.subtasks || []} />
       <article
         data-plan-content="true"
         className={`markdown-content mt-6${showLineNumbers ? ' with-line-numbers' : ''}`}

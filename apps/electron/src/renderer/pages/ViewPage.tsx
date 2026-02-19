@@ -15,7 +15,6 @@ import { PlanViewer } from '@/components/plan/PlanViewer';
 import { ProjectBadge } from '@/components/plan/ProjectBadge';
 import { SectionNav } from '@/components/plan/SectionNav';
 import { StatusDropdown } from '@/components/plan/StatusDropdown';
-import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
 import { usePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
 import { formatDate, formatFileSize } from '@/lib/utils';
 
@@ -24,11 +23,10 @@ export function ViewPage() {
   const navigate = useNavigate();
   const { data: plan, isLoading, error } = usePlan(filename || '');
   const updateStatus = useUpdateStatus();
-  const fmEnabled = useFrontmatterEnabled();
-  const settingsLoading = useSettingsLoading();
-  const status = normalizePlanStatus(plan?.frontmatter?.status);
+  const meta = plan?.metadata ?? plan?.frontmatter;
+  const status = normalizePlanStatus(meta?.status);
 
-  if (settingsLoading || isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
@@ -73,7 +71,7 @@ export function ViewPage() {
               <span className="font-mono text-[10px] text-slate-500">{plan.filename}</span>
             </div>
 
-            {fmEnabled && !plan.readOnly && (
+            {!plan.readOnly && (
               <StatusDropdown
                 currentStatus={status}
                 onStatusChange={(nextStatus: PlanStatus) =>
@@ -96,16 +94,14 @@ export function ViewPage() {
                 <HardDrive className="h-3.5 w-3.5" />
                 {formatFileSize(plan.size)}
               </span>
-              {fmEnabled && plan.frontmatter?.projectPath && (
-                <ProjectBadge projectPath={plan.frontmatter.projectPath} />
-              )}
+              {meta?.projectPath && <ProjectBadge projectPath={meta.projectPath} />}
             </div>
 
-            {fmEnabled && plan.frontmatter?.blockedBy && plan.frontmatter.blockedBy.length > 0 && (
+            {meta?.blockedBy && meta.blockedBy.length > 0 && (
               <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-amber-300">
                 <GitBranch className="h-3.5 w-3.5" />
                 <span>Blocked by:</span>
-                {plan.frontmatter.blockedBy.map((dep) => (
+                {meta.blockedBy.map((dep) => (
                   <Link
                     key={dep}
                     to={`/plan/${encodeURIComponent(dep)}`}

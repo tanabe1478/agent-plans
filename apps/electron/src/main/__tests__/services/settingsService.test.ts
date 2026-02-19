@@ -21,7 +21,6 @@ describe('settingsService', () => {
       const service = createService();
       expect(typeof service.getSettings).toBe('function');
       expect(typeof service.updateSettings).toBe('function');
-      expect(typeof service.isFrontmatterEnabled).toBe('function');
       expect(typeof service.getPlanDirectories).toBe('function');
       expect(typeof service.resetSettingsCache).toBe('function');
     });

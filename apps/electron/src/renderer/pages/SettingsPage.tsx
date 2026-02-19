@@ -1,13 +1,9 @@
 import type { AppShortcuts, ShortcutAction } from '@agent-plans/shared';
 import {
   AlertCircle,
-  CheckSquare,
-  Clock,
-  Columns,
   Eye,
   Folder,
   FolderOpen,
-  GitBranch,
   Keyboard,
   Loader2,
   Minus,
@@ -24,14 +20,6 @@ import {
 } from '@/lib/shortcuts';
 import { useUiStore } from '@/stores/uiStore';
 import { DEFAULT_SHORTCUTS, mergeShortcuts } from '../../shared/shortcutDefaults';
-
-const FRONTMATTER_FEATURES = [
-  { icon: CheckSquare, label: 'Status management (ToDo, In Progress, Review, Completed)' },
-  { icon: Columns, label: 'Kanban board view' },
-  { icon: GitBranch, label: 'Dependency graph between plans' },
-  { icon: CheckSquare, label: 'Subtasks with progress tracking' },
-  { icon: Clock, label: 'Due date tracking with deadline alerts' },
-];
 
 const DEFAULT_PLAN_DIRECTORY = '~/.agent-plans/plans';
 const DEFAULT_CODEX_SESSION_LOG_DIRECTORY = '~/.codex/sessions';
@@ -132,7 +120,6 @@ export function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
   const updateSettings = useUpdateSettings();
   const { addToast } = useUiStore();
-  const frontmatterHeadingId = useId();
   const fileWatcherHeadingId = useId();
   const [directoryEntries, setDirectoryEntries] = useState<DirectoryEntry[]>([]);
   const [pickingDirectoryId, setPickingDirectoryId] = useState<string | null>(null);
@@ -282,20 +269,6 @@ export function SettingsPage() {
     );
   }
 
-  const handleToggle = async () => {
-    const newValue = !settings?.frontmatterEnabled;
-    try {
-      const updated = await updateSettings.mutateAsync({ frontmatterEnabled: newValue });
-      setDirectoryEntries(toDirectoryEntries(updated.planDirectories));
-      addToast(
-        newValue ? 'Frontmatter features enabled' : 'Frontmatter features disabled',
-        'success'
-      );
-    } catch {
-      addToast('Failed to update settings', 'error');
-    }
-  };
-
   const handleFileWatcherToggle = async () => {
     const newValue = !settings?.fileWatcherEnabled;
     try {
@@ -415,64 +388,6 @@ export function SettingsPage() {
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
-
-      <div className="rounded-lg border bg-card p-6 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 id={frontmatterHeadingId} className="text-lg font-semibold">
-              Frontmatter Features
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Enable YAML frontmatter-based plan management features. These are custom features
-              beyond basic Markdown plans.
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-labelledby={frontmatterHeadingId}
-            aria-checked={settings?.frontmatterEnabled ?? false}
-            onClick={handleToggle}
-            disabled={updateSettings.isPending}
-            className={`
-              relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
-              transition-colors duration-200 ease-in-out
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-              disabled:cursor-not-allowed disabled:opacity-50
-              ${settings?.frontmatterEnabled ? 'bg-primary' : 'bg-muted'}
-            `}
-          >
-            <span
-              className={`
-                pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0
-                transition duration-200 ease-in-out
-                ${settings?.frontmatterEnabled ? 'translate-x-5' : 'translate-x-0'}
-              `}
-            />
-          </button>
-        </div>
-
-        <div className="mt-6 border-t pt-4">
-          <h3 className="text-sm font-medium mb-3">
-            {settings?.frontmatterEnabled
-              ? 'Enabled features:'
-              : 'Features available when enabled:'}
-          </h3>
-          <ul className="space-y-2">
-            {FRONTMATTER_FEATURES.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Icon className="h-4 w-4 shrink-0" />
-                <span>{label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="mt-4 text-xs text-muted-foreground">
-          Existing frontmatter data in your plan files is always preserved regardless of this
-          setting.
-        </p>
-      </div>
 
       <div className="rounded-lg border bg-card p-6 mb-4">
         <div className="flex items-start justify-between gap-4">

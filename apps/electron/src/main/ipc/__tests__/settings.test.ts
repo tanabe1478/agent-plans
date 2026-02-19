@@ -50,7 +50,6 @@ describe('Settings IPC Handlers', () => {
 
   it('should return plain settings object from settings:get', async () => {
     vi.mocked(getSettings).mockResolvedValueOnce({
-      frontmatterEnabled: true,
       planDirectories: ['/tmp/test-plans'],
       shortcuts: DEFAULT_SHORTCUTS,
     });
@@ -61,7 +60,6 @@ describe('Settings IPC Handlers', () => {
 
     expect(getSettings).toHaveBeenCalledTimes(1);
     expect(result).toEqual({
-      frontmatterEnabled: true,
       planDirectories: ['/tmp/test-plans'],
       shortcuts: DEFAULT_SHORTCUTS,
     });
@@ -69,7 +67,6 @@ describe('Settings IPC Handlers', () => {
 
   it('should return plain settings object from settings:update', async () => {
     vi.mocked(updateSettings).mockResolvedValueOnce({
-      frontmatterEnabled: false,
       planDirectories: ['/tmp/updated-plans'],
       shortcuts: DEFAULT_SHORTCUTS,
     });
@@ -77,16 +74,13 @@ describe('Settings IPC Handlers', () => {
 
     expect(handler).toBeDefined();
     const result = await handler?.({} as never, {
-      frontmatterEnabled: false,
       planDirectories: ['/tmp/updated-plans'],
     });
 
     expect(updateSettings).toHaveBeenCalledWith({
-      frontmatterEnabled: false,
       planDirectories: ['/tmp/updated-plans'],
     });
     expect(result).toEqual({
-      frontmatterEnabled: false,
       planDirectories: ['/tmp/updated-plans'],
       shortcuts: DEFAULT_SHORTCUTS,
     });

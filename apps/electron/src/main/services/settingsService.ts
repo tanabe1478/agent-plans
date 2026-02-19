@@ -8,7 +8,6 @@ import { config } from '../config.js';
 const SETTINGS_FILENAME = '.settings.json';
 const DEFAULT_CODEX_SESSIONS_DIR = join(homedir(), '.codex', 'sessions');
 const ELECTRON_DEFAULT_SETTINGS: AppSettings = {
-  frontmatterEnabled: true,
   planDirectories: [config.plansDir],
   codexIntegrationEnabled: false,
   codexSessionLogDirectories: [DEFAULT_CODEX_SESSIONS_DIR],
@@ -108,11 +107,6 @@ export class SettingsService {
     return updated;
   }
 
-  async isFrontmatterEnabled(): Promise<boolean> {
-    const settings = await this.getSettings();
-    return settings.frontmatterEnabled;
-  }
-
   async getPlanDirectories(): Promise<string[]> {
     const settings = await this.getSettings();
     return this.normalizePlanDirectories(settings.planDirectories);
@@ -138,10 +132,6 @@ export async function getSettings(): Promise<AppSettings> {
 
 export async function updateSettings(partial: Partial<AppSettings>): Promise<AppSettings> {
   return defaultSettingsService.updateSettings(partial);
-}
-
-export async function isFrontmatterEnabled(): Promise<boolean> {
-  return defaultSettingsService.isFrontmatterEnabled();
 }
 
 export async function getPlanDirectories(): Promise<string[]> {

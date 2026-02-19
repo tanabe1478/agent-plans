@@ -116,7 +116,7 @@ describe('PlanService', () => {
       await expect(planService.getPlan('../invalid.md')).rejects.toThrow('Invalid filename');
     });
 
-    it('should normalize legacy status values from frontmatter', async () => {
+    it('should not parse frontmatter from file (metadata comes from DB)', async () => {
       await writeFile(
         join(plansDir, 'legacy-status.md'),
         '---\nstatus: draft\n---\n\n# Legacy Plan\n\nLegacy content.',
@@ -124,7 +124,9 @@ describe('PlanService', () => {
       );
 
       const plan = await planService.getPlan('legacy-status.md');
-      expect(plan.frontmatter?.status).toBe('todo');
+      // Frontmatter is stripped; metadata comes from DB (empty when no MetadataService)
+      expect(plan.metadata).toEqual({});
+      expect(plan.frontmatter).toEqual({});
     });
 
     it('should load codex plan detail when integration is enabled', async () => {

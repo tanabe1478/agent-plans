@@ -132,8 +132,6 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
 
   // Simple string fields
   if (typeof data.assignee === 'string') corrected.assignee = data.assignee;
-  if (typeof data.created === 'string') corrected.created = data.created;
-  if (typeof data.modified === 'string') corrected.modified = data.modified;
   if (typeof data.projectPath === 'string') corrected.projectPath = data.projectPath;
   if (typeof data.sessionId === 'string') corrected.sessionId = data.sessionId;
 
@@ -143,12 +141,6 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
     corrected.archivedAt = Number.isNaN(parsed)
       ? new Date().toISOString()
       : (data.archivedAt as string);
-  }
-
-  // Schema version
-  if (data.schemaVersion !== undefined) {
-    const num = Number(data.schemaVersion);
-    if (!Number.isNaN(num)) corrected.schemaVersion = num;
   }
 
   return corrected;

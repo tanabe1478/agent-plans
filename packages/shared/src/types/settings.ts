@@ -14,8 +14,6 @@ export type AppShortcuts = Record<ShortcutAction, string>;
  * Application settings
  */
 export interface AppSettings {
-  /** Enable YAML frontmatter features (status, priority, tags, subtasks, etc.) */
-  frontmatterEnabled: boolean;
   /** Directories to scan for markdown plans */
   planDirectories?: string[];
   /** Enable Codex session log integration */

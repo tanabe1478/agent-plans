@@ -90,8 +90,11 @@ export const ipcClient = {
     updateStatus: (filename: string, status: PlanStatus): Promise<PlanMeta> =>
       invoke<PlanMeta>('plans:updateStatus', { filename, status } as UpdateStatusRequest),
 
+    updateMetadata: (filename: string, field: string, value: unknown): Promise<PlanMeta> =>
+      invoke<PlanMeta>('plans:updateMetadata', { filename, field, value }),
+
     updateFrontmatter: (filename: string, field: string, value: unknown): Promise<PlanMeta> =>
-      invoke<PlanMeta>('plans:updateFrontmatter', { filename, field, value }),
+      invoke<PlanMeta>('plans:updateMetadata', { filename, field, value }),
 
     export: (filename: string, format: ExportFormat): Promise<ExportedPlanFile> =>
       invoke<ExportedPlanFile>('plans:export', filename, format),

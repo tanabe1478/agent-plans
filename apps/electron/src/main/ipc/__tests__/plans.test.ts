@@ -81,6 +81,10 @@ describe('Plans IPC Handlers', () => {
     expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:updateStatus', expect.any(Function));
   });
 
+  it('should register plans:updateMetadata handler', () => {
+    expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:updateMetadata', expect.any(Function));
+  });
+
   it('should register plans:updateFrontmatter handler', () => {
     expect(mockIpcMain.handle).toHaveBeenCalledWith(
       'plans:updateFrontmatter',
@@ -112,6 +116,6 @@ describe('Plans IPC Handlers', () => {
   });
 
   it('should register all handlers exactly once', () => {
-    expect(mockIpcMain.handle).toHaveBeenCalledTimes(16);
+    expect(mockIpcMain.handle).toHaveBeenCalledTimes(17);
   });
 });

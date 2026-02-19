@@ -8,18 +8,23 @@
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:debug": "electron-vite dev --remoteDebuggingPort 9222",
     "build": "electron-vite build",
     "dist:mac": "pnpm build && electron-builder --mac dmg --arm64 --publish never",
     "dist:mac:unsigned": "pnpm build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64 --publish never",
     "preview": "electron-vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "node scripts/run-tests.cjs run",
+    "test:watch": "node scripts/run-tests.cjs",
     "test:e2e": "pnpm build && playwright test -c playwright.config.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "verify:native": "node scripts/verify-native-modules.cjs",
+    "verify:runtime": "node scripts/verify-electron-runtime.cjs",
+    "postinstall": "node scripts/rebuild-native.cjs"
   },
   "dependencies": {
     "@agent-plans/shared": "workspace:*",
     "@tanstack/react-query": "^5.59.0",
+    "better-sqlite3": "^12.6.2",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.320.0",
     "open": "^10.0.0",
@@ -34,14 +39,15 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@playwright/test": "^1.40.0",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^14.3.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.11.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
-    "@electron/notarize": "^2.5.0",
     "autoprefixer": "^10.4.18",
     "clsx": "^2.1.1",
     "electron": "^33.0.0",
@@ -59,7 +65,7 @@
     "appId": "com.tanabe1478.agentplans",
     "productName": "agent-plans",
     "afterSign": "scripts/notarize.cjs",
-    "npmRebuild": false,
+    "npmRebuild": true,
     "directories": {
       "output": "release"
     },

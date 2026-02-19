@@ -28,8 +28,8 @@ export function getCurrentSchemaVersion(): number {
   return CURRENT_SCHEMA_VERSION;
 }
 
-export function needsMigration(frontmatter: PlanFrontmatter): boolean {
-  const version = frontmatter.schemaVersion ?? 0;
+export function needsMigration(frontmatter: Record<string, unknown>): boolean {
+  const version = (frontmatter.schemaVersion as number) ?? 0;
   return version < CURRENT_SCHEMA_VERSION;
 }
 
