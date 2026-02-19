@@ -26,7 +26,7 @@ interface ParsedFrontmatter {
   subtasks?: { id: string; title: string; status: string; assignee?: string; dueDate?: string }[];
 }
 
-const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
 
 function isPlanPriority(value: string): value is PlanPriority {
   return ['low', 'medium', 'high', 'critical'].includes(value);

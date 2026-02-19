@@ -56,7 +56,7 @@ function parseFrontmatterRaw(content: string): {
   body: string;
   raw: string | null;
 } {
-  const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+  const pattern = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
   const match = content.match(pattern);
 
   if (!match) {

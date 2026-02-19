@@ -63,7 +63,11 @@ export function PlanViewer({ plan, showLineNumbers = false }: PlanViewerProps) {
 
   return (
     <div>
-      <SubtaskList filename={plan.filename} subtasks={meta?.subtasks || []} />
+      <SubtaskList
+        filename={plan.filename}
+        subtasks={meta?.subtasks || []}
+        readOnly={plan.readOnly}
+      />
       <article
         data-plan-content="true"
         className={`markdown-content mt-6${showLineNumbers ? ' with-line-numbers' : ''}`}

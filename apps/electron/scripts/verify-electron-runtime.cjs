@@ -1,4 +1,3 @@
-/* biome-ignore-file lint/suspicious/noConsole: CLI script uses console for user-facing output */
 /**
  * Verify the Electron app starts correctly and the renderer loads.
  *
@@ -123,6 +122,15 @@ async function cdpEvaluate(wsUrl, expression) {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  const nodeVersion = parseInt(process.versions.node.split('.')[0], 10);
+  if (nodeVersion < 22) {
+    console.error(
+      '[verify-runtime] Node.js %s detected. This script requires Node.js >= 22 for built-in WebSocket support.',
+      process.versions.node
+    );
+    process.exit(1);
+  }
+
   console.log('[verify-runtime] Starting electron-vite dev with CDP on port %d ...', DEBUG_PORT);
 
   // Start electron-vite dev

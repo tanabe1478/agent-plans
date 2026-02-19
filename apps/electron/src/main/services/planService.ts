@@ -482,10 +482,11 @@ export class PlanService {
 
     await rename(oldPath, newPath);
 
-    // Move metadata in DB: copy old → new, delete old
+    // Move metadata in DB: copy old → new (including subtasks & deps), delete old
     if (this.metadataService) {
       const oldMeta = this.metadataService.getMetadata(filename);
       if (oldMeta) {
+        // Copy metadata to new filename first
         this.metadataService.upsertMetadata(newFilename, {
           source: oldMeta.source,
           status: oldMeta.status,
@@ -500,6 +501,30 @@ export class PlanService {
           createdAt: oldMeta.createdAt,
           modifiedAt: oldMeta.modifiedAt,
         });
+
+        // Migrate subtasks to new filename before cascade-delete
+        const subtasks = this.metadataService.listSubtasks(filename);
+        for (const subtask of subtasks) {
+          this.metadataService.upsertSubtask(newFilename, {
+            id: subtask.id,
+            title: subtask.title,
+            status: subtask.status,
+            assignee: subtask.assignee,
+            dueDate: subtask.dueDate,
+            sortOrder: subtask.sortOrder,
+          });
+        }
+
+        // Migrate dependencies to new filename before cascade-delete
+        const deps = this.metadataService.getDependencies(filename);
+        for (const blockedBy of deps.blockedBy) {
+          this.metadataService.addDependency(newFilename, blockedBy);
+        }
+        for (const blocks of deps.blocks) {
+          this.metadataService.addDependency(blocks, newFilename);
+        }
+
+        // Now safe to delete old metadata (subtasks/deps cascade-delete)
         this.metadataService.deleteMetadata(filename);
       }
     }
