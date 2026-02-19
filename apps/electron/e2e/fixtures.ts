@@ -24,10 +24,15 @@ function resetFixtures(targetDir: string): void {
     mkdirSync(resolve(targetDir, dir), { recursive: true });
   }
 
+  // Remove stale metadata DB so frontmatter migration runs fresh
+  rmSync(resolve(targetDir, '.metadata.db'), { force: true });
+  rmSync(resolve(targetDir, '.metadata.db-wal'), { force: true });
+  rmSync(resolve(targetDir, '.metadata.db-shm'), { force: true });
+
   writeFileSync(resolve(targetDir, '.audit.jsonl'), '');
   writeFileSync(resolve(targetDir, '.views.json'), '[]');
   writeFileSync(resolve(targetDir, '.notifications-read.json'), '[]');
-  writeFileSync(resolve(targetDir, '.settings.json'), '{"frontmatterEnabled":true}');
+  writeFileSync(resolve(targetDir, '.settings.json'), '{}');
 }
 
 function slugify(input: string): string {

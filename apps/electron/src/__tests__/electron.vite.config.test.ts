@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { ElectronViteConfig } from 'electron-vite';
 import { describe, expect, it } from 'vitest';
@@ -111,5 +112,64 @@ describe('electron.vite.config', () => {
 
     const rendererInput = config.renderer?.build?.rollupOptions?.input as { index: string };
     expect(rendererInput.index).toContain('src/renderer/index.html');
+  });
+});
+
+describe('native module ABI guard', () => {
+  const pkg = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf-8'));
+
+  const NATIVE_MODULES = ['better-sqlite3'];
+
+  const hasNativeModule = NATIVE_MODULES.some(
+    (mod) => pkg.dependencies?.[mod] || pkg.devDependencies?.[mod]
+  );
+
+  it('should have postinstall script that runs rebuild-native when native modules are present', () => {
+    expect(hasNativeModule).toBe(true);
+    expect(pkg.scripts?.postinstall).toBeDefined();
+    expect(pkg.scripts.postinstall).toContain('rebuild-native');
+  });
+
+  it('should have rebuild-native script file', () => {
+    const scriptPath = resolve(__dirname, '../../scripts/rebuild-native.cjs');
+    expect(existsSync(scriptPath)).toBe(true);
+  });
+
+  it('should have verify:native script for Electron runtime ABI verification', () => {
+    expect(pkg.scripts?.['verify:native']).toBeDefined();
+    expect(pkg.scripts['verify:native']).toContain('verify-native-modules');
+  });
+
+  it('should have verify-native-modules script file', () => {
+    const scriptPath = resolve(__dirname, '../../scripts/verify-native-modules.cjs');
+    expect(existsSync(scriptPath)).toBe(true);
+  });
+});
+
+describe('Electron runtime debug infrastructure', () => {
+  const pkg = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf-8'));
+
+  const mcpJsonPath = resolve(__dirname, '../../../../.mcp.json');
+  const hasMcpJson = existsSync(mcpJsonPath);
+
+  it('should have dev:debug script with remoteDebuggingPort', () => {
+    expect(pkg.scripts?.['dev:debug']).toBeDefined();
+    expect(pkg.scripts['dev:debug']).toContain('remoteDebuggingPort');
+  });
+
+  it('should have verify:runtime script', () => {
+    expect(pkg.scripts?.['verify:runtime']).toBeDefined();
+    expect(pkg.scripts['verify:runtime']).toContain('verify-electron-runtime');
+  });
+
+  it('should have verify-electron-runtime script file', () => {
+    const scriptPath = resolve(__dirname, '../../scripts/verify-electron-runtime.cjs');
+    expect(existsSync(scriptPath)).toBe(true);
+  });
+
+  it.skipIf(!hasMcpJson)('should have electron-debug MCP server configured in .mcp.json', () => {
+    const mcpConfig = JSON.parse(readFileSync(mcpJsonPath, 'utf-8'));
+    expect(mcpConfig.mcpServers?.['electron-debug']).toBeDefined();
+    expect(mcpConfig.mcpServers['electron-debug'].command).toBe('electron-debug-mcp');
   });
 });

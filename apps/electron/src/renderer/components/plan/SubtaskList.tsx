@@ -7,9 +7,10 @@ import { useUpdateSubtask } from '../../lib/hooks';
 interface SubtaskListProps {
   filename: string;
   subtasks: Subtask[];
+  readOnly?: boolean;
 }
 
-export function SubtaskList({ filename, subtasks }: SubtaskListProps) {
+export function SubtaskList({ filename, subtasks, readOnly }: SubtaskListProps) {
   const [newTitle, setNewTitle] = useState('');
   const updateSubtask = useUpdateSubtask();
 
@@ -71,7 +72,7 @@ export function SubtaskList({ filename, subtasks }: SubtaskListProps) {
               type="button"
               onClick={() => handleToggle(subtask.id)}
               className="flex-shrink-0 text-muted-foreground hover:text-primary"
-              disabled={updateSubtask.isPending}
+              disabled={readOnly || updateSubtask.isPending}
             >
               {subtask.status === 'done' ? (
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -86,38 +87,42 @@ export function SubtaskList({ filename, subtasks }: SubtaskListProps) {
             >
               {subtask.title}
             </span>
-            <button
-              type="button"
-              onClick={() => handleDelete(subtask.id)}
-              className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-              disabled={updateSubtask.isPending}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => handleDelete(subtask.id)}
+                className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                disabled={updateSubtask.isPending}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
           </li>
         ))}
       </ul>
 
-      <div className="mt-3 flex gap-2">
-        <input
-          type="text"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleAdd();
-          }}
-          placeholder="Add subtask..."
-          className="flex-1 rounded-md border px-3 py-1.5 text-sm"
-        />
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={!newTitle.trim() || updateSubtask.isPending}
-          className="rounded-md border px-2 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="mt-3 flex gap-2">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAdd();
+            }}
+            placeholder="Add subtask..."
+            className="flex-1 rounded-md border px-3 py-1.5 text-sm"
+          />
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!newTitle.trim() || updateSubtask.isPending}
+            className="rounded-md border px-2 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

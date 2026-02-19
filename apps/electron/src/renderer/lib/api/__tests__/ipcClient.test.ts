@@ -176,7 +176,6 @@ describe('ipcClient', () => {
     it('should call settings:get channel', async () => {
       const { ipcClient } = await import('../ipcClient');
       mockInvoke.mockResolvedValueOnce({
-        frontmatterEnabled: true,
         planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });
@@ -189,19 +188,16 @@ describe('ipcClient', () => {
     it('should call settings:update channel', async () => {
       const { ipcClient } = await import('../ipcClient');
       mockInvoke.mockResolvedValueOnce({
-        frontmatterEnabled: false,
         planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });
 
       await ipcClient.settings.update({
-        frontmatterEnabled: true,
         planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });
 
       expect(mockInvoke).toHaveBeenCalledWith('settings:update', {
-        frontmatterEnabled: true,
         planDirectories: ['~/.agent-plans/plans'],
         shortcuts: DEFAULT_SHORTCUTS,
       });

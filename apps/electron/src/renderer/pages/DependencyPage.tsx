@@ -1,8 +1,7 @@
 import type { DependencyGraph, DependencyNode, PlanStatus } from '@agent-plans/shared';
 import { AlertTriangle, Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
+import { useNavigate } from 'react-router-dom';
 import { useDependencyGraph } from '@/lib/hooks/useDependencies';
 
 const NODE_WIDTH = 200;
@@ -198,8 +197,6 @@ function GraphEdge({
 }
 
 export function DependencyPage() {
-  const frontmatterEnabled = useFrontmatterEnabled();
-  const settingsLoading = useSettingsLoading();
   const { data: graph, isLoading, error } = useDependencyGraph();
   const navigate = useNavigate();
   const [scale, setScale] = useState(1);
@@ -252,9 +249,6 @@ export function DependencyPage() {
   const handleMouseUp = useCallback(() => {
     setIsPanning(false);
   }, []);
-
-  if (settingsLoading) return null;
-  if (!frontmatterEnabled) return <Navigate to="/" replace />;
 
   if (isLoading) {
     return (

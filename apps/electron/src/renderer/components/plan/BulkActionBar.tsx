@@ -1,6 +1,5 @@
 import type { PlanStatus } from '@agent-plans/shared';
 import { ArrowRightCircle, CheckSquare, XSquare } from 'lucide-react';
-import { useFrontmatterEnabled } from '../../contexts/SettingsContext';
 import { useBulkUpdateStatus } from '../../lib/hooks';
 import { usePlanStore } from '../../stores/planStore';
 import { useUiStore } from '../../stores/uiStore';
@@ -8,7 +7,6 @@ import { useUiStore } from '../../stores/uiStore';
 export function BulkActionBar() {
   const { selectedPlans, clearSelection } = usePlanStore();
   const { addToast } = useUiStore();
-  const fmEnabled = useFrontmatterEnabled();
   const count = selectedPlans.size;
 
   const bulkStatus = useBulkUpdateStatus();
@@ -58,28 +56,26 @@ export function BulkActionBar() {
           <div className="h-6 w-px bg-border" />
 
           {/* Status change */}
-          {fmEnabled && (
-            <div className="flex items-center gap-1">
-              <ArrowRightCircle className="h-3.5 w-3.5 text-muted-foreground" />
-              <select
-                onChange={(e) => {
-                  if (e.target.value) handleBulkStatus(e.target.value as PlanStatus);
-                  e.target.value = '';
-                }}
-                disabled={isPending}
-                className="rounded-md border px-2 py-1 text-xs"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Status...
-                </option>
-                <option value="todo">ToDo</option>
-                <option value="in_progress">In Progress</option>
-                <option value="review">Review</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-          )}
+          <div className="flex items-center gap-1">
+            <ArrowRightCircle className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              onChange={(e) => {
+                if (e.target.value) handleBulkStatus(e.target.value as PlanStatus);
+                e.target.value = '';
+              }}
+              disabled={isPending}
+              className="rounded-md border px-2 py-1 text-xs"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Status...
+              </option>
+              <option value="todo">ToDo</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>

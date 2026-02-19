@@ -28,8 +28,8 @@ export function getCurrentSchemaVersion(): number {
   return CURRENT_SCHEMA_VERSION;
 }
 
-export function needsMigration(frontmatter: PlanFrontmatter): boolean {
-  const version = frontmatter.schemaVersion ?? 0;
+export function needsMigration(frontmatter: Record<string, unknown>): boolean {
+  const version = (frontmatter.schemaVersion as number) ?? 0;
   return version < CURRENT_SCHEMA_VERSION;
 }
 
@@ -56,7 +56,7 @@ function parseFrontmatterRaw(content: string): {
   body: string;
   raw: string | null;
 } {
-  const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+  const pattern = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
   const match = content.match(pattern);
 
   if (!match) {
@@ -68,7 +68,7 @@ function parseFrontmatterRaw(content: string): {
 
   // Simple YAML key-value parsing
   const fm: Record<string, unknown> = {};
-  const lines = rawFm.split('\n');
+  const lines = rawFm.split(/\r?\n/);
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];

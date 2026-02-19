@@ -1,8 +1,11 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, ipcMain } from 'electron';
+import { config } from './config.js';
 import { registerAllHandlers } from './ipc/index.js';
 import { FileWatcherService } from './services/fileWatcherService.js';
+import { migrateFrontmatterToDb } from './services/frontmatterMigration.js';
+import { getDefaultMetadataService } from './services/planService.js';
 import { settingsService } from './services/settingsService.js';
 
 let mainWindow: BrowserWindow | null = null;
@@ -112,9 +115,17 @@ async function createWindow() {
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Register all IPC handlers
   registerAllHandlers(ipcMain, fileWatcher);
+
+  // Migrate frontmatter metadata to SQLite DB on first launch.
+  // Subsequent launches are no-ops (frontmatter already stripped).
+  try {
+    await migrateFrontmatterToDb(config.plansDir, getDefaultMetadataService());
+  } catch {
+    // Non-fatal: migration failure should not block app startup
+  }
 
   void createWindow();
 

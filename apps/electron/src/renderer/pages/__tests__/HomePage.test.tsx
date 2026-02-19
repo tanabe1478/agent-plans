@@ -21,7 +21,6 @@ vi.mock('@/lib/hooks/usePlans', () => ({
 }));
 
 vi.mock('@/contexts/SettingsContext', () => ({
-  useFrontmatterEnabled: () => false,
   useSettingsLoading: () => false,
 }));
 
@@ -96,9 +95,9 @@ describe('HomePage', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('should hide status tabs when frontmatter is disabled', () => {
+  it('should always show status tabs', () => {
     render(<HomePage />, { wrapper: createWrapper() });
-    expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'All' }).length).toBeGreaterThan(0);
   });
 
   it('should have select button', () => {

@@ -5,9 +5,15 @@ import { createGzip } from 'node:zlib';
 import { normalizePlanStatus, type PlanFrontmatter, type PlanStatus } from '@agent-plans/shared';
 import { config } from '../config.js';
 
+/** Extended frontmatter for export, including legacy timestamp fields found in files */
+interface ExportFrontmatter extends PlanFrontmatter {
+  created?: string;
+  modified?: string;
+}
+
 interface ExportPlan {
   filename: string;
-  frontmatter: PlanFrontmatter | undefined;
+  frontmatter: ExportFrontmatter | undefined;
   content: string;
 }
 
@@ -33,7 +39,7 @@ function parseFrontmatter(content: string): {
 
   const frontmatterStr = match[1];
   const body = match[2];
-  const frontmatter: PlanFrontmatter = {};
+  const frontmatter: ExportFrontmatter = {};
   const lines = frontmatterStr.split('\n');
 
   for (const line of lines) {

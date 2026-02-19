@@ -74,10 +74,11 @@ export class NotificationService {
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     for (const plan of plans) {
-      const status = plan.frontmatter?.status ?? 'todo';
+      const planMeta = plan.metadata ?? plan.frontmatter;
+      const status = planMeta?.status ?? 'todo';
       if (status === 'completed') continue;
 
-      const dueDate = plan.frontmatter?.dueDate;
+      const dueDate = planMeta?.dueDate;
       if (dueDate) {
         const due = startOfDay(new Date(dueDate));
 
@@ -124,9 +125,10 @@ export class NotificationService {
       }
 
       // Blocked and stale check
-      const blockedBy = plan.frontmatter?.blockedBy;
+      const meta = plan.metadata ?? plan.frontmatter;
+      const blockedBy = meta?.blockedBy;
       if (blockedBy && blockedBy.length > 0 && status === 'in_progress') {
-        const modified = plan.frontmatter?.modified || plan.modifiedAt;
+        const modified = plan.modifiedAt;
         const modifiedDate = new Date(modified);
         if (modifiedDate < threeDaysAgo) {
           const dateStr = modifiedDate.toISOString().split('T')[0];

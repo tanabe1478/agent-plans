@@ -1,17 +1,11 @@
+import { mkdirSync } from 'node:fs';
 import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import type {
-  PlanDetail,
-  PlanFrontmatter,
-  PlanMeta,
-  PlanPriority,
-  PlanStatus,
-  Subtask,
-} from '@agent-plans/shared';
-import { normalizePlanStatus } from '@agent-plans/shared';
+import type { PlanDetail, PlanMeta, PlanMetadata, PlanStatus } from '@agent-plans/shared';
 import { config } from '../config.js';
 import { ArchiveService } from './archiveService.js';
 import { type CodexSessionService, codexSessionService } from './codexSessionService.js';
+import { MetadataService } from './metadataService.js';
 import { generatePlanName } from './nameGenerator.js';
 import { type SettingsService, settingsService } from './settingsService.js';
 
@@ -31,11 +25,6 @@ export interface ConflictChecker {
     plansDir: string
   ): Promise<{ hasConflict: boolean; lastKnownMtime?: number; currentMtime?: number }>;
   recordFileState(filename: string, mtime: number, size: number): void;
-}
-
-export interface MigrationHandler {
-  needsMigration(frontmatter: unknown): boolean;
-  migrate(frontmatter: Record<string, unknown>): PlanFrontmatter;
 }
 
 export interface PlanServiceConfig {
@@ -58,265 +47,13 @@ class PlanConflictError extends Error {
   }
 }
 
-function isPlanPriority(value: string): value is PlanPriority {
-  return ['low', 'medium', 'high', 'critical'].includes(value);
-}
-
-function buildSubtask(candidate: Partial<Subtask>): Subtask | null {
-  if (!candidate.id || !candidate.title) return null;
-  return {
-    id: candidate.id,
-    title: candidate.title,
-    status: candidate.status ?? 'todo',
-    assignee: candidate.assignee,
-    dueDate: candidate.dueDate,
-  };
-}
-
 /**
- * Parse a YAML array from frontmatter lines starting at the given index.
- * Supports both inline [a, b] and multi-line "- item" syntax.
+ * Strip any remaining YAML frontmatter from file content.
+ * After DB migration, files should be pure content, but this handles edge cases.
  */
-function parseYamlArray(
-  value: string,
-  lines: string[],
-  startIndex: number
-): { items: string[]; consumed: number } {
-  // Inline array: [a, b, c]
-  if (value.startsWith('[') && value.endsWith(']')) {
-    const inner = value.slice(1, -1);
-    const items = inner
-      .split(',')
-      .map((s) => s.trim().replace(/^["']|["']$/g, ''))
-      .filter(Boolean);
-    return { items, consumed: 0 };
-  }
-
-  // Multi-line array: lines starting with "  - "
-  const items: string[] = [];
-  let consumed = 0;
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const line = lines[i];
-    const listMatch = line.match(/^\s+-\s+(.+)$/);
-    if (listMatch) {
-      items.push(listMatch[1].trim().replace(/^["']|["']$/g, ''));
-      consumed++;
-    } else {
-      break;
-    }
-  }
-  return { items, consumed };
-}
-
-/**
- * Parse subtasks from YAML frontmatter lines.
- */
-function parseSubtasks(
-  lines: string[],
-  startIndex: number
-): { subtasks: Subtask[]; consumed: number } {
-  const subtasks: Subtask[] = [];
-  let consumed = 0;
-  let current: Partial<Subtask> | null = null;
-
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const line = lines[i];
-    // New subtask item
-    const itemMatch = line.match(/^\s+-\s+(\w+):\s*(.*)$/);
-    // Continuation property
-    const propMatch = line.match(/^\s{4,}(\w+):\s*(.*)$/);
-
-    if (itemMatch) {
-      const built = current ? buildSubtask(current) : null;
-      if (built) {
-        subtasks.push(built);
-      }
-      current = {};
-      const key = itemMatch[1];
-      const val = itemMatch[2].trim().replace(/^["']|["']$/g, '');
-      if (key === 'id') current.id = val;
-      else if (key === 'title') current.title = val;
-      else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
-      else if (key === 'dueDate') current.dueDate = val;
-      consumed++;
-    } else if (propMatch && current) {
-      const key = propMatch[1];
-      const val = propMatch[2].trim().replace(/^["']|["']$/g, '');
-      if (key === 'id') current.id = val;
-      else if (key === 'title') current.title = val;
-      else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
-      else if (key === 'dueDate') current.dueDate = val;
-      consumed++;
-    } else {
-      break;
-    }
-  }
-
-  const built = current ? buildSubtask(current) : null;
-  if (built) {
-    subtasks.push(built);
-  }
-
-  return { subtasks, consumed };
-}
-
-/**
- * Parse YAML frontmatter from markdown content
- */
-function parseFrontmatter(content: string): {
-  frontmatter: PlanFrontmatter | undefined;
-  body: string;
-} {
-  const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
-  const match = content.match(pattern);
-
-  if (!match) {
-    return { frontmatter: undefined, body: content };
-  }
-
-  const frontmatterStr = match[1];
-  const body = match[2];
-
-  const frontmatter: PlanFrontmatter = {};
-  const lines = frontmatterStr.split('\n');
-
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1 || line.match(/^\s/)) {
-      i++;
-      continue;
-    }
-
-    const key = line.slice(0, colonIndex).trim();
-    let value = line.slice(colonIndex + 1).trim();
-
-    // Remove quotes if present
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-
-    switch (key) {
-      case 'created':
-        frontmatter.created = value;
-        break;
-      case 'modified':
-        frontmatter.modified = value;
-        break;
-      case 'project_path':
-        frontmatter.projectPath = value;
-        break;
-      case 'session_id':
-        frontmatter.sessionId = value;
-        break;
-      case 'status':
-        frontmatter.status = normalizePlanStatus(value);
-        break;
-      case 'priority':
-        if (isPlanPriority(value)) {
-          frontmatter.priority = value;
-        }
-        break;
-      case 'dueDate':
-        frontmatter.dueDate = value;
-        break;
-      case 'tags': {
-        const tagResult = parseYamlArray(value, lines, i);
-        frontmatter.tags = tagResult.items;
-        i += tagResult.consumed;
-        break;
-      }
-      case 'estimate':
-        frontmatter.estimate = value;
-        break;
-      case 'blockedBy': {
-        const blockedResult = parseYamlArray(value, lines, i);
-        frontmatter.blockedBy = blockedResult.items;
-        i += blockedResult.consumed;
-        break;
-      }
-      case 'assignee':
-        frontmatter.assignee = value;
-        break;
-      case 'archivedAt':
-        frontmatter.archivedAt = value;
-        break;
-      case 'subtasks': {
-        const subtaskResult = parseSubtasks(lines, i);
-        if (subtaskResult.subtasks.length > 0) {
-          frontmatter.subtasks = subtaskResult.subtasks;
-        }
-        i += subtaskResult.consumed;
-        break;
-      }
-      case 'schemaVersion':
-        frontmatter.schemaVersion = parseInt(value, 10) || undefined;
-        break;
-    }
-
-    i++;
-  }
-
-  return { frontmatter: Object.keys(frontmatter).length > 0 ? frontmatter : undefined, body };
-}
-
-/**
- * Serialize a string array to YAML format
- */
-function serializeYamlArray(items: string[]): string {
-  if (items.length === 0) return '[]';
-  return `\n${items.map((item) => `  - "${item}"`).join('\n')}`;
-}
-
-/**
- * Serialize subtasks to YAML format
- */
-function serializeSubtasks(subtasks: Subtask[]): string {
-  if (subtasks.length === 0) return '[]';
-  return (
-    '\n' +
-    subtasks
-      .map((st) => {
-        const props: string[] = [];
-        props.push(`  - id: "${st.id}"`);
-        props.push(`    title: "${st.title}"`);
-        props.push(`    status: ${st.status}`);
-        if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
-        if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
-        return props.join('\n');
-      })
-      .join('\n')
-  );
-}
-
-/**
- * Serialize frontmatter to YAML string
- */
-function serializeFrontmatter(fm: PlanFrontmatter): string {
-  const lines: string[] = [];
-  if (fm.created) lines.push(`created: "${fm.created}"`);
-  if (fm.modified) lines.push(`modified: "${fm.modified}"`);
-  if (fm.projectPath) lines.push(`project_path: "${fm.projectPath}"`);
-  if (fm.sessionId) lines.push(`session_id: "${fm.sessionId}"`);
-  if (fm.status) lines.push(`status: ${fm.status}`);
-  if (fm.priority) lines.push(`priority: ${fm.priority}`);
-  if (fm.dueDate) lines.push(`dueDate: "${fm.dueDate}"`);
-  if (fm.tags && fm.tags.length > 0) lines.push(`tags:${serializeYamlArray(fm.tags)}`);
-  if (fm.estimate) lines.push(`estimate: "${fm.estimate}"`);
-  if (fm.blockedBy && fm.blockedBy.length > 0)
-    lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
-  if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
-  if (fm.archivedAt) lines.push(`archivedAt: "${fm.archivedAt}"`);
-  if (fm.subtasks && fm.subtasks.length > 0)
-    lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
-  if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);
-  return lines.join('\n');
+function stripFrontmatter(content: string): string {
+  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/);
+  return match ? match[1] : content;
 }
 
 /**
@@ -339,12 +76,11 @@ function extractSections(content: string): string[] {
  * Extract preview text from markdown
  */
 function extractPreview(content: string, length: number): string {
-  // Skip the title line
   const lines = content.split('\n');
   const startIndex = lines.findIndex((line) => line.match(/^#\s+/)) + 1;
   const textContent = lines
     .slice(startIndex)
-    .filter((line) => !line.match(/^[#|`\-*]/)) // Skip headers, code, lists
+    .filter((line) => !line.match(/^[#|`\-*]/))
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -367,13 +103,48 @@ function extractRelatedProject(content: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Convert MetadataService row to PlanMetadata for the renderer
+ */
+function toMetadata(
+  row: ReturnType<MetadataService['getMetadata']>,
+  subtasks: ReturnType<MetadataService['listSubtasks']>,
+  deps: ReturnType<MetadataService['getDependencies']>
+): PlanMetadata {
+  const meta: PlanMetadata = {};
+  if (row) {
+    if (row.status) meta.status = row.status;
+    if (row.priority) meta.priority = row.priority;
+    if (row.dueDate) meta.dueDate = row.dueDate;
+    if (row.estimate) meta.estimate = row.estimate;
+    if (row.assignee) meta.assignee = row.assignee;
+    if (row.tags && row.tags.length > 0) meta.tags = row.tags;
+    if (row.projectPath) meta.projectPath = row.projectPath;
+    if (row.sessionId) meta.sessionId = row.sessionId;
+    if (row.archivedAt) meta.archivedAt = row.archivedAt;
+  }
+  if (subtasks.length > 0) {
+    meta.subtasks = subtasks.map((st) => ({
+      id: st.id,
+      title: st.title,
+      status: st.status,
+      assignee: st.assignee ?? undefined,
+      dueDate: st.dueDate ?? undefined,
+    }));
+  }
+  if (deps.blockedBy.length > 0) {
+    meta.blockedBy = deps.blockedBy;
+  }
+  return meta;
+}
+
 export interface PlanServiceDependencies {
   archiveService: ArchiveService;
   settingsService: SettingsService;
+  metadataService?: MetadataService;
   codexSessionService?: CodexSessionService;
   auditLogger?: AuditLogger;
   conflictChecker?: ConflictChecker;
-  migrationHandler?: MigrationHandler;
 }
 
 export class PlanService {
@@ -382,10 +153,10 @@ export class PlanService {
   private previewLength: number;
   private archiveService: ArchiveService;
   private settingsService: SettingsService;
+  private metadataService?: MetadataService;
   private codexSessionService?: CodexSessionService;
   private auditLogger?: AuditLogger;
   private conflictChecker?: ConflictChecker;
-  private migrationHandler?: MigrationHandler;
 
   constructor(config: PlanServiceConfig, deps: PlanServiceDependencies) {
     this.plansDir = config.plansDir;
@@ -393,10 +164,10 @@ export class PlanService {
     this.previewLength = config.previewLength;
     this.archiveService = deps.archiveService;
     this.settingsService = deps.settingsService;
+    this.metadataService = deps.metadataService;
     this.codexSessionService = deps.codexSessionService;
     this.auditLogger = deps.auditLogger;
     this.conflictChecker = deps.conflictChecker;
-    this.migrationHandler = deps.migrationHandler;
   }
 
   private async getCodexSessionDirectories(): Promise<string[]> {
@@ -462,13 +233,18 @@ export class PlanService {
     throw new Error(`Plan not found: ${filename}`);
   }
 
-  private async getPlanMetaFromPath(
-    filename: string,
-    filePath: string,
-    frontmatterEnabled: boolean
-  ): Promise<PlanMeta> {
+  private getMetadataForPlan(filename: string): PlanMetadata {
+    if (!this.metadataService) return {};
+    const row = this.metadataService.getMetadata(filename);
+    const subtasks = this.metadataService.listSubtasks(filename);
+    const deps = this.metadataService.getDependencies(filename);
+    return toMetadata(row, subtasks, deps);
+  }
+
+  private async getPlanMetaFromPath(filename: string, filePath: string): Promise<PlanMeta> {
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
-    const { frontmatter, body } = parseFrontmatter(content);
+    const body = stripFrontmatter(content);
+    const metadata = this.getMetadataForPlan(filename);
 
     return {
       filename,
@@ -481,8 +257,9 @@ export class PlanService {
       size: stats.size,
       preview: extractPreview(body, this.previewLength),
       sections: extractSections(body),
-      relatedProject: extractRelatedProject(body),
-      frontmatter: frontmatterEnabled ? frontmatter : undefined,
+      relatedProject: metadata.projectPath ?? extractRelatedProject(body),
+      metadata,
+      frontmatter: metadata,
     };
   }
 
@@ -506,11 +283,10 @@ export class PlanService {
       }
     }
 
-    const frontmatterEnabled = await this.settingsService.isFrontmatterEnabled();
     const plans = await Promise.all(
       Array.from(targets.entries()).map(async ([filename, filePath]) => {
         try {
-          return await this.getPlanMetaFromPath(filename, filePath, frontmatterEnabled);
+          return await this.getPlanMetaFromPath(filename, filePath);
         } catch {
           return null;
         }
@@ -526,8 +302,20 @@ export class PlanService {
     }
     for (const plan of codexPlans) {
       if (!merged.has(plan.filename)) {
-        merged.set(plan.filename, plan);
+        // Enrich Codex plans with DB metadata
+        const metadata = this.getMetadataForPlan(plan.filename);
+        const enriched = {
+          ...plan,
+          metadata: { ...metadata, ...plan.metadata },
+          frontmatter: { ...metadata, ...plan.frontmatter },
+        };
+        merged.set(plan.filename, enriched);
       }
+    }
+
+    // Garbage collect stale DB entries
+    if (this.metadataService) {
+      this.metadataService.garbageCollect(new Set(merged.keys()));
     }
 
     return Array.from(merged.values()).sort(
@@ -540,8 +328,7 @@ export class PlanService {
    */
   async getPlanMeta(filename: string): Promise<PlanMeta> {
     const filePath = await this.resolvePlanPath(filename);
-    const frontmatterEnabled = await this.settingsService.isFrontmatterEnabled();
-    return this.getPlanMetaFromPath(filename, filePath, frontmatterEnabled);
+    return this.getPlanMetaFromPath(filename, filePath);
   }
 
   /**
@@ -550,7 +337,13 @@ export class PlanService {
   async getPlan(filename: string): Promise<PlanDetail> {
     const codexPlan = await this.getCodexPlanDetail(filename);
     if (codexPlan) {
-      return codexPlan;
+      // Enrich with DB metadata
+      const metadata = this.getMetadataForPlan(filename);
+      return {
+        ...codexPlan,
+        metadata: { ...metadata, ...codexPlan.metadata },
+        frontmatter: { ...metadata, ...codexPlan.frontmatter },
+      };
     }
 
     const filePath = await this.resolvePlanPath(filename);
@@ -559,18 +352,8 @@ export class PlanService {
     // Record file state for conflict detection
     this.conflictChecker?.recordFileState(filename, stats.mtimeMs, stats.size);
 
-    let { frontmatter, body } = parseFrontmatter(content);
-
-    // Auto-migrate if needed
-    if (this.migrationHandler) {
-      if (frontmatter && this.migrationHandler.needsMigration(frontmatter)) {
-        frontmatter = this.migrationHandler.migrate({ ...frontmatter });
-      } else if (!frontmatter) {
-        frontmatter = this.migrationHandler.migrate({});
-      }
-    }
-
-    const fmEnabled = await this.settingsService.isFrontmatterEnabled();
+    const body = stripFrontmatter(content);
+    const metadata = this.getMetadataForPlan(filename);
 
     return {
       filename,
@@ -583,8 +366,9 @@ export class PlanService {
       size: stats.size,
       preview: extractPreview(body, this.previewLength),
       sections: extractSections(body),
-      relatedProject: extractRelatedProject(body),
-      frontmatter: fmEnabled ? frontmatter : undefined,
+      relatedProject: metadata.projectPath ?? extractRelatedProject(body),
+      metadata,
+      frontmatter: metadata,
       content: body,
     };
   }
@@ -600,6 +384,17 @@ export class PlanService {
     await mkdir(targetDir, { recursive: true });
     const filePath = join(targetDir, finalFilename);
     await writeFile(filePath, content, 'utf-8');
+
+    // Create default metadata in DB
+    if (this.metadataService) {
+      const now = new Date().toISOString();
+      this.metadataService.upsertMetadata(finalFilename, {
+        source: 'markdown',
+        status: 'todo',
+        createdAt: now,
+        modifiedAt: now,
+      });
+    }
 
     // Audit log (non-blocking)
     this.auditLogger
@@ -656,6 +451,9 @@ export class PlanService {
       await unlink(filePath);
     }
 
+    // Clean up DB metadata
+    this.metadataService?.deleteMetadata(filename);
+
     // Audit log (non-blocking)
     this.auditLogger
       ?.log(
@@ -684,60 +482,149 @@ export class PlanService {
     const newPath = join(dirname(oldPath), newFilename);
 
     await rename(oldPath, newPath);
+
+    // Move metadata in DB: copy old → new (including subtasks & deps), delete old
+    if (this.metadataService) {
+      const oldMeta = this.metadataService.getMetadata(filename);
+      if (oldMeta) {
+        // Copy metadata to new filename first
+        this.metadataService.upsertMetadata(newFilename, {
+          source: oldMeta.source,
+          status: oldMeta.status,
+          priority: oldMeta.priority,
+          dueDate: oldMeta.dueDate,
+          estimate: oldMeta.estimate,
+          assignee: oldMeta.assignee,
+          tags: oldMeta.tags,
+          projectPath: oldMeta.projectPath,
+          sessionId: oldMeta.sessionId,
+          archivedAt: oldMeta.archivedAt,
+          createdAt: oldMeta.createdAt,
+          modifiedAt: oldMeta.modifiedAt,
+        });
+
+        // Migrate subtasks to new filename before cascade-delete
+        const subtasks = this.metadataService.listSubtasks(filename);
+        for (const subtask of subtasks) {
+          this.metadataService.upsertSubtask(newFilename, {
+            id: subtask.id,
+            title: subtask.title,
+            status: subtask.status,
+            assignee: subtask.assignee,
+            dueDate: subtask.dueDate,
+            sortOrder: subtask.sortOrder,
+          });
+        }
+
+        // Migrate dependencies to new filename before cascade-delete
+        const deps = this.metadataService.getDependencies(filename);
+        for (const blockedBy of deps.blockedBy) {
+          this.metadataService.addDependency(newFilename, blockedBy);
+        }
+        for (const blocks of deps.blocks) {
+          this.metadataService.addDependency(blocks, newFilename);
+        }
+
+        // Now safe to delete old metadata (subtasks/deps cascade-delete)
+        this.metadataService.deleteMetadata(filename);
+      }
+    }
+
     return this.getPlanMeta(newFilename);
   }
 
   /**
-   * Update plan status
+   * Update plan status via DB
    */
   async updateStatus(filename: string, status: PlanStatus): Promise<PlanMeta> {
-    this.ensureMutablePlan(filename);
-    const filePath = await this.resolvePlanPath(filename);
-    const content = await readFile(filePath, 'utf-8');
+    if (!this.metadataService) {
+      throw new Error('MetadataService not available');
+    }
 
-    const { frontmatter, body } = parseFrontmatter(content);
-    const previousStatus = frontmatter?.status ?? 'todo';
-    const newFrontmatter: PlanFrontmatter = {
-      ...frontmatter,
-      status,
-      modified: new Date().toISOString(),
-    };
+    // For Codex plans, only update DB (content is read-only)
+    const isCodex = this.codexSessionService?.isVirtualFilename(filename);
 
-    const newContent = `---\n${serializeFrontmatter(newFrontmatter)}\n---\n${body}`;
-    await writeFile(filePath, newContent, 'utf-8');
+    if (!isCodex) {
+      this.ensureMutablePlan(filename);
+      // Ensure the file exists
+      const filePath = await this.resolvePlanPath(filename);
 
-    // Audit log (non-blocking)
-    this.auditLogger
-      ?.log(
-        { action: 'status_change', filename, details: { from: previousStatus, to: status } },
-        dirname(filePath)
-      )
-      .catch(() => {});
+      // Audit log
+      const previousMeta = this.metadataService.getMetadata(filename);
+      const previousStatus = previousMeta?.status ?? 'todo';
+      this.auditLogger
+        ?.log(
+          { action: 'status_change', filename, details: { from: previousStatus, to: status } },
+          dirname(filePath)
+        )
+        .catch(() => {});
+    }
+
+    // Ensure DB entry exists
+    const existing = this.metadataService.getMetadata(filename);
+    if (!existing) {
+      const now = new Date().toISOString();
+      this.metadataService.upsertMetadata(filename, {
+        source: isCodex ? 'codex' : 'markdown',
+        status,
+        createdAt: now,
+        modifiedAt: now,
+      });
+    } else {
+      this.metadataService.updateField(filename, 'status', status);
+    }
+
+    if (isCodex) {
+      // Return enriched Codex plan
+      const codexPlan = await this.getCodexPlanDetail(filename);
+      if (codexPlan) {
+        const metadata = this.getMetadataForPlan(filename);
+        return {
+          ...codexPlan,
+          metadata,
+          frontmatter: metadata,
+        };
+      }
+    }
 
     return this.getPlanMeta(filename);
   }
 
   /**
-   * Update a single frontmatter field
+   * Update a single metadata field via DB
    */
-  async updateFrontmatterField(
-    filename: string,
-    field: keyof PlanFrontmatter,
-    value: unknown
-  ): Promise<PlanMeta> {
-    this.ensureMutablePlan(filename);
-    const filePath = await this.resolvePlanPath(filename);
-    const content = await readFile(filePath, 'utf-8');
+  async updateMetadataField(filename: string, field: string, value: unknown): Promise<PlanMeta> {
+    if (!this.metadataService) {
+      throw new Error('MetadataService not available');
+    }
 
-    const { frontmatter, body } = parseFrontmatter(content);
-    const newFrontmatter: PlanFrontmatter = {
-      ...frontmatter,
-      [field]: value,
-      modified: new Date().toISOString(),
-    };
+    const isCodex = this.codexSessionService?.isVirtualFilename(filename);
+    if (!isCodex) {
+      this.ensureMutablePlan(filename);
+      await this.resolvePlanPath(filename);
+    }
 
-    const newContent = `---\n${serializeFrontmatter(newFrontmatter)}\n---\n${body}`;
-    await writeFile(filePath, newContent, 'utf-8');
+    // Ensure DB entry exists
+    const existing = this.metadataService.getMetadata(filename);
+    if (!existing) {
+      const now = new Date().toISOString();
+      this.metadataService.upsertMetadata(filename, {
+        source: isCodex ? 'codex' : 'markdown',
+        status: 'todo',
+        createdAt: now,
+        modifiedAt: now,
+      });
+    }
+
+    this.metadataService.updateField(filename, field, value);
+
+    if (isCodex) {
+      const codexPlan = await this.getCodexPlanDetail(filename);
+      if (codexPlan) {
+        const metadata = this.getMetadataForPlan(filename);
+        return { ...codexPlan, metadata, frontmatter: metadata };
+      }
+    }
 
     return this.getPlanMeta(filename);
   }
@@ -768,6 +655,19 @@ export class PlanService {
   }
 }
 
+// Default singleton MetadataService instance
+const defaultDbPath = join(config.plansDir, '.metadata.db');
+let defaultMetadataService: MetadataService | undefined;
+
+function getDefaultMetadataService(): MetadataService {
+  if (!defaultMetadataService) {
+    // Ensure the plansDir exists before opening the DB
+    mkdirSync(dirname(defaultDbPath), { recursive: true });
+    defaultMetadataService = new MetadataService(defaultDbPath);
+  }
+  return defaultMetadataService;
+}
+
 // Default singleton instance
 const defaultArchiveService = new ArchiveService({
   plansDir: config.plansDir,
@@ -784,9 +684,11 @@ export const planService = new PlanService(
   {
     archiveService: defaultArchiveService,
     settingsService,
+    metadataService: getDefaultMetadataService(),
     codexSessionService,
     auditLogger: undefined,
     conflictChecker: undefined,
-    migrationHandler: undefined,
   }
 );
+
+export { getDefaultMetadataService };

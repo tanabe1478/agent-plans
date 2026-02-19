@@ -5,8 +5,8 @@ import type {
   CreatePlanRequest,
   ExternalApp,
   PlanDetail,
-  PlanFrontmatter,
   PlanMeta,
+  PlanMetadata,
   PlanStatus,
   RenamePlanRequest,
   SubtaskActionRequest,
@@ -31,9 +31,9 @@ interface UpdateStatusRequestWithFilename extends UpdateStatusRequest {
   filename: string;
 }
 
-interface UpdateFrontmatterRequestWithFilename {
+interface UpdateMetadataRequestWithFilename {
   filename: string;
-  field: keyof PlanFrontmatter;
+  field: keyof PlanMetadata;
   value: unknown;
 }
 
@@ -121,7 +121,7 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
       request: UpdateStatusRequestWithFilename
     ): Promise<PlanMeta> => {
       const plan = await planService.getPlan(request.filename);
-      const currentStatus = plan.frontmatter?.status ?? 'todo';
+      const currentStatus = plan.metadata?.status ?? plan.frontmatter?.status ?? 'todo';
 
       if (!statusTransitionService.isValidTransition(currentStatus, request.status)) {
         throw new Error(`Invalid status transition from ${currentStatus} to ${request.status}`);
@@ -131,13 +131,24 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
     }
   );
 
+  // Support both old and new channel names for backward compatibility
+  ipcMain.handle(
+    'plans:updateMetadata',
+    async (
+      _event: IpcMainInvokeEvent,
+      request: UpdateMetadataRequestWithFilename
+    ): Promise<PlanMeta> => {
+      return planService.updateMetadataField(request.filename, request.field, request.value);
+    }
+  );
+
   ipcMain.handle(
     'plans:updateFrontmatter',
     async (
       _event: IpcMainInvokeEvent,
-      request: UpdateFrontmatterRequestWithFilename
+      request: UpdateMetadataRequestWithFilename
     ): Promise<PlanMeta> => {
-      return planService.updateFrontmatterField(request.filename, request.field, request.value);
+      return planService.updateMetadataField(request.filename, request.field, request.value);
     }
   );
 
@@ -209,7 +220,7 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
     ): Promise<BulkOperationResponse> => {
       return runBulkOperation(request.filenames, async (filename) => {
         const plan = await planService.getPlan(filename);
-        const currentStatus = plan.frontmatter?.status ?? 'todo';
+        const currentStatus = plan.metadata?.status ?? plan.frontmatter?.status ?? 'todo';
 
         if (!statusTransitionService.isValidTransition(currentStatus, request.status)) {
           throw new Error(`Invalid transition from ${currentStatus} to ${request.status}`);
@@ -232,7 +243,7 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
     'plans:availableTransitions',
     async (_event: IpcMainInvokeEvent, filename: string): Promise<PlanStatus[]> => {
       const plan = await planService.getPlan(filename);
-      const currentStatus = plan.frontmatter?.status ?? 'todo';
+      const currentStatus = plan.metadata?.status ?? plan.frontmatter?.status ?? 'todo';
       return statusTransitionService.getAvailableTransitions(currentStatus);
     }
   );

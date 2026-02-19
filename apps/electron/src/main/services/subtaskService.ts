@@ -1,255 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { normalizePlanStatus, type PlanFrontmatter, type Subtask } from '@agent-plans/shared';
+import type { Subtask } from '@agent-plans/shared';
 import { config } from '../config.js';
-import { planService } from './planService.js';
-
-// Re-use the parsing/serialization from planService via a shared approach
-// We read the file, parse frontmatter, modify subtasks, and write back
-
-const FRONTMATTER_PATTERN = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
-
-function parseFrontmatterRaw(content: string): { frontmatterStr: string; body: string } | null {
-  const match = content.match(FRONTMATTER_PATTERN);
-  if (!match) return null;
-  return { frontmatterStr: match[1], body: match[2] };
-}
-
-function parseSubtasksFromYaml(
-  lines: string[],
-  startIndex: number
-): { subtasks: Subtask[]; consumed: number } {
-  const subtasks: Subtask[] = [];
-  let consumed = 0;
-  let current: Partial<Subtask> | null = null;
-
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const line = lines[i];
-    const itemMatch = line.match(/^\s+-\s+(\w+):\s*(.*)$/);
-    const propMatch = line.match(/^\s{4,}(\w+):\s*(.*)$/);
-
-    if (itemMatch) {
-      if (current?.id && current.title) {
-        subtasks.push({ status: 'todo', ...current } as Subtask);
-      }
-      current = {};
-      const key = itemMatch[1];
-      const val = itemMatch[2].trim().replace(/^["']|["']$/g, '');
-      if (key === 'id') current.id = val;
-      else if (key === 'title') current.title = val;
-      else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
-      else if (key === 'dueDate') current.dueDate = val;
-      consumed++;
-    } else if (propMatch && current) {
-      const key = propMatch[1];
-      const val = propMatch[2].trim().replace(/^["']|["']$/g, '');
-      if (key === 'id') current.id = val;
-      else if (key === 'title') current.title = val;
-      else if (key === 'status' && (val === 'todo' || val === 'done')) current.status = val;
-      else if (key === 'assignee') current.assignee = val;
-      else if (key === 'dueDate') current.dueDate = val;
-      consumed++;
-    } else {
-      break;
-    }
-  }
-
-  if (current?.id && current.title) {
-    subtasks.push({ status: 'todo', ...current } as Subtask);
-  }
-
-  return { subtasks, consumed };
-}
-
-function parseYamlArray(
-  value: string,
-  lines: string[],
-  startIndex: number
-): { items: string[]; consumed: number } {
-  if (value.startsWith('[') && value.endsWith(']')) {
-    const inner = value.slice(1, -1);
-    const items = inner
-      .split(',')
-      .map((s) => s.trim().replace(/^["']|["']$/g, ''))
-      .filter(Boolean);
-    return { items, consumed: 0 };
-  }
-  const items: string[] = [];
-  let consumed = 0;
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const line = lines[i];
-    const listMatch = line.match(/^\s+-\s+(.+)$/);
-    if (listMatch) {
-      items.push(listMatch[1].trim().replace(/^["']|["']$/g, ''));
-      consumed++;
-    } else {
-      break;
-    }
-  }
-  return { items, consumed };
-}
-
-function parseFrontmatter(content: string): { frontmatter: PlanFrontmatter; body: string } {
-  const raw = parseFrontmatterRaw(content);
-  if (!raw) return { frontmatter: {}, body: content };
-
-  const frontmatter: PlanFrontmatter = {};
-  const lines = raw.frontmatterStr.split('\n');
-
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1 || line.match(/^\s/)) {
-      i++;
-      continue;
-    }
-
-    const key = line.slice(0, colonIndex).trim();
-    let value = line.slice(colonIndex + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-
-    switch (key) {
-      case 'created':
-        frontmatter.created = value;
-        break;
-      case 'modified':
-        frontmatter.modified = value;
-        break;
-      case 'project_path':
-        frontmatter.projectPath = value;
-        break;
-      case 'session_id':
-        frontmatter.sessionId = value;
-        break;
-      case 'status':
-        frontmatter.status = normalizePlanStatus(value);
-        break;
-      case 'priority':
-        if (['low', 'medium', 'high', 'critical'].includes(value)) {
-          frontmatter.priority = value as PlanFrontmatter['priority'];
-        }
-        break;
-      case 'dueDate':
-        frontmatter.dueDate = value;
-        break;
-      case 'tags': {
-        const tagResult = parseYamlArray(value, lines, i);
-        frontmatter.tags = tagResult.items;
-        i += tagResult.consumed;
-        break;
-      }
-      case 'estimate':
-        frontmatter.estimate = value;
-        break;
-      case 'blockedBy': {
-        const blockedResult = parseYamlArray(value, lines, i);
-        frontmatter.blockedBy = blockedResult.items;
-        i += blockedResult.consumed;
-        break;
-      }
-      case 'assignee':
-        frontmatter.assignee = value;
-        break;
-      case 'archivedAt':
-        frontmatter.archivedAt = value;
-        break;
-      case 'subtasks': {
-        const subtaskResult = parseSubtasksFromYaml(lines, i);
-        if (subtaskResult.subtasks.length > 0) {
-          frontmatter.subtasks = subtaskResult.subtasks;
-        }
-        i += subtaskResult.consumed;
-        break;
-      }
-      case 'schemaVersion':
-        frontmatter.schemaVersion = parseInt(value, 10) || undefined;
-        break;
-    }
-    i++;
-  }
-
-  return { frontmatter, body: raw.body };
-}
-
-function serializeYamlArray(items: string[]): string {
-  if (items.length === 0) return '[]';
-  return `\n${items.map((item) => `  - "${item}"`).join('\n')}`;
-}
-
-function serializeSubtasks(subtasks: Subtask[]): string {
-  if (subtasks.length === 0) return '[]';
-  return (
-    '\n' +
-    subtasks
-      .map((st) => {
-        const props: string[] = [];
-        props.push(`  - id: "${st.id}"`);
-        props.push(`    title: "${st.title}"`);
-        props.push(`    status: ${st.status}`);
-        if (st.assignee) props.push(`    assignee: "${st.assignee}"`);
-        if (st.dueDate) props.push(`    dueDate: "${st.dueDate}"`);
-        return props.join('\n');
-      })
-      .join('\n')
-  );
-}
-
-function serializeFrontmatter(fm: PlanFrontmatter): string {
-  const lines: string[] = [];
-  if (fm.created) lines.push(`created: "${fm.created}"`);
-  if (fm.modified) lines.push(`modified: "${fm.modified}"`);
-  if (fm.projectPath) lines.push(`project_path: "${fm.projectPath}"`);
-  if (fm.sessionId) lines.push(`session_id: "${fm.sessionId}"`);
-  if (fm.status) lines.push(`status: ${fm.status}`);
-  if (fm.priority) lines.push(`priority: ${fm.priority}`);
-  if (fm.dueDate) lines.push(`dueDate: "${fm.dueDate}"`);
-  if (fm.tags && fm.tags.length > 0) lines.push(`tags:${serializeYamlArray(fm.tags)}`);
-  if (fm.estimate) lines.push(`estimate: "${fm.estimate}"`);
-  if (fm.blockedBy && fm.blockedBy.length > 0)
-    lines.push(`blockedBy:${serializeYamlArray(fm.blockedBy)}`);
-  if (fm.assignee) lines.push(`assignee: "${fm.assignee}"`);
-  if (fm.archivedAt) lines.push(`archivedAt: "${fm.archivedAt}"`);
-  if (fm.subtasks && fm.subtasks.length > 0)
-    lines.push(`subtasks:${serializeSubtasks(fm.subtasks)}`);
-  if (fm.schemaVersion != null) lines.push(`schemaVersion: ${fm.schemaVersion}`);
-  return lines.join('\n');
-}
-
-function validateFilename(filename: string): void {
-  const safePattern = /^[a-zA-Z0-9_-]+\.md$/;
-  if (!safePattern.test(filename) || filename.includes('..')) {
-    throw new Error(`Invalid filename: ${filename}`);
-  }
-}
-
-async function readPlanFile(
-  filename: string,
-  plansDir: string,
-  resolveFilePath?: (filename: string) => Promise<string>
-): Promise<{ frontmatter: PlanFrontmatter; body: string; filePath: string }> {
-  validateFilename(filename);
-  const filePath = resolveFilePath ? await resolveFilePath(filename) : join(plansDir, filename);
-  const content = await readFile(filePath, 'utf-8');
-  const { frontmatter, body } = parseFrontmatter(content);
-  return { frontmatter, body, filePath };
-}
-
-async function writePlanFile(
-  filePath: string,
-  frontmatter: PlanFrontmatter,
-  body: string
-): Promise<void> {
-  const newContent = `---\n${serializeFrontmatter(frontmatter)}\n---\n${body}`;
-  await writeFile(filePath, newContent, 'utf-8');
-}
+import type { MetadataService } from './metadataService.js';
+import { getDefaultMetadataService } from './planService.js';
 
 export function getSubtaskProgress(subtasks: Subtask[]): {
   done: number;
@@ -265,24 +18,50 @@ export function getSubtaskProgress(subtasks: Subtask[]): {
 
 export interface SubtaskServiceConfig {
   plansDir: string;
-  resolveFilePath?: (filename: string) => Promise<string>;
+  metadataService: MetadataService;
 }
 
+/**
+ * SubtaskService manages subtasks via the SQLite metadata database.
+ *
+ * After the frontmatter-to-DB migration, subtask state lives exclusively in
+ * the `subtasks` table.  Plan markdown files are never modified by this service.
+ */
 export class SubtaskService {
-  private plansDir: string;
-  private resolveFilePath?: (filename: string) => Promise<string>;
+  private metadataService: MetadataService;
 
-  constructor(config: SubtaskServiceConfig) {
-    this.plansDir = config.plansDir;
-    this.resolveFilePath = config.resolveFilePath;
+  constructor(cfg: SubtaskServiceConfig) {
+    this.metadataService = cfg.metadataService;
+  }
+
+  /**
+   * Ensure the plan has a metadata row so the subtask foreign key is valid.
+   */
+  private ensureMetadataExists(filename: string): void {
+    const existing = this.metadataService.getMetadata(filename);
+    if (!existing) {
+      const now = new Date().toISOString();
+      this.metadataService.upsertMetadata(filename, {
+        source: 'markdown',
+        status: 'todo',
+        createdAt: now,
+        modifiedAt: now,
+      });
+    }
+  }
+
+  /**
+   * Get the next sort order for a new subtask.
+   */
+  private getNextSortOrder(filename: string): number {
+    const existing = this.metadataService.listSubtasks(filename);
+    if (existing.length === 0) return 0;
+    return Math.max(...existing.map((s) => s.sortOrder)) + 1;
   }
 
   async addSubtask(filename: string, subtask: Omit<Subtask, 'id'>): Promise<Subtask> {
-    const { frontmatter, body, filePath } = await readPlanFile(
-      filename,
-      this.plansDir,
-      this.resolveFilePath
-    );
+    this.ensureMetadataExists(filename);
+
     const newSubtask: Subtask = {
       id: randomUUID(),
       title: subtask.title,
@@ -291,16 +70,15 @@ export class SubtaskService {
       ...(subtask.dueDate ? { dueDate: subtask.dueDate } : {}),
     };
 
-    const subtasks = frontmatter.subtasks || [];
-    subtasks.push(newSubtask);
+    this.metadataService.upsertSubtask(filename, {
+      id: newSubtask.id,
+      title: newSubtask.title,
+      status: newSubtask.status as 'todo' | 'done',
+      assignee: newSubtask.assignee ?? null,
+      dueDate: newSubtask.dueDate ?? null,
+      sortOrder: this.getNextSortOrder(filename),
+    });
 
-    const updatedFrontmatter: PlanFrontmatter = {
-      ...frontmatter,
-      subtasks,
-      modified: new Date().toISOString(),
-    };
-
-    await writePlanFile(filePath, updatedFrontmatter, body);
     return newSubtask;
   }
 
@@ -309,90 +87,79 @@ export class SubtaskService {
     subtaskId: string,
     update: Partial<Omit<Subtask, 'id'>>
   ): Promise<Subtask> {
-    const { frontmatter, body, filePath } = await readPlanFile(
-      filename,
-      this.plansDir,
-      this.resolveFilePath
-    );
-    const subtasks = frontmatter.subtasks || [];
-    const index = subtasks.findIndex((s) => s.id === subtaskId);
+    const existing = this.metadataService.listSubtasks(filename);
+    const current = existing.find((s) => s.id === subtaskId);
 
-    if (index === -1) {
+    if (!current) {
       throw new Error(`Subtask not found: ${subtaskId}`);
     }
 
-    const updated: Subtask = { ...subtasks[index], ...update };
-    const newSubtasks = [...subtasks];
-    newSubtasks[index] = updated;
-
-    const updatedFrontmatter: PlanFrontmatter = {
-      ...frontmatter,
-      subtasks: newSubtasks,
-      modified: new Date().toISOString(),
+    const updated: Subtask = {
+      id: current.id,
+      title: update.title ?? current.title,
+      status: (update.status as 'todo' | 'done') ?? current.status,
+      ...(('assignee' in update ? update.assignee : current.assignee)
+        ? { assignee: update.assignee ?? current.assignee ?? undefined }
+        : {}),
+      ...(('dueDate' in update ? update.dueDate : current.dueDate)
+        ? { dueDate: update.dueDate ?? current.dueDate ?? undefined }
+        : {}),
     };
 
-    await writePlanFile(filePath, updatedFrontmatter, body);
+    this.metadataService.upsertSubtask(filename, {
+      id: updated.id,
+      title: updated.title,
+      status: updated.status as 'todo' | 'done',
+      assignee: updated.assignee ?? null,
+      dueDate: updated.dueDate ?? null,
+      sortOrder: current.sortOrder,
+    });
+
     return updated;
   }
 
   async deleteSubtask(filename: string, subtaskId: string): Promise<void> {
-    const { frontmatter, body, filePath } = await readPlanFile(
-      filename,
-      this.plansDir,
-      this.resolveFilePath
-    );
-    const subtasks = frontmatter.subtasks || [];
-    const index = subtasks.findIndex((s) => s.id === subtaskId);
+    const existing = this.metadataService.listSubtasks(filename);
+    const current = existing.find((s) => s.id === subtaskId);
 
-    if (index === -1) {
+    if (!current) {
       throw new Error(`Subtask not found: ${subtaskId}`);
     }
 
-    const newSubtasks = subtasks.filter((s) => s.id !== subtaskId);
-
-    const updatedFrontmatter: PlanFrontmatter = {
-      ...frontmatter,
-      subtasks: newSubtasks.length > 0 ? newSubtasks : undefined,
-      modified: new Date().toISOString(),
-    };
-
-    await writePlanFile(filePath, updatedFrontmatter, body);
+    this.metadataService.deleteSubtask(filename, subtaskId);
   }
 
   async toggleSubtask(filename: string, subtaskId: string): Promise<Subtask> {
-    const { frontmatter, body, filePath } = await readPlanFile(
-      filename,
-      this.plansDir,
-      this.resolveFilePath
-    );
-    const subtasks = frontmatter.subtasks || [];
-    const index = subtasks.findIndex((s) => s.id === subtaskId);
+    const existing = this.metadataService.listSubtasks(filename);
+    const current = existing.find((s) => s.id === subtaskId);
 
-    if (index === -1) {
+    if (!current) {
       throw new Error(`Subtask not found: ${subtaskId}`);
     }
 
-    const toggled: Subtask = {
-      ...subtasks[index],
-      status: subtasks[index].status === 'done' ? 'todo' : 'done',
+    const newStatus = current.status === 'done' ? 'todo' : 'done';
+
+    this.metadataService.upsertSubtask(filename, {
+      id: current.id,
+      title: current.title,
+      status: newStatus,
+      assignee: current.assignee,
+      dueDate: current.dueDate,
+      sortOrder: current.sortOrder,
+    });
+
+    return {
+      id: current.id,
+      title: current.title,
+      status: newStatus,
+      ...(current.assignee ? { assignee: current.assignee } : {}),
+      ...(current.dueDate ? { dueDate: current.dueDate } : {}),
     };
-
-    const newSubtasks = [...subtasks];
-    newSubtasks[index] = toggled;
-
-    const updatedFrontmatter: PlanFrontmatter = {
-      ...frontmatter,
-      subtasks: newSubtasks,
-      modified: new Date().toISOString(),
-    };
-
-    await writePlanFile(filePath, updatedFrontmatter, body);
-    return toggled;
   }
 }
 
 // Default singleton instance
 export const subtaskService = new SubtaskService({
   plansDir: config.plansDir,
-  resolveFilePath: (filename) => planService.getFilePath(filename),
+  metadataService: getDefaultMetadataService(),
 });

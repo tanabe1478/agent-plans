@@ -5,27 +5,19 @@
 import type { ExternalApp, PlanStatus, SubtaskActionRequest } from '@agent-plans/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ipcClient } from '../api/ipcClient';
-import { useSettings } from './useSettings';
 
 export function usePlans() {
-  const { data: settings, isLoading: isSettingsLoading } = useSettings();
-  const frontmatterEnabled = settings?.frontmatterEnabled ?? true;
-
   return useQuery({
-    queryKey: ['plans', frontmatterEnabled],
+    queryKey: ['plans'],
     queryFn: ipcClient.plans.list,
-    enabled: !isSettingsLoading,
   });
 }
 
 export function usePlan(filename: string) {
-  const { data: settings, isLoading: isSettingsLoading } = useSettings();
-  const frontmatterEnabled = settings?.frontmatterEnabled ?? true;
-
   return useQuery({
-    queryKey: ['plan', filename, frontmatterEnabled],
+    queryKey: ['plan', filename],
     queryFn: () => ipcClient.plans.get(filename),
-    enabled: !!filename && !isSettingsLoading,
+    enabled: !!filename,
   });
 }
 

@@ -81,11 +81,14 @@ export interface BulkStatusRequest {
 }
 
 /**
- * PATCH /api/plans/:filename/frontmatter request body
+ * PATCH /api/plans/:filename/metadata request body
  */
-export interface UpdateFrontmatterRequest {
-  frontmatter: Partial<import('./plan.js').PlanFrontmatter>;
+export interface UpdateMetadataRequest {
+  metadata: Partial<import('./plan.js').PlanMetadata>;
 }
+
+/** @deprecated Use UpdateMetadataRequest instead */
+export type UpdateFrontmatterRequest = UpdateMetadataRequest;
 
 /**
  * GET /api/search query parameters

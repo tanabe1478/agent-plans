@@ -64,38 +64,36 @@ export const STATUS_TRANSITIONS: Record<PlanStatus, PlanStatus[]> = {
 };
 
 /**
- * Metadata extracted from YAML frontmatter
+ * Plan metadata stored in SQLite DB.
+ * Previously extracted from YAML frontmatter; now DB is the single source of truth.
  */
-export interface PlanFrontmatter {
-  /** Legacy created timestamp (frontmatter field) */
-  created?: string;
-  /** Legacy modified timestamp (frontmatter field) */
-  modified?: string;
+export interface PlanMetadata {
   /** Project path where plan was created */
   projectPath?: string;
   /** Agent session ID (e.g. Claude Code/Codex) */
   sessionId?: string;
   /** Plan status */
   status?: PlanStatus;
-  /** Legacy priority value */
+  /** Priority value */
   priority?: PlanPriority;
   /** Due date (ISO 8601) */
   dueDate?: string;
-  /** Legacy tags */
+  /** Tags */
   tags?: string[];
   /** Estimated effort (e.g. "2h", "3d", "1w") */
   estimate?: string;
-  /** Legacy assignee */
+  /** Assignee */
   assignee?: string;
   /** Filenames of blocking plans */
   blockedBy?: string[];
-  /** Legacy archive timestamp */
+  /** Archive timestamp */
   archivedAt?: string;
   /** Subtasks */
   subtasks?: Subtask[];
-  /** Schema version for migration */
-  schemaVersion?: number;
 }
+
+/** @deprecated Use PlanMetadata instead */
+export type PlanFrontmatter = PlanMetadata;
 
 /**
  * Saved view filters for preset/custom views
@@ -159,8 +157,10 @@ export interface PlanMeta {
   sections: string[];
   /** Related project path if found */
   relatedProject?: string;
-  /** Metadata from YAML frontmatter */
-  frontmatter?: PlanFrontmatter;
+  /** Plan metadata from DB */
+  metadata?: PlanMetadata;
+  /** @deprecated Use metadata instead */
+  frontmatter?: PlanMetadata;
 }
 
 /**

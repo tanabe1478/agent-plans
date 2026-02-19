@@ -6,9 +6,8 @@ import {
 } from '@agent-plans/shared';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { type DragEvent, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { StatusBadge } from '@/components/plan/StatusBadge';
-import { useFrontmatterEnabled, useSettingsLoading } from '@/contexts/SettingsContext';
 import { usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
 import { cn, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
 
@@ -23,13 +22,19 @@ function canTransition(from: PlanStatus, to: PlanStatus): boolean {
   return STATUS_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
+function getPlanStatus(plan: PlanMeta): PlanStatus {
+  const meta = plan.metadata ?? plan.frontmatter;
+  return normalizePlanStatus(meta?.status);
+}
+
 interface KanbanCardProps {
   plan: PlanMeta;
   onDragStart: (e: DragEvent, plan: PlanMeta) => void;
 }
 
 function KanbanCard({ plan, onDragStart }: KanbanCardProps) {
-  const dueDate = plan.frontmatter?.dueDate;
+  const meta = plan.metadata ?? plan.frontmatter;
+  const dueDate = meta?.dueDate;
   const deadlineColor = getDeadlineColor(dueDate);
 
   return (
@@ -125,15 +130,10 @@ function KanbanColumn({
 }
 
 export function KanbanPage() {
-  const frontmatterEnabled = useFrontmatterEnabled();
-  const settingsLoading = useSettingsLoading();
   const { data, isLoading, error } = usePlans();
   const updateStatus = useUpdateStatus();
   const [draggedPlan, setDraggedPlan] = useState<PlanMeta | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<PlanStatus | null>(null);
-
-  if (settingsLoading) return null;
-  if (!frontmatterEnabled) return <Navigate to="/" replace />;
 
   if (isLoading) {
     return (
@@ -156,9 +156,7 @@ export function KanbanPage() {
 
   const plansByStatus = KANBAN_COLUMNS.reduce(
     (acc, col) => {
-      acc[col.status] = plans.filter(
-        (p) => normalizePlanStatus(p.frontmatter?.status) === col.status
-      );
+      acc[col.status] = plans.filter((p) => getPlanStatus(p) === col.status);
       return acc;
     },
     {} as Record<PlanStatus, PlanMeta[]>
@@ -174,7 +172,7 @@ export function KanbanPage() {
     e.preventDefault();
     setDragOverStatus(status);
     if (draggedPlan) {
-      const fromStatus = normalizePlanStatus(draggedPlan.frontmatter?.status);
+      const fromStatus = getPlanStatus(draggedPlan);
       e.dataTransfer.dropEffect = canTransition(fromStatus, status) ? 'move' : 'none';
     }
   };
@@ -189,7 +187,7 @@ export function KanbanPage() {
 
     if (!draggedPlan) return;
 
-    const fromStatus = normalizePlanStatus(draggedPlan.frontmatter?.status);
+    const fromStatus = getPlanStatus(draggedPlan);
     if (fromStatus === targetStatus) {
       setDraggedPlan(null);
       return;
@@ -209,7 +207,7 @@ export function KanbanPage() {
 
   const canDropOnCurrent =
     draggedPlan && dragOverStatus
-      ? canTransition(normalizePlanStatus(draggedPlan.frontmatter?.status), dragOverStatus)
+      ? canTransition(getPlanStatus(draggedPlan), dragOverStatus)
       : false;
 
   return (
