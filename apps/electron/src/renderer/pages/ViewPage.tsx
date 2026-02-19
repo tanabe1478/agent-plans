@@ -38,6 +38,13 @@ export function ViewPage() {
   const isEditable = !plan?.readOnly;
   const hasUnsavedChanges = isEditable && draftContent !== null && draftContent !== plan?.content;
 
+  // Reset draft state when filename changes to prevent stale auto-saves.
+  useEffect(() => {
+    setDraftContent(null);
+    setSaveStatus('idle');
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+  }, [filename]);
+
   // Reset draft when plan content changes (external file edit or post-save refetch).
   // This prevents stale draftContent from triggering false unsaved-changes detection.
   useEffect(() => {
