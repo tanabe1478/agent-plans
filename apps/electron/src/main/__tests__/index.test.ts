@@ -129,7 +129,7 @@ describe('Main Process', () => {
 
     expect(BrowserWindow).toHaveBeenCalledWith(
       expect.objectContaining({
-        trafficLightPosition: { x: 15, y: 15 },
+        trafficLightPosition: { x: 15, y: 8 },
       })
     );
   });
