@@ -2,6 +2,8 @@ import { getRawPlanStatus, type PlanMeta } from '@agent-plans/shared';
 import {
   AlertCircle,
   CheckSquare,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Eye,
   FileText,
@@ -23,14 +25,14 @@ import { writeClipboard } from '@/lib/clipboard';
 import { useBulkDelete, usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
 import { useStatusColumns } from '@/lib/hooks/useStatusColumns';
 import { cn, formatDate, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
-import { useUiStore } from '@/stores/uiStore';
+import { ITEMS_PER_PAGE_OPTIONS, useUiStore } from '@/stores/uiStore';
 
 export function HomePage() {
   const navigate = useNavigate();
   const { data, isLoading, error } = usePlans();
   const bulkDelete = useBulkDelete();
   const updateStatus = useUpdateStatus();
-  const { addToast } = useUiStore();
+  const { addToast, itemsPerPage, setItemsPerPage } = useUiStore();
   const settingsLoading = useSettingsLoading();
   const { columns } = useStatusColumns();
   const [query, setQuery] = useState('');
@@ -42,6 +44,7 @@ export function HomePage() {
   const [contextPlan, setContextPlan] = useState<PlanMeta | null>(null);
   const [contextPos, setContextPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [deleteTarget, setDeleteTarget] = useState<PlanMeta | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const plans = data || [];
 
   const filteredPlans = useMemo(() => {
@@ -77,6 +80,18 @@ export function HomePage() {
     }
     setActiveFilename(activePlan.filename);
   }, [activePlan]);
+
+  // Reset to page 1 when filters or items-per-page change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlans.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedPlans = useMemo(() => {
+    const start = (safeCurrentPage - 1) * itemsPerPage;
+    return filteredPlans.slice(start, start + itemsPerPage);
+  }, [filteredPlans, safeCurrentPage, itemsPerPage]);
 
   const toggleSelection = (filename: string) => {
     setSelectedPlans((prev) => {
@@ -237,7 +252,7 @@ export function HomePage() {
                 No plans found.
               </div>
             ) : (
-              filteredPlans.map((plan) => {
+              paginatedPlans.map((plan) => {
                 const isActive = plan.filename === activePlan?.filename;
                 const isChecked = selectedPlans.has(plan.filename);
                 const fm = plan.metadata ?? plan.frontmatter;
@@ -352,6 +367,52 @@ export function HomePage() {
               })
             )}
           </div>
+          {filteredPlans.length > 0 ? (
+            <div className="flex items-center justify-between border-t border-slate-800 px-3 py-2 text-[11px] text-slate-400">
+              <span>
+                Showing {(safeCurrentPage - 1) * itemsPerPage + 1}–
+                {Math.min(safeCurrentPage * itemsPerPage, filteredPlans.length)} of{' '}
+                {filteredPlans.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={safeCurrentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="border border-slate-700 p-1 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <span>
+                  {safeCurrentPage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={safeCurrentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="border border-slate-700 p-1 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span>Per page</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-[11px] text-slate-300 outline-none"
+                >
+                  {ITEMS_PER_PAGE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <aside className="border border-slate-800 bg-slate-900/60 p-3">

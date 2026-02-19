@@ -8,6 +8,8 @@ interface Toast {
 
 export type Theme = 'light' | 'dark' | 'system';
 
+export const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;
+
 interface UiStore {
   // Theme
   theme: Theme;
@@ -22,6 +24,10 @@ interface UiStore {
   toasts: Toast[];
   addToast: (message: string, type?: Toast['type']) => void;
   removeToast: (id: string) => void;
+
+  // Pagination
+  itemsPerPage: number;
+  setItemsPerPage: (n: number) => void;
 }
 
 const getInitialTheme = (): Theme => {
@@ -29,6 +35,16 @@ const getInitialTheme = (): Theme => {
   const stored = localStorage.getItem('theme') as Theme | null;
   if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
   return 'system';
+};
+
+const getInitialItemsPerPage = (): number => {
+  if (typeof window === 'undefined') return 20;
+  const stored = localStorage.getItem('itemsPerPage');
+  if (stored) {
+    const parsed = Number(stored);
+    if ((ITEMS_PER_PAGE_OPTIONS as readonly number[]).includes(parsed)) return parsed;
+  }
+  return 20;
 };
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -62,4 +78,11 @@ export const useUiStore = create<UiStore>((set) => ({
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     })),
+
+  // Pagination
+  itemsPerPage: getInitialItemsPerPage(),
+  setItemsPerPage: (n) => {
+    localStorage.setItem('itemsPerPage', String(n));
+    set({ itemsPerPage: n });
+  },
 }));
