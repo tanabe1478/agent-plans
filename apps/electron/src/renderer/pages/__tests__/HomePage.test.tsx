@@ -1,21 +1,34 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  plans: [] as Array<Record<string, unknown>>,
+  bulkDeleteMutateAsync: vi.fn(),
+  bulkStatusMutateAsync: vi.fn(),
+  updateStatusMutate: vi.fn(),
+  addToast: vi.fn(),
+  setItemsPerPage: vi.fn(),
+}));
 
 // Mock the hooks
 vi.mock('@/lib/hooks/usePlans', () => ({
   usePlans: () => ({
-    data: [],
+    data: mocks.plans,
     isLoading: false,
     error: null,
   }),
   useBulkDelete: () => ({
-    mutateAsync: vi.fn(),
+    mutateAsync: mocks.bulkDeleteMutateAsync,
+    isPending: false,
+  }),
+  useBulkUpdateStatus: () => ({
+    mutateAsync: mocks.bulkStatusMutateAsync,
     isPending: false,
   }),
   useUpdateStatus: () => ({
-    mutate: vi.fn(),
+    mutate: mocks.updateStatusMutate,
     isPending: false,
   }),
 }));
@@ -26,11 +39,25 @@ vi.mock('@/contexts/SettingsContext', () => ({
 
 vi.mock('@/stores/uiStore', () => ({
   useUiStore: () => ({
-    addToast: vi.fn(),
+    addToast: mocks.addToast,
     itemsPerPage: 20,
-    setItemsPerPage: vi.fn(),
+    setItemsPerPage: mocks.setItemsPerPage,
   }),
   ITEMS_PER_PAGE_OPTIONS: [10, 20, 50, 100],
+}));
+
+vi.mock('@/lib/hooks/useStatusColumns', () => ({
+  useStatusColumns: () => ({
+    columns: [
+      { id: 'todo', label: 'Todo', color: 'gray' },
+      { id: 'in_progress', label: 'In Progress', color: 'blue' },
+      { id: 'review', label: 'Review', color: 'orange' },
+      { id: 'completed', label: 'Completed', color: 'green' },
+    ],
+    getStatusLabel: (id: string) => id,
+    getStatusColor: () => 'gray',
+  }),
+  getColorClassName: () => '',
 }));
 
 vi.mock('@/components/ui/Button', () => ({
@@ -81,6 +108,20 @@ const createWrapper = () => {
 };
 
 describe('HomePage', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    mocks.plans.length = 0;
+    mocks.bulkDeleteMutateAsync.mockReset();
+    mocks.bulkStatusMutateAsync.mockReset();
+    mocks.updateStatusMutate.mockReset();
+    mocks.addToast.mockReset();
+    mocks.setItemsPerPage.mockReset();
+    mocks.bulkStatusMutateAsync.mockResolvedValue({ succeeded: [], failed: [] });
+  });
+
   it('should render without crashing', () => {
     render(<HomePage />, { wrapper: createWrapper() });
     expect(screen.getAllByText('Plans').length).toBeGreaterThan(0);
@@ -106,5 +147,65 @@ describe('HomePage', () => {
   it('should have select button', () => {
     render(<HomePage />, { wrapper: createWrapper() });
     expect(screen.getAllByText('Select').length).toBeGreaterThan(0);
+  });
+
+  it('supports bulk status update in selection mode', async () => {
+    mocks.plans.push({
+      filename: 'plan-a.md',
+      title: 'Plan A',
+      createdAt: '2026-02-20T00:00:00.000Z',
+      modifiedAt: '2026-02-20T00:00:00.000Z',
+      size: 10,
+      preview: 'Preview',
+      sections: [],
+      metadata: { status: 'todo' },
+      readOnly: false,
+      source: 'markdown',
+    });
+
+    mocks.bulkStatusMutateAsync.mockResolvedValue({ succeeded: ['plan-a.md'], failed: [] });
+
+    const view = render(<HomePage />, { wrapper: createWrapper() });
+
+    fireEvent.click(view.getAllByText('Select')[0]);
+    const row = view.container.querySelector('[data-plan-row="plan-a.md"]');
+    if (!row) throw new Error('plan row not found');
+    fireEvent.click(row);
+    fireEvent.change(view.getByLabelText('Bulk status target'), { target: { value: 'review' } });
+    fireEvent.click(view.getByText('Update Status'));
+
+    await waitFor(() => {
+      expect(mocks.bulkStatusMutateAsync).toHaveBeenCalledWith({
+        filenames: ['plan-a.md'],
+        status: 'review',
+      });
+    });
+  });
+
+  it('selects plan when clicking modified area', () => {
+    mocks.plans.push({
+      filename: 'plan-a.md',
+      title: 'Plan A',
+      createdAt: '2026-02-20T00:00:00.000Z',
+      modifiedAt: '2026-02-20T00:00:00.000Z',
+      size: 10,
+      preview: 'Preview',
+      sections: [],
+      metadata: { status: 'todo' },
+      readOnly: false,
+      source: 'markdown',
+    });
+
+    const view = render(<HomePage />, { wrapper: createWrapper() });
+
+    fireEvent.click(view.getAllByText('Select')[0]);
+    const modifiedCell = view.container.querySelector('[data-plan-modified="plan-a.md"]');
+    if (!modifiedCell) throw new Error('modified cell not found');
+    fireEvent.click(modifiedCell);
+
+    const checkbox = view.container.querySelector(
+      'input[type="checkbox"]'
+    ) as HTMLInputElement | null;
+    expect(checkbox?.checked).toBe(true);
   });
 });

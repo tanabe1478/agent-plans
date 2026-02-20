@@ -35,7 +35,7 @@ export function StatusDropdown({ currentStatus, onStatusChange, disabled }: Stat
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef} data-row-action="true">
       <StatusBadge
         status={effectiveStatus}
         onClick={() => !disabled && setIsOpen(!isOpen)}
