@@ -27,7 +27,7 @@ const PALETTE_COMMANDS: Array<{
 }> = [
   { id: 'go-home', action: 'commandGoHome', label: 'Go to Home', hint: 'Route' },
   { id: 'go-kanban', action: 'commandGoKanban', label: 'Go to Kanban', hint: 'Route' },
-  { id: 'go-search', action: 'commandGoSearch', label: 'Go to Search', hint: 'Route' },
+  { id: 'go-search', action: 'commandGoSearch', label: 'Search Plans', hint: 'Route' },
   { id: 'go-settings', action: 'commandOpenSettings', label: 'Open Settings', hint: 'Route' },
   {
     id: 'open-quick-open',
@@ -64,7 +64,7 @@ export function Layout() {
           navigate('/kanban');
           return;
         case 'commandGoSearch':
-          navigate('/search');
+          navigate('/');
           return;
         case 'commandOpenSettings':
           navigate('/settings');

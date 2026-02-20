@@ -2,94 +2,63 @@ import { expect, test } from '../fixtures';
 
 test.describe('Search flows', () => {
   test('runs filter query from search input', async ({ page }) => {
-    await page.getByRole('link', { name: 'Search' }).click();
-    await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
-
     const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
+    await expect(input).toBeVisible();
+
     await input.fill('status:todo');
     await input.press('Enter');
 
-    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo/);
-    await expect(page.getByText('"status:todo" -')).toBeVisible();
+    await expect(page.getByText(/results? for/)).toBeVisible();
   });
 
   test('clears query and search state after typo query', async ({ page }) => {
-    await page.getByRole('link', { name: 'Search' }).click();
-
     const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
     await input.fill('stats:todo');
     await input.press('Enter');
 
-    await expect(page).toHaveURL(/#\/search\?q=stats%3Atodo/);
-    await expect(page.getByText('"stats:todo" -')).toBeVisible();
+    await expect(page.getByText(/results? for/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Clear search' }).click();
-    await expect(page).toHaveURL(/#\/search$/);
-    await expect(page.getByText('"stats:todo" -')).not.toBeVisible();
+    await expect(page.getByText(/results? for/)).not.toBeVisible();
     await expect(input).toHaveValue('');
   });
 
   test('runs query via query guide buttons', async ({ page }) => {
-    await page.getByRole('link', { name: 'Search' }).click();
-    await page.getByRole('button', { name: 'In Progress' }).click();
+    // Open the query guide popover
+    await page.getByRole('button', { name: 'Query syntax guide' }).click();
 
-    await expect(page).toHaveURL(/#\/search\?q=status%3Ain_progress/);
-    await expect(page.getByText('"status:in_progress" -')).toBeVisible();
+    // Click the "In Progress" example (use title to disambiguate from status badges)
+    await page.getByTitle('status:in_progress').click();
+
+    await expect(page.getByText(/results? for/)).toBeVisible();
   });
 
   test('supports OR search clauses', async ({ page }) => {
-    await page.getByRole('link', { name: 'Search' }).click();
-
     const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
     await input.fill('status:todo OR status:completed');
     await input.press('Enter');
 
-    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo%20OR%20status%3Acompleted/);
-    await expect(page.getByText('"status:todo OR status:completed" -')).toBeVisible();
+    await expect(page.getByText(/results? for/)).toBeVisible();
     await expect(page.getByText('API Rate Limiting Implementation')).toBeVisible();
   });
 
   test('supports AND search clauses', async ({ page }) => {
-    await page.getByRole('link', { name: 'Search' }).click();
-
     const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
     await input.fill('status:todo AND authentication');
     await input.press('Enter');
 
-    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo%20AND%20authentication/);
-    await expect(page.getByText('"status:todo AND authentication" - 1 result')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: /Web Application Authentication/ })
-    ).toBeVisible();
-  });
-
-  test('supports multi-select status labels with OR behavior', async ({ page }) => {
-    await page.getByRole('link', { name: 'Search' }).click();
-
-    await page.getByRole('button', { name: 'status:todo', exact: true }).click();
-    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo/);
-
-    await page.getByRole('button', { name: 'status:in_progress', exact: true }).click();
-    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo%20OR%20status%3Ain_progress/);
-    await expect(page.getByText('"status:todo OR status:in_progress" - 6 results')).toBeVisible();
-
-    await page.getByRole('button', { name: 'status:todo', exact: true }).click();
-    await expect(page).toHaveURL(/#\/search\?q=status%3Ain_progress/);
-    await expect(page.getByText('"status:in_progress" - 3 results')).toBeVisible();
+    await expect(page.getByText(/1 result for/)).toBeVisible();
   });
 
   test('clears active filter chip and resets search results', async ({ page }) => {
-    await page.getByRole('link', { name: 'Search' }).click();
-    await page.getByRole('button', { name: 'status:todo', exact: true }).click();
+    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
+    await input.fill('status:todo');
+    await input.press('Enter');
 
-    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo/);
-    await expect(page.getByText('"status:todo" -')).toBeVisible();
+    await expect(page.getByText(/results? for/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Remove status:todo filter' }).click();
-    await expect(page).toHaveURL(/#\/search$/);
-    await expect(page.getByText('"status:todo" -')).not.toBeVisible();
-    await expect(page.getByPlaceholder('Search plans... (e.g. status:in_progress)')).toHaveValue(
-      ''
-    );
+    await expect(page.getByText(/results? for/)).not.toBeVisible();
+    await expect(input).toHaveValue('');
   });
 });

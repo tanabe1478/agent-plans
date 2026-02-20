@@ -79,6 +79,7 @@ export type {
   AppShortcuts,
   FileChangeEvent,
   GetSettingsResponse,
+  SavedSearch,
   ShortcutAction,
   StatusColumnDef,
   StylesheetLoadResult,

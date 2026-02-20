@@ -107,11 +107,11 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
   return (
     <div className="relative">
       {chips.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
+        <div className="mb-1.5 flex flex-wrap gap-1">
           {chips.map((chip) => (
             <span
               key={chip.raw}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium"
+              className="inline-flex items-center gap-1 border border-slate-600 bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-300"
             >
               <span className="font-semibold">{chip.field}</span>
               <span className="opacity-60">{chip.operator}</span>
@@ -120,7 +120,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
                 type="button"
                 onClick={() => removeChip(chip.raw)}
                 aria-label={`Remove ${chip.raw} filter`}
-                className="ml-0.5 hover:text-destructive"
+                className="ml-0.5 text-slate-500 hover:text-rose-400"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -130,7 +130,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
       )}
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
         <input
           ref={inputRef}
           type="text"
@@ -146,7 +146,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder ?? 'Search plans... (e.g. status:in_progress)'}
-          className="w-full rounded-md border bg-background px-9 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-8 w-full border border-slate-700 bg-slate-950 pl-8 pr-8 text-[12px] text-slate-100 outline-none placeholder:text-slate-500 focus:border-slate-500"
         />
         {value && (
           <button
@@ -157,15 +157,15 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
               inputRef.current?.focus();
             }}
             aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
 
       {showHints && matchingHints.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+        <div className="absolute z-50 mt-1 w-full border border-slate-700 bg-slate-900 shadow-md">
           {matchingHints.map((hint, i) => (
             <button
               key={hint.prefix}
@@ -174,12 +174,12 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
                 e.preventDefault();
                 applyHint(hint.prefix);
               }}
-              className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
-                i === focusedHint ? 'bg-accent' : ''
+              className={`w-full px-3 py-1.5 text-left text-[12px] hover:bg-slate-800 ${
+                i === focusedHint ? 'bg-slate-800' : ''
               }`}
             >
-              <span className="font-mono font-medium text-primary">{hint.prefix}</span>
-              <span className="ml-2 text-muted-foreground">{hint.description}</span>
+              <span className="font-mono font-medium text-blue-400">{hint.prefix}</span>
+              <span className="ml-2 text-slate-500">{hint.description}</span>
             </button>
           ))}
         </div>

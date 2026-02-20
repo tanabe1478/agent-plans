@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { MetadataService } from '../../services/metadataService.js';
 import { SearchService } from '../../services/searchService.js';
 import { SettingsService } from '../../services/settingsService.js';
 
@@ -112,6 +113,52 @@ describe('SearchService', () => {
       const results = await searchService.search('status:todo OR status:review');
       const filenames = results.map((result) => result.filename).sort();
       expect(filenames).toEqual(['review-plan.md', 'todo-plan.md']);
+    });
+
+    it('should prefer metadata DB status over YAML frontmatter status', async () => {
+      // YAML says "todo" but user changed status to "in_progress" via UI (metadata DB)
+      await writeFile(
+        join(plansDir, 'changed-plan.md'),
+        '---\nstatus: todo\n---\n\n# Changed Plan\n\nThis plan was changed.',
+        'utf-8'
+      );
+      await writeFile(
+        join(plansDir, 'still-todo.md'),
+        '---\nstatus: todo\n---\n\n# Still Todo\n\nThis plan is still todo.',
+        'utf-8'
+      );
+
+      const dbPath = join(tempDir, 'metadata.db');
+      const metadataService = new MetadataService(dbPath);
+      const now = new Date().toISOString();
+
+      // Simulate UI status change: metadata DB has in_progress
+      metadataService.upsertMetadata('changed-plan.md', {
+        source: 'markdown',
+        status: 'in_progress',
+        createdAt: now,
+        modifiedAt: now,
+      });
+      metadataService.upsertMetadata('still-todo.md', {
+        source: 'markdown',
+        status: 'todo',
+        createdAt: now,
+        modifiedAt: now,
+      });
+
+      const searchWithMeta = new SearchService({ plansDir, metadataService });
+
+      // Search for in_progress should find the plan whose DB status was changed
+      const results = await searchWithMeta.search('status:in_progress');
+      expect(results).toHaveLength(1);
+      expect(results[0].filename).toBe('changed-plan.md');
+
+      // Search for todo should only find the one still in todo
+      const todoResults = await searchWithMeta.search('status:todo');
+      expect(todoResults).toHaveLength(1);
+      expect(todoResults[0].filename).toBe('still-todo.md');
+
+      metadataService.close();
     });
 
     it('should search across multiple configured directories', async () => {

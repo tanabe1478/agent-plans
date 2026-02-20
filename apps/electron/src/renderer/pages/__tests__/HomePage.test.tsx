@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   updateStatusMutate: vi.fn(),
   addToast: vi.fn(),
   setItemsPerPage: vi.fn(),
+  searchData: null as { total: number; results: Array<Record<string, unknown>> } | null,
+  searchLoading: false,
 }));
 
 // Mock the hooks
@@ -30,6 +32,13 @@ vi.mock('@/lib/hooks/usePlans', () => ({
   useUpdateStatus: () => ({
     mutate: mocks.updateStatusMutate,
     isPending: false,
+  }),
+}));
+
+vi.mock('@/lib/hooks/useSearch', () => ({
+  useSearch: () => ({
+    data: mocks.searchData,
+    isLoading: mocks.searchLoading,
   }),
 }));
 
@@ -101,6 +110,38 @@ vi.mock('@/components/ui/Dialog', () => ({
     ) : null,
 }));
 
+vi.mock('@/components/search/SearchBar', () => ({
+  SearchBar: ({ value, onChange, onSubmit, placeholder }: any) => (
+    <input
+      type="text"
+      value={value}
+      onChange={(e: any) => onChange(e.target.value)}
+      onKeyDown={(e: any) => e.key === 'Enter' && onSubmit(value)}
+      placeholder={placeholder}
+      data-testid="search-bar"
+    />
+  ),
+}));
+
+vi.mock('@/components/search/QueryGuidePopover', () => ({
+  QueryGuidePopover: () => <div data-testid="query-guide" />,
+}));
+
+vi.mock('@/components/search/SavedSearches', () => ({
+  SavedSearches: () => <div data-testid="saved-searches" />,
+}));
+
+vi.mock('@/components/search/SearchResultsList', () => ({
+  SearchResultsList: ({ results }: any) => (
+    <div data-testid="search-results">{results.length} results</div>
+  ),
+}));
+
+vi.mock('@/lib/hooks/useSettings', () => ({
+  useSettings: () => ({ data: {} }),
+  useUpdateSettings: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
 import { HomePage } from '../HomePage';
 
 const createWrapper = () => {
@@ -134,6 +175,8 @@ describe('HomePage', () => {
     mocks.addToast.mockReset();
     mocks.setItemsPerPage.mockReset();
     mocks.bulkStatusMutateAsync.mockResolvedValue({ succeeded: [], failed: [] });
+    mocks.searchData = null;
+    mocks.searchLoading = false;
   });
 
   it('should render without crashing', () => {
@@ -146,16 +189,19 @@ describe('HomePage', () => {
     expect(screen.getAllByText(/0 indexed/).length).toBeGreaterThan(0);
   });
 
-  it('should have filter input', () => {
+  it('should have SearchBar component', () => {
     render(<HomePage />, { wrapper: createWrapper() });
-    expect(
-      screen.getAllByPlaceholderText('Search by title, filename, section...').length
-    ).toBeGreaterThan(0);
+    expect(screen.getByTestId('search-bar')).toBeTruthy();
   });
 
-  it('should always show status tabs', () => {
+  it('should have QueryGuidePopover', () => {
     render(<HomePage />, { wrapper: createWrapper() });
-    expect(screen.getAllByRole('button', { name: 'All' }).length).toBeGreaterThan(0);
+    expect(screen.getByTestId('query-guide')).toBeTruthy();
+  });
+
+  it('should have SavedSearches', () => {
+    render(<HomePage />, { wrapper: createWrapper() });
+    expect(screen.getByTestId('saved-searches')).toBeTruthy();
   });
 
   it('should have select button', () => {
@@ -221,6 +267,97 @@ describe('HomePage', () => {
       'input[type="checkbox"]'
     ) as HTMLInputElement | null;
     expect(checkbox?.checked).toBe(true);
+  });
+
+  it('should enter search mode when submitting a query', () => {
+    mocks.searchData = {
+      total: 2,
+      results: [
+        { filename: 'result-1.md', title: 'Result 1', matches: [] },
+        { filename: 'result-2.md', title: 'Result 2', matches: [] },
+      ],
+    };
+
+    render(<HomePage />, { wrapper: createWrapper() });
+
+    const searchBar = screen.getByTestId('search-bar');
+    fireEvent.change(searchBar, { target: { value: 'status:in_progress' } });
+    fireEvent.keyDown(searchBar, { key: 'Enter' });
+
+    // Search results should be visible
+    expect(screen.getByTestId('search-results')).toBeTruthy();
+    expect(screen.getByText('2 results')).toBeTruthy();
+  });
+
+  it('should hide Select button in search mode', () => {
+    mocks.searchData = {
+      total: 1,
+      results: [{ filename: 'r.md', title: 'R', matches: [] }],
+    };
+
+    render(<HomePage />, { wrapper: createWrapper() });
+
+    const searchBar = screen.getByTestId('search-bar');
+    fireEvent.change(searchBar, { target: { value: 'status:todo' } });
+    fireEvent.keyDown(searchBar, { key: 'Enter' });
+
+    // Select button should be hidden in search mode
+    expect(screen.queryByText('Select')).toBeNull();
+  });
+
+  it('should show result count summary in search mode', () => {
+    mocks.searchData = {
+      total: 3,
+      results: [
+        { filename: 'a.md', title: 'A', matches: [] },
+        { filename: 'b.md', title: 'B', matches: [] },
+        { filename: 'c.md', title: 'C', matches: [] },
+      ],
+    };
+
+    render(<HomePage />, { wrapper: createWrapper() });
+
+    const searchBar = screen.getByTestId('search-bar');
+    fireEvent.change(searchBar, { target: { value: 'keyword' } });
+    fireEvent.keyDown(searchBar, { key: 'Enter' });
+
+    expect(screen.getByText(/3 results for/)).toBeTruthy();
+  });
+
+  it('should return to plan list mode when clearing search', () => {
+    mocks.plans.push({
+      filename: 'plan-a.md',
+      title: 'Plan A',
+      createdAt: '2026-02-20T00:00:00.000Z',
+      modifiedAt: '2026-02-20T00:00:00.000Z',
+      size: 10,
+      preview: 'Preview',
+      sections: [],
+      metadata: { status: 'todo' },
+      readOnly: false,
+      source: 'markdown',
+    });
+
+    mocks.searchData = {
+      total: 1,
+      results: [{ filename: 'r.md', title: 'R', matches: [] }],
+    };
+
+    render(<HomePage />, { wrapper: createWrapper() });
+
+    // Enter search mode
+    const searchBar = screen.getByTestId('search-bar');
+    fireEvent.change(searchBar, { target: { value: 'query' } });
+    fireEvent.keyDown(searchBar, { key: 'Enter' });
+    expect(screen.getByTestId('search-results')).toBeTruthy();
+
+    // Clear search (submit empty string)
+    fireEvent.change(searchBar, { target: { value: '' } });
+    fireEvent.keyDown(searchBar, { key: 'Enter' });
+
+    // Should be back to plan list mode
+    expect(screen.queryByTestId('search-results')).toBeNull();
+    expect(screen.getAllByText('Select').length).toBeGreaterThan(0);
   });
 
   it('allows status change for read-only Codex plans', () => {
