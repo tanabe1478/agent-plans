@@ -87,7 +87,7 @@ export function HomePage() {
   };
 
   const filteredPlans = useMemo(() => {
-    return plans.sort(
+    return [...plans].sort(
       (a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime()
     );
   }, [plans]);

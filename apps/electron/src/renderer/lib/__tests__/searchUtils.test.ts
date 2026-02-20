@@ -67,5 +67,17 @@ describe('searchUtils', () => {
       expect(highlightMatch('some text', 'status:todo')).toBe('some text');
       expect(highlightMatch('some text', 'AND OR')).toBe('some text');
     });
+
+    it('should HTML-escape text to prevent XSS', () => {
+      const result = highlightMatch('<script>alert(1)</script>', 'alert');
+      expect(result).not.toContain('<script>');
+      expect(result).toContain('&lt;script&gt;');
+      expect(result).toContain('<mark');
+      expect(result).toContain('alert</mark>');
+    });
+
+    it('should HTML-escape text even when query is empty', () => {
+      expect(highlightMatch('<b>bold</b>', '')).toBe('&lt;b&gt;bold&lt;/b&gt;');
+    });
   });
 });
