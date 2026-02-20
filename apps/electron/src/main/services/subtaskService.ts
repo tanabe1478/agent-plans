@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import type { Subtask } from '@agent-plans/shared';
 import { config } from '../config.js';
 import type { MetadataService } from './metadataService.js';
-import { getDefaultMetadataService } from './planService.js';
 
 export function getSubtaskProgress(subtasks: Subtask[]): {
   done: number;
@@ -165,8 +164,9 @@ type SubtaskServiceFacade = Pick<
 
 let defaultSubtaskService: SubtaskService | null = null;
 
-function getSubtaskService(): SubtaskService {
+async function getSubtaskService(): Promise<SubtaskService> {
   if (!defaultSubtaskService) {
+    const { getDefaultMetadataService } = await import('./planService.js');
     defaultSubtaskService = new SubtaskService({
       plansDir: config.plansDir,
       metadataService: getDefaultMetadataService(),
@@ -177,8 +177,8 @@ function getSubtaskService(): SubtaskService {
 
 // Default singleton facade (lazy-initialized to avoid DB side effects at import time)
 export const subtaskService: SubtaskServiceFacade = {
-  addSubtask: (...args) => getSubtaskService().addSubtask(...args),
-  updateSubtask: (...args) => getSubtaskService().updateSubtask(...args),
-  deleteSubtask: (...args) => getSubtaskService().deleteSubtask(...args),
-  toggleSubtask: (...args) => getSubtaskService().toggleSubtask(...args),
+  addSubtask: async (...args) => (await getSubtaskService()).addSubtask(...args),
+  updateSubtask: async (...args) => (await getSubtaskService()).updateSubtask(...args),
+  deleteSubtask: async (...args) => (await getSubtaskService()).deleteSubtask(...args),
+  toggleSubtask: async (...args) => (await getSubtaskService()).toggleSubtask(...args),
 };

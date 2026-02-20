@@ -12,10 +12,12 @@ const defaultSettings = {
   customStylesheetPath: null,
 };
 
-let currentSettings = { ...defaultSettings };
+let currentSettings: typeof defaultSettings | undefined = { ...defaultSettings };
+let currentLoading = false;
+let currentError: unknown = null;
 const mockMutateAsync = vi.fn(async (partial: Record<string, unknown>) => {
   currentSettings = {
-    ...currentSettings,
+    ...(currentSettings ?? defaultSettings),
     ...partial,
   };
   return currentSettings;
@@ -24,8 +26,8 @@ const mockMutateAsync = vi.fn(async (partial: Record<string, unknown>) => {
 vi.mock('@/lib/hooks/useSettings', () => ({
   useSettings: () => ({
     data: currentSettings,
-    isLoading: false,
-    error: null,
+    isLoading: currentLoading,
+    error: currentError,
   }),
   useUpdateSettings: () => ({
     mutateAsync: mockMutateAsync,
@@ -59,6 +61,8 @@ const createWrapper = () => {
 describe('SettingsPage', () => {
   beforeEach(() => {
     currentSettings = { ...defaultSettings };
+    currentLoading = false;
+    currentError = null;
     mockMutateAsync.mockClear();
   });
 
@@ -89,6 +93,27 @@ describe('SettingsPage', () => {
     const { container } = render(<SettingsPage />, { wrapper: createWrapper() });
     expect(screen.getAllByText('Appearance').length).toBeGreaterThan(0);
     expect(container.querySelector('#theme-mode')).not.toBeNull();
+  });
+
+  it('should reflect persisted plan directories after loading completes', async () => {
+    currentLoading = true;
+    currentSettings = undefined;
+    const wrapper = createWrapper();
+    const { container, rerender } = render(<SettingsPage />, { wrapper });
+
+    currentSettings = {
+      ...defaultSettings,
+      planDirectories: ['/tmp/from-settings'],
+    };
+    currentLoading = false;
+    rerender(<SettingsPage />);
+
+    await waitFor(() => {
+      const input = container.querySelector(
+        'input[placeholder="~/.agent-plans/plans"]'
+      ) as HTMLInputElement | null;
+      expect(input?.value).toBe('/tmp/from-settings');
+    });
   });
 
   it('should keep a newly added empty plan directory row', async () => {
