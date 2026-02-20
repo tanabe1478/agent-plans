@@ -49,11 +49,13 @@ export function extractHeadings(content: string): Heading[] {
 }
 
 function getRenderedHeadingElements(): HTMLElement[] {
-  return Array.from(
-    document.querySelectorAll<HTMLElement>(
-      '[data-plan-content="true"] h1, [data-plan-content="true"] h2, [data-plan-content="true"] h3'
-    )
-  );
+  const selector = [
+    '[data-plan-content="true"] h1',
+    '[data-plan-content="true"] h2',
+    '[data-plan-content="true"] h3',
+  ].join(', ');
+
+  return Array.from(document.querySelectorAll<HTMLElement>(selector));
 }
 
 export function SectionNav({ content }: SectionNavProps) {
@@ -86,7 +88,7 @@ export function SectionNav({ content }: SectionNavProps) {
   const scrollToHeading = (index: number) => {
     const el = getRenderedHeadingElements()[index];
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
     }
   };
 

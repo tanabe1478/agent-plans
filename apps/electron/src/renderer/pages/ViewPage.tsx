@@ -298,7 +298,7 @@ export function ViewPage() {
           </div>
 
           {plan.sections.length > 0 ? (
-            <div className="border border-slate-800 bg-slate-900/60 p-3">
+            <div className="border border-slate-800 bg-slate-900/60 p-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-1.5rem)] lg:overflow-auto">
               <p className="mb-2 text-[11px] uppercase tracking-[0.08em] text-slate-500">Outline</p>
               <SectionNav content={plan.content} />
             </div>
