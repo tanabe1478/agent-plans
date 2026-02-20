@@ -108,3 +108,42 @@
 - Risk: State synchronization fix may affect directory picker UX and current unsaved draft behavior.
 - Risk: Normalization/order changes can surprise existing users if order is not preserved as expected.
 - Rollback: revert settings-page synchronization changes and re-enable previous logic, keeping test evidence for follow-up redesign.
+
+## Revision 4
+
+### Objective
+- Fix PRI-25: when tapping the right-side outline index in preview, scroll to a readable position where the target heading is near the top and subsequent content is visible.
+- Align behavior with common ToC navigation patterns instead of placing the heading near the bottom edge.
+
+### Context
+- Current implementation in `SectionNav` uses `el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })`.
+- `block: 'nearest'` minimizes scroll distance, which can keep the heading near the viewport bottom when clicked from the outline.
+- Existing CSS already has `.markdown-content [id] { scroll-margin-top: 0.75rem; }`, but this is too small to provide a comfortable reading offset.
+- Common implementations (MDN-documented primitives) use:
+- `scrollIntoView({ block: 'start' })` for deterministic top alignment.
+- `scroll-margin-top` (target-side) or `scroll-padding-top` (container-side) to reserve visual breathing room.
+
+### Implementation Steps
+- [x] Step 1: Reproduce current behavior in View page and capture exact before-state (clicked heading lands near lower viewport).
+- [x] Step 2: Update outline navigation scroll behavior from `block: 'nearest'` to top-aligned behavior (`block: 'start'`) while preserving smooth scrolling.
+- [x] Step 3: Tune heading offset for readability by increasing and standardizing top offset (`scroll-margin-top`) for markdown heading anchors.
+- [x] Step 4: If needed, adjust active-heading detection threshold in `SectionNav` so highlight tracking remains consistent with the new offset.
+- [x] Step 5: Update/add renderer tests (`SectionNav.test.tsx`) to assert the new scroll options and prevent regression.
+- [x] Step 6: Manually verify in Electron:
+- [x] Step 6a: click multiple outline entries (top/middle/bottom headings).
+- [x] Step 6b: confirm target heading appears near top with content below visible.
+- [x] Step 6c: confirm behavior remains acceptable near document end where full top alignment may be physically impossible.
+
+### Verification
+- `pnpm --filter @agent-plans/electron test -- src/renderer/__tests__/components/plan/SectionNav.test.tsx`
+- `pnpm --filter @agent-plans/electron lint`
+- Manual checks on View page:
+- target heading no longer snaps to bottom-oriented placement for normal sections.
+- smooth navigation remains intact.
+- active outline highlight follows visible section transitions.
+
+### Risks / Rollback
+- Risk: Larger top offset can make headings appear too low on small viewports.
+- Risk: Changing scroll semantics can affect user expectation for very short documents.
+- Mitigation: keep offset moderate and validate across section positions and viewport sizes.
+- Rollback: revert `SectionNav` scroll mode and related CSS offset adjustments.

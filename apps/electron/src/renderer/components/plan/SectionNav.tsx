@@ -53,9 +53,6 @@ function getRenderedHeadingElements(): HTMLElement[] {
     '[data-plan-content="true"] h1',
     '[data-plan-content="true"] h2',
     '[data-plan-content="true"] h3',
-    '.milkdown-editor-container .ProseMirror h1',
-    '.milkdown-editor-container .ProseMirror h2',
-    '.milkdown-editor-container .ProseMirror h3',
   ].join(', ');
 
   return Array.from(document.querySelectorAll<HTMLElement>(selector));
