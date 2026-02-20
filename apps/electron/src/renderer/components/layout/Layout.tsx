@@ -12,6 +12,7 @@ import { Header } from './Header';
 type PaletteShortcutAction = Extract<
   ShortcutAction,
   | 'commandGoHome'
+  | 'commandGoKanban'
   | 'commandGoSearch'
   | 'commandOpenSettings'
   | 'commandOpenQuickOpen'
@@ -25,6 +26,7 @@ const PALETTE_COMMANDS: Array<{
   hint: string;
 }> = [
   { id: 'go-home', action: 'commandGoHome', label: 'Go to Home', hint: 'Route' },
+  { id: 'go-kanban', action: 'commandGoKanban', label: 'Go to Kanban', hint: 'Route' },
   { id: 'go-search', action: 'commandGoSearch', label: 'Go to Search', hint: 'Route' },
   { id: 'go-settings', action: 'commandOpenSettings', label: 'Open Settings', hint: 'Route' },
   {
@@ -57,6 +59,9 @@ export function Layout() {
       switch (action) {
         case 'commandGoHome':
           navigate('/');
+          return;
+        case 'commandGoKanban':
+          navigate('/kanban');
           return;
         case 'commandGoSearch':
           navigate('/search');

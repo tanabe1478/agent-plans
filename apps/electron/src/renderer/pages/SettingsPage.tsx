@@ -66,6 +66,12 @@ const SHORTCUT_ITEMS: Array<{
     section: 'Command Palette',
   },
   {
+    action: 'commandGoKanban',
+    label: 'Go to Kanban',
+    description: 'Run "Go to Kanban" from Command Palette.',
+    section: 'Command Palette',
+  },
+  {
     action: 'commandGoSearch',
     label: 'Go to Search',
     description: 'Run "Go to Search" from Command Palette.',

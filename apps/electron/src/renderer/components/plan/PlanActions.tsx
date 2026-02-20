@@ -108,7 +108,8 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
         <div className="relative">
           <Button
             variant="outline"
-            size="default"
+            size="sm"
+            className="h-auto px-2 py-1.5 text-[12px] border-slate-700"
             onClick={() => {
               setShowOpenMenu(!showOpenMenu);
               setShowMenu(false);
@@ -116,7 +117,7 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
             title="Open in external app"
             aria-label="Open in external app"
           >
-            <ExternalLink className="h-4 w-4 mr-1.5" />
+            <ExternalLink className="h-3.5 w-3.5 mr-1" />
             Open in...
           </Button>
 

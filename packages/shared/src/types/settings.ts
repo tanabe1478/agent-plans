@@ -60,6 +60,7 @@ export type ShortcutAction =
   | 'openCommandPalette'
   | 'openQuickOpen'
   | 'commandGoHome'
+  | 'commandGoKanban'
   | 'commandGoSearch'
   | 'commandOpenSettings'
   | 'commandOpenQuickOpen'
