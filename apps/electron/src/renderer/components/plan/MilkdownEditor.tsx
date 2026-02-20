@@ -94,6 +94,11 @@ export function MilkdownEditor({
   }, [initialContent, readOnly]);
 
   return (
-    <div ref={containerRef} className="milkdown-editor-container" data-testid="milkdown-editor" />
+    <div
+      ref={containerRef}
+      className="milkdown-editor-container"
+      data-testid="milkdown-editor"
+      data-plan-content="true"
+    />
   );
 }

@@ -286,8 +286,9 @@
   @apply bg-muted;
 }
 
-.markdown-content [id] {
-  scroll-margin-top: 0.75rem;
+.markdown-content :is(h1, h2, h3)[id],
+.milkdown-editor-container .ProseMirror :is(h1, h2, h3) {
+  scroll-margin-top: 3.5rem;
 }
 
 .review-file {

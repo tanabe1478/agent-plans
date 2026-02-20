@@ -59,7 +59,30 @@ describe('SectionNav', () => {
     fireEvent.click(screen.getByRole('button', { name: '日本語の見出し' }));
     expect(scrollIntoViewMock).toHaveBeenCalledWith({
       behavior: 'smooth',
-      block: 'nearest',
+      block: 'start',
+      inline: 'nearest',
+    });
+  });
+
+  it('scrolls to heading rendered inside Milkdown ProseMirror', () => {
+    const content = `# Top\n## Sub`;
+
+    render(
+      <>
+        <div className="milkdown-editor-container" data-plan-content="true">
+          <div className="ProseMirror">
+            <h1>Top</h1>
+            <h2>Sub</h2>
+          </div>
+        </div>
+        <SectionNav content={content} />
+      </>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sub' }));
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
       inline: 'nearest',
     });
   });
