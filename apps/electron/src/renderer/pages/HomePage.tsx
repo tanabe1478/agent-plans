@@ -393,7 +393,7 @@ export function HomePage() {
                     <div className="pr-2">
                       <StatusDropdown
                         currentStatus={status}
-                        disabled={updateStatus.isPending || readOnly}
+                        disabled={updateStatus.isPending}
                         onStatusChange={(next) =>
                           updateStatus.mutate({ filename: plan.filename, status: next })
                         }

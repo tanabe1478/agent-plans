@@ -83,6 +83,6 @@ describe('KanbanPage', () => {
     const link = screen.getByRole('link', { name: /Codex Plan/i });
     const card = link.closest('div[draggable]');
     expect(card).not.toBeNull();
-    expect((card as HTMLElement).getAttribute('draggable')).toBe('false');
+    expect((card as HTMLElement).getAttribute('draggable')).toBe('true');
   });
 });
