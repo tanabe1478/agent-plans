@@ -152,18 +152,24 @@ export function SettingsPage() {
     : 'Enable Codex integration';
 
   const savedDirectories =
-    settings?.planDirectories && settings.planDirectories.length > 0
+    settings && settings.planDirectories.length > 0
       ? settings.planDirectories
-      : [DEFAULT_PLAN_DIRECTORY];
+      : settings
+        ? [DEFAULT_PLAN_DIRECTORY]
+        : [];
   const draftDirectories = directoryEntries.map((entry) => entry.path);
   const effectiveDirectories = normalizeDirectoryPaths(draftDirectories);
   const normalizedSavedDirectories = normalizeDirectoryPaths(savedDirectories);
-  const hasDirectoryChanges = !arePathListsEqual(effectiveDirectories, normalizedSavedDirectories);
-  const hasDirectoryDraftChanges = !arePathListsEqual(draftDirectories, savedDirectories);
+  const hasDirectoryChanges =
+    settings !== undefined && !arePathListsEqual(effectiveDirectories, normalizedSavedDirectories);
+  const hasDirectoryDraftChanges =
+    settings !== undefined && !arePathListsEqual(draftDirectories, savedDirectories);
   const savedCodexDirectories =
-    settings?.codexSessionLogDirectories && settings.codexSessionLogDirectories.length > 0
+    settings && settings.codexSessionLogDirectories.length > 0
       ? settings.codexSessionLogDirectories
-      : [DEFAULT_CODEX_SESSION_LOG_DIRECTORY];
+      : settings
+        ? [DEFAULT_CODEX_SESSION_LOG_DIRECTORY]
+        : [];
   const draftCodexDirectories = codexDirectoryEntries.map((entry) => entry.path);
   const normalizedCodexDirectories = normalizeDirectoryPaths(draftCodexDirectories);
   const normalizedSavedCodexDirectories = normalizeDirectoryPaths(savedCodexDirectories);
@@ -185,9 +191,10 @@ export function SettingsPage() {
   );
 
   useEffect(() => {
+    if (!settings) return;
     if (hasDirectoryDraftChanges && directoryEntries.length > 0) return;
 
-    const directories = settings?.planDirectories ?? [];
+    const directories = settings.planDirectories ?? [];
     const source = directories.length > 0 ? directories : [DEFAULT_PLAN_DIRECTORY];
 
     setDirectoryEntries((current) => {
@@ -199,12 +206,13 @@ export function SettingsPage() {
       if (isSame) return current;
       return source.map((path) => createDirectoryEntry(path));
     });
-  }, [settings?.planDirectories, hasDirectoryDraftChanges, directoryEntries.length]);
+  }, [settings, settings?.planDirectories, hasDirectoryDraftChanges, directoryEntries.length]);
 
   useEffect(() => {
+    if (!settings) return;
     if (hasCodexDirectoryDraftChanges && codexDirectoryEntries.length > 0) return;
 
-    const directories = settings?.codexSessionLogDirectories ?? [];
+    const directories = settings.codexSessionLogDirectories ?? [];
     const source = directories.length > 0 ? directories : [DEFAULT_CODEX_SESSION_LOG_DIRECTORY];
 
     setCodexDirectoryEntries((current) => {
@@ -217,6 +225,7 @@ export function SettingsPage() {
       return source.map((path) => createDirectoryEntry(path));
     });
   }, [
+    settings,
     settings?.codexSessionLogDirectories,
     hasCodexDirectoryDraftChanges,
     codexDirectoryEntries.length,
