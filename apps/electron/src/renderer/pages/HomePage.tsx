@@ -22,7 +22,12 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { useSettingsLoading } from '@/contexts/SettingsContext';
 import { writeClipboard } from '@/lib/clipboard';
-import { useBulkDelete, usePlans, useUpdateStatus } from '@/lib/hooks/usePlans';
+import {
+  useBulkDelete,
+  useBulkUpdateStatus,
+  usePlans,
+  useUpdateStatus,
+} from '@/lib/hooks/usePlans';
 import { useStatusColumns } from '@/lib/hooks/useStatusColumns';
 import { cn, formatDate, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
 import { ITEMS_PER_PAGE_OPTIONS, useUiStore } from '@/stores/uiStore';
@@ -31,6 +36,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const { data, isLoading, error } = usePlans();
   const bulkDelete = useBulkDelete();
+  const bulkUpdateStatus = useBulkUpdateStatus();
   const updateStatus = useUpdateStatus();
   const { addToast, itemsPerPage, setItemsPerPage } = useUiStore();
   const settingsLoading = useSettingsLoading();
@@ -45,6 +51,7 @@ export function HomePage() {
   const [contextPos, setContextPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [deleteTarget, setDeleteTarget] = useState<PlanMeta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [bulkStatusTarget, setBulkStatusTarget] = useState('');
   const plans = data || [];
 
   const filteredPlans = useMemo(() => {
@@ -81,11 +88,6 @@ export function HomePage() {
     setActiveFilename(activePlan.filename);
   }, [activePlan]);
 
-  // Reset to page 1 when filters or items-per-page change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, statusFilter, itemsPerPage]);
-
   const totalPages = Math.max(1, Math.ceil(filteredPlans.length / itemsPerPage));
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const paginatedPlans = useMemo(() => {
@@ -103,6 +105,20 @@ export function HomePage() {
       }
       return next;
     });
+  };
+
+  const handleRowClick = (plan: PlanMeta) => {
+    if (selectionMode) {
+      if (plan.readOnly) return;
+      toggleSelection(plan.filename);
+      return;
+    }
+    setActiveFilename(plan.filename);
+  };
+
+  const handleRowDoubleClick = (plan: PlanMeta) => {
+    if (selectionMode) return;
+    navigate(`/plan/${encodeURIComponent(plan.filename)}`);
   };
 
   if (settingsLoading || isLoading) {
@@ -148,6 +164,30 @@ export function HomePage() {
   const hasSelection = selectedPlans.size > 0;
   const writablePlans = filteredPlans.filter((plan) => !plan.readOnly);
 
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatusTarget || selectedPlans.size === 0) return;
+    const filenames = plans
+      .filter((plan) => selectedPlans.has(plan.filename) && !plan.readOnly)
+      .map((plan) => plan.filename);
+    if (filenames.length === 0) {
+      addToast('No writable plans selected', 'error');
+      return;
+    }
+
+    try {
+      const result = await bulkUpdateStatus.mutateAsync({ filenames, status: bulkStatusTarget });
+      const message =
+        result.failed.length > 0
+          ? `${result.succeeded.length} plan(s) updated, ${result.failed.length} failed`
+          : `${result.succeeded.length} plan(s) updated`;
+      addToast(message, result.failed.length > 0 ? 'info' : 'success');
+      setSelectedPlans(new Set());
+      setBulkStatusTarget('');
+    } catch (err) {
+      addToast(`Bulk status update failed: ${err}`, 'error');
+    }
+  };
+
   return (
     <div className="space-y-3">
       <section className="border border-slate-800 bg-slate-900/50 p-3">
@@ -160,7 +200,10 @@ export function HomePage() {
               size="sm"
               onClick={() => {
                 setSelectionMode((v) => !v);
-                if (selectionMode) setSelectedPlans(new Set());
+                if (selectionMode) {
+                  setSelectedPlans(new Set());
+                  setBulkStatusTarget('');
+                }
               }}
             >
               <CheckSquare className="mr-1 h-4 w-4" />
@@ -181,6 +224,28 @@ export function HomePage() {
                   <XSquare className="mr-1 h-4 w-4" />
                   Clear
                 </Button>
+                <select
+                  value={bulkStatusTarget}
+                  onChange={(event) => setBulkStatusTarget(event.target.value)}
+                  className="h-8 border border-slate-700 bg-slate-950 px-2 text-[11px] text-slate-300 outline-none"
+                  disabled={bulkUpdateStatus.isPending}
+                  aria-label="Bulk status target"
+                >
+                  <option value="">Status...</option>
+                  {columns.map((col) => (
+                    <option key={col.id} value={col.id}>
+                      {col.label}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleBulkStatusUpdate()}
+                  disabled={!hasSelection || !bulkStatusTarget || bulkUpdateStatus.isPending}
+                >
+                  {bulkUpdateStatus.isPending ? 'Updating...' : 'Update Status'}
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -200,7 +265,10 @@ export function HomePage() {
             <input
               type="text"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Search by title, filename, section..."
               className="h-8 w-full border border-slate-700 bg-slate-950 pl-8 pr-3 text-[12px] text-slate-100 outline-none placeholder:text-slate-500"
             />
@@ -208,7 +276,10 @@ export function HomePage() {
           <div className="flex items-center gap-1 border border-slate-700 bg-slate-950 p-1">
             <button
               type="button"
-              onClick={() => setStatusFilter('all')}
+              onClick={() => {
+                setStatusFilter('all');
+                setCurrentPage(1);
+              }}
               className={cn(
                 'px-2 py-1 text-[11px] tracking-wide',
                 statusFilter === 'all'
@@ -222,7 +293,10 @@ export function HomePage() {
               <button
                 key={col.id}
                 type="button"
-                onClick={() => setStatusFilter(col.id)}
+                onClick={() => {
+                  setStatusFilter(col.id);
+                  setCurrentPage(1);
+                }}
                 className={cn(
                   'px-2 py-1 text-[11px] tracking-wide',
                   statusFilter === col.id
@@ -261,6 +335,7 @@ export function HomePage() {
                 const readOnly = Boolean(plan.readOnly);
                 return (
                   // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: row interaction is pointer-based in desktop list view
                   <div
                     key={plan.filename}
                     data-plan-row={plan.filename}
@@ -269,8 +344,18 @@ export function HomePage() {
                       setContextPlan(plan);
                       setContextPos({ x: event.clientX, y: event.clientY });
                     }}
+                    onClick={(event) => {
+                      const target = event.target as HTMLElement | null;
+                      if (target?.closest('[data-row-action="true"]')) return;
+                      handleRowClick(plan);
+                    }}
+                    onDoubleClick={(event) => {
+                      const target = event.target as HTMLElement | null;
+                      if (target?.closest('[data-row-action="true"]')) return;
+                      handleRowDoubleClick(plan);
+                    }}
                     className={cn(
-                      'grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] items-center border-b border-slate-800 px-2 py-1.5 text-[12px] text-slate-300',
+                      'grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] items-center border-b border-slate-800 px-2 py-1.5 text-[12px] text-slate-300 cursor-pointer',
                       isActive
                         ? 'bg-slate-800/70'
                         : 'hover:bg-slate-700/30 dark:hover:bg-slate-800/40'
@@ -282,6 +367,8 @@ export function HomePage() {
                           type="checkbox"
                           checked={isChecked}
                           disabled={readOnly}
+                          data-row-action="true"
+                          onClick={(event) => event.stopPropagation()}
                           onChange={() => {
                             if (readOnly) return;
                             toggleSelection(plan.filename);
@@ -292,19 +379,7 @@ export function HomePage() {
                         <FileText className="h-3.5 w-3.5 text-slate-600" />
                       )}
                     </div>
-                    <button
-                      type="button"
-                      className="min-w-0 text-left"
-                      onClick={() => {
-                        if (selectionMode) {
-                          if (readOnly) return;
-                          toggleSelection(plan.filename);
-                          return;
-                        }
-                        setActiveFilename(plan.filename);
-                      }}
-                      onDoubleClick={() => navigate(`/plan/${encodeURIComponent(plan.filename)}`)}
-                    >
+                    <div className="min-w-0 text-left">
                       <p className="truncate text-[12px] font-medium">{plan.title}</p>
                       <p className="truncate font-mono text-[10px] text-slate-500">
                         {plan.filename}
@@ -314,7 +389,7 @@ export function HomePage() {
                           Codex
                         </span>
                       ) : null}
-                    </button>
+                    </div>
                     <div className="pr-2">
                       <StatusDropdown
                         currentStatus={status}
@@ -324,7 +399,7 @@ export function HomePage() {
                         }
                       />
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-500" data-plan-modified={plan.filename}>
                       {formatDate(plan.modifiedAt)}
                       {dueDate ? (
                         <p
@@ -345,7 +420,11 @@ export function HomePage() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
-                        onClick={() => navigate(`/plan/${encodeURIComponent(plan.filename)}`)}
+                        data-row-action="true"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          navigate(`/plan/${encodeURIComponent(plan.filename)}`);
+                        }}
                         className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
                         title="Open detail"
                       >
@@ -353,9 +432,11 @@ export function HomePage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
-                          navigate(`/plan/${encodeURIComponent(plan.filename)}/review`)
-                        }
+                        data-row-action="true"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          navigate(`/plan/${encodeURIComponent(plan.filename)}/review`);
+                        }}
                         className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
                         title="Open review"
                       >
@@ -401,7 +482,10 @@ export function HomePage() {
                 <span>Per page</span>
                 <select
                   value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
                   className="border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-[11px] text-slate-300 outline-none"
                 >
                   {ITEMS_PER_PAGE_OPTIONS.map((n) => (
