@@ -75,6 +75,20 @@ vi.mock('@/components/ui/Button', () => ({
   ),
 }));
 
+vi.mock('@/components/plan/StatusDropdown', () => ({
+  StatusDropdown: ({ currentStatus, disabled, onStatusChange }: any) => (
+    <button
+      type="button"
+      data-testid={`status-dropdown-${currentStatus}`}
+      data-row-action="true"
+      disabled={disabled}
+      onClick={() => onStatusChange('in_progress')}
+    >
+      {currentStatus}
+    </button>
+  ),
+}));
+
 vi.mock('@/components/ui/Dialog', () => ({
   Dialog: ({ children, open, onClose, title }: any) =>
     open ? (
@@ -207,5 +221,26 @@ describe('HomePage', () => {
       'input[type="checkbox"]'
     ) as HTMLInputElement | null;
     expect(checkbox?.checked).toBe(true);
+  });
+
+  it('allows status change for read-only Codex plans', () => {
+    mocks.plans.push({
+      filename: 'codex-session.md',
+      title: 'Codex Session',
+      createdAt: '2026-02-20T00:00:00.000Z',
+      modifiedAt: '2026-02-20T00:00:00.000Z',
+      size: 10,
+      preview: 'Imported from Codex',
+      sections: [],
+      metadata: { status: 'todo' },
+      readOnly: true,
+      source: 'codex',
+    });
+
+    const view = render(<HomePage />, { wrapper: createWrapper() });
+
+    const dropdown = view.getByTestId('status-dropdown-todo');
+    expect(dropdown).not.toBeNull();
+    expect((dropdown as HTMLButtonElement).disabled).toBe(false);
   });
 });

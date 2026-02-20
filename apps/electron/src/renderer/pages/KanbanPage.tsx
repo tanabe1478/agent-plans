@@ -18,11 +18,10 @@ function getPlanStatus(plan: PlanMeta): string {
 
 interface KanbanCardProps {
   plan: PlanMeta;
-  draggable: boolean;
   onDragStart: (e: DragEvent, plan: PlanMeta) => void;
 }
 
-function KanbanCard({ plan, draggable, onDragStart }: KanbanCardProps) {
+function KanbanCard({ plan, onDragStart }: KanbanCardProps) {
   const meta = plan.metadata ?? plan.frontmatter;
   const dueDate = meta?.dueDate;
   const deadlineColor = getDeadlineColor(dueDate);
@@ -30,14 +29,11 @@ function KanbanCard({ plan, draggable, onDragStart }: KanbanCardProps) {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop card container
     <div
-      draggable={draggable}
-      onDragStart={(e) => {
-        if (!draggable) return;
-        onDragStart(e, plan);
-      }}
+      draggable
+      onDragStart={(e) => onDragStart(e, plan)}
       className={cn(
         'rounded-lg border-2 bg-card p-3 shadow-sm hover:shadow-md transition-shadow',
-        draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
+        'cursor-grab active:cursor-grabbing',
         deadlineColor || 'border-border'
       )}
     >
@@ -150,12 +146,7 @@ function KanbanColumn({
       </div>
       <div className="p-2 flex-1 overflow-y-auto space-y-2 min-h-[200px]">
         {plans.map((plan) => (
-          <KanbanCard
-            key={plan.filename}
-            plan={plan}
-            draggable={!plan.readOnly}
-            onDragStart={onCardDragStart}
-          />
+          <KanbanCard key={plan.filename} plan={plan} onDragStart={onCardDragStart} />
         ))}
         {plans.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-8">No plans</p>
