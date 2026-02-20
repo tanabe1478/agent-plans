@@ -57,8 +57,10 @@ test.describe('Search flows', () => {
     await input.press('Enter');
 
     await expect(page).toHaveURL(/#\/search\?q=status%3Atodo%20AND%20authentication/);
-    await expect(page.getByText('"status:todo AND authentication" - 1 results')).toBeVisible();
-    await expect(page.getByText('Web Application Authentication')).toBeVisible();
+    await expect(page.getByText('"status:todo AND authentication" - 1 result')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Web Application Authentication/ })
+    ).toBeVisible();
   });
 
   test('supports multi-select status labels with OR behavior', async ({ page }) => {

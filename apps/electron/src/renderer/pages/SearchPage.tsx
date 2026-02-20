@@ -123,7 +123,7 @@ export function SearchPage() {
         </div>
         {queryParam && data && (
           <p className="mt-2 text-sm text-muted-foreground">
-            "{queryParam}" - {data.total} results
+            "{queryParam}" - {data.total} {data.total === 1 ? 'result' : 'results'}
           </p>
         )}
       </div>
