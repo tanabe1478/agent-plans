@@ -31,8 +31,10 @@ export function highlightMatch(text: string, query: string): string {
     .filter((token) => !/^status[:=]/i.test(token))
     .join(' ');
   if (!textPart) return escapeHtml(text);
+  const normalizedTextPart = textPart.replace(/^"+|"+$/g, '');
+  if (!normalizedTextPart) return escapeHtml(text);
   const escaped = escapeHtml(text);
-  const regex = new RegExp(`(${escapeRegExp(textPart)})`, 'gi');
+  const regex = new RegExp(`(${escapeRegExp(normalizedTextPart)})`, 'gi');
   return escaped.replace(
     regex,
     '<mark class="bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded">$1</mark>'

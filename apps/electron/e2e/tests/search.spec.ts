@@ -27,8 +27,8 @@ test.describe('Search flows', () => {
     // Open the query guide popover
     await page.getByRole('button', { name: 'Query syntax guide' }).click();
 
-    // Click the "In Progress" example
-    await page.getByRole('button', { name: 'In Progress' }).click();
+    // Click the "In Progress" example (use title to disambiguate from status badges)
+    await page.getByTitle('status:in_progress').click();
 
     await expect(page.getByText(/results? for/)).toBeVisible();
   });

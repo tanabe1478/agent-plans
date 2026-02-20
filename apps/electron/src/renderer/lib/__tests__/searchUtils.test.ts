@@ -79,5 +79,11 @@ describe('searchUtils', () => {
     it('should HTML-escape text even when query is empty', () => {
       expect(highlightMatch('<b>bold</b>', '')).toBe('&lt;b&gt;bold&lt;/b&gt;');
     });
+
+    it('should strip surrounding quotes from phrase queries', () => {
+      const result = highlightMatch('exact phrase here', '"exact phrase"');
+      expect(result).toContain('<mark');
+      expect(result).toContain('exact phrase</mark>');
+    });
   });
 });
