@@ -62,10 +62,10 @@ describe('SearchService', () => {
       expect(results[0].filename).toBe('todo-plan.md');
     });
 
-    it('should support tag filter', async () => {
+    it('should treat obsolete filter syntax as text search', async () => {
       await writeFile(
         join(plansDir, 'api-plan.md'),
-        '---\nstatus: todo\ntags:\n  - api\n  - backend\n---\n\n# API Plan\n\nAPI related.',
+        '---\nstatus: todo\ntags:\n  - api\n  - backend\n---\n\n# API Plan\n\nUse tag:api for filtering.',
         'utf-8'
       );
       await writeFile(
@@ -77,6 +77,7 @@ describe('SearchService', () => {
       const results = await searchService.search('tag:api');
       expect(results).toHaveLength(1);
       expect(results[0].filename).toBe('api-plan.md');
+      expect(results[0].matches.length).toBeGreaterThan(0);
     });
 
     it('should combine text search with filters', async () => {

@@ -6,22 +6,12 @@ import { useSearch } from '@/lib/hooks/useSearch';
 
 const SEARCH_EXAMPLES: Array<{ label: string; query: string }> = [
   { label: 'In Progress', query: 'status:in_progress' },
-  { label: 'Due This Month', query: 'due<2026-03-01' },
-  { label: 'By Project Path', query: 'project:agent-plans' },
   { label: 'Todo or Review', query: 'status:todo OR status:review' },
-  { label: 'Progress + API', query: 'status:in_progress AND tag:api' },
-  { label: 'Blocked Plans', query: 'blockedBy:backend-plan.md' },
-  { label: 'Estimate Includes 2d', query: 'estimate:2d' },
   { label: 'Exact Phrase', query: '"レビュー指摘対応"' },
 ];
 
 const SEARCH_SYNTAX_GUIDE: Array<{ syntax: string; description: string }> = [
-  { syntax: 'due<2026-02-20', description: 'Due date comparison (<, >, <=, >=, =)' },
-  { syntax: 'project:agent-plans', description: 'Project path partial match' },
-  { syntax: 'estimate:2d', description: 'Estimate partial match' },
-  { syntax: 'blockedBy:plan.md', description: 'Dependency filename match' },
-  { syntax: 'tag:api', description: 'Tag match (optional frontmatter field)' },
-  { syntax: 'priority:high', description: 'Priority match (optional frontmatter field)' },
+  { syntax: 'status:todo', description: 'Filter by plan status' },
   { syntax: '... AND ...', description: 'All conditions in the same clause must match' },
   { syntax: '... OR ...', description: 'Either clause can match (OR union search)' },
   { syntax: '"exact phrase"', description: 'Exact text phrase search in markdown body' },
@@ -316,10 +306,7 @@ function highlightMatch(text: string, query: string): string {
   const textPart = query
     .split(/\s+/)
     .filter((token) => !/^(AND|OR|\|\||&&)$/i.test(token))
-    .filter(
-      (token) =>
-        !/^(status|due|estimate|project|blockedBy|tag|priority|assignee)[:=<>]/i.test(token)
-    )
+    .filter((token) => !/^status[:=]/i.test(token))
     .join(' ');
   if (!textPart) return text;
   const regex = new RegExp(`(${escapeRegExp(textPart)})`, 'gi');

@@ -81,7 +81,8 @@ function extractFrontmatter(content: string): PlanFrontmatter | undefined {
 }
 
 /**
- * Check if a single filter matches the frontmatter
+ * Check if a single filter matches the frontmatter.
+ * Only `status` is supported; other fields were removed in #63.
  */
 function matchesFilter(filter: QueryFilter, fm: PlanFrontmatter | undefined): boolean {
   if (!fm) return false;
@@ -94,66 +95,6 @@ function matchesFilter(filter: QueryFilter, fm: PlanFrontmatter | undefined): bo
       const status = (fm.status ?? '').toLowerCase();
       return operator === ':' || operator === '=' ? status === lowerValue : false;
     }
-    case 'priority': {
-      const priority = (fm.priority ?? '').toLowerCase();
-      return operator === ':' || operator === '=' ? priority === lowerValue : false;
-    }
-    case 'assignee': {
-      const assignee = (fm.assignee ?? '').toLowerCase();
-      if (operator === ':') return assignee.includes(lowerValue);
-      return assignee === lowerValue;
-    }
-    case 'tag': {
-      const tags = (fm.tags ?? []).map((t) => t.toLowerCase());
-      return tags.some((t) => (operator === ':' ? t.includes(lowerValue) : t === lowerValue));
-    }
-    case 'due': {
-      const due = fm.dueDate;
-      if (!due) return false;
-      return compareDates(due, value, operator);
-    }
-    case 'estimate': {
-      const estimate = (fm.estimate ?? '').toLowerCase();
-      if (operator === ':') return estimate.includes(lowerValue);
-      return estimate === lowerValue;
-    }
-    case 'project': {
-      const project = (
-        fm.projectPath ??
-        ((fm as Record<string, unknown>).project_path as string) ??
-        ''
-      ).toLowerCase();
-      if (operator === ':') return project.includes(lowerValue);
-      return project === lowerValue;
-    }
-    case 'blockedBy': {
-      const blocked = (fm.blockedBy ?? []).map((b) => b.toLowerCase());
-      if (operator === ':') return blocked.some((b) => b.includes(lowerValue));
-      return blocked.some((b) => b === lowerValue);
-    }
-    default:
-      return false;
-  }
-}
-
-/**
- * Compare date strings using the given operator
- */
-function compareDates(actual: string, target: string, operator: string): boolean {
-  const a = actual.slice(0, 10); // YYYY-MM-DD
-  const t = target.slice(0, 10);
-  switch (operator) {
-    case ':':
-    case '=':
-      return a === t;
-    case '<':
-      return a < t;
-    case '>':
-      return a > t;
-    case '<=':
-      return a <= t;
-    case '>=':
-      return a >= t;
     default:
       return false;
   }
@@ -180,17 +121,7 @@ export class SearchService {
     if (!this.metadataService) return undefined;
     const row = this.metadataService.getMetadata(filename);
     if (!row) return undefined;
-    const deps = this.metadataService.getDependencies(filename);
-    return {
-      status: row.status,
-      priority: row.priority ?? undefined,
-      dueDate: row.dueDate ?? undefined,
-      estimate: row.estimate ?? undefined,
-      assignee: row.assignee ?? undefined,
-      tags: row.tags.length > 0 ? row.tags : undefined,
-      projectPath: row.projectPath ?? undefined,
-      blockedBy: deps.blockedBy.length > 0 ? deps.blockedBy : undefined,
-    };
+    return { status: row.status };
   }
 
   private async getPlanDirectories(): Promise<string[]> {
@@ -251,7 +182,7 @@ export class SearchService {
 
   /**
    * Search for a query in all plan files.
-   * Supports structured filters like status:in_progress, tag:api, due<2026-02-10.
+   * Supports the `status:` filter; other filter fields were removed in #63.
    */
   async search(query: string, limit = 50): Promise<SearchResult[]> {
     if (!query.trim()) {

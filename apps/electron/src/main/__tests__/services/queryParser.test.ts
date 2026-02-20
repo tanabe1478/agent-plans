@@ -24,44 +24,16 @@ describe('queryParser', () => {
       });
     });
 
-    it('should parse tag filter', () => {
-      const result = parseQuery('tag:api');
-
-      expect(result.filters).toHaveLength(1);
-      expect(result.filters[0]).toEqual({
-        field: 'tag',
-        operator: ':',
-        value: 'api',
-      });
-    });
-
-    it('should parse priority filter', () => {
-      const result = parseQuery('priority:high');
-
-      expect(result.filters).toHaveLength(1);
-      expect(result.filters[0]).toEqual({
-        field: 'priority',
-        operator: ':',
-        value: 'high',
-      });
-    });
-
-    it('should parse date comparison operators', () => {
-      const result = parseQuery('due<2026-02-10');
-
-      expect(result.filters).toHaveLength(1);
-      expect(result.filters[0]).toEqual({
-        field: 'due',
-        operator: '<',
-        value: '2026-02-10',
-      });
-    });
-
     it('should combine text and filters', () => {
-      const result = parseQuery('performance status:todo tag:api');
+      const result = parseQuery('performance status:todo');
 
       expect(result.textQuery).toBe('performance');
-      expect(result.filters).toHaveLength(2);
+      expect(result.filters).toHaveLength(1);
+      expect(result.filters[0]).toEqual({
+        field: 'status',
+        operator: ':',
+        value: 'todo',
+      });
     });
 
     it('should handle quoted phrases', () => {
@@ -72,33 +44,11 @@ describe('queryParser', () => {
     });
 
     it('should handle multiple filters of same type', () => {
-      const result = parseQuery('tag:api tag:backend');
+      const result = parseQuery('status:todo status:review');
 
       expect(result.filters).toHaveLength(2);
-      expect(result.filters[0].value).toBe('api');
-      expect(result.filters[1].value).toBe('backend');
-    });
-
-    it('should parse assignee filter', () => {
-      const result = parseQuery('assignee:john');
-
-      expect(result.filters).toHaveLength(1);
-      expect(result.filters[0]).toEqual({
-        field: 'assignee',
-        operator: ':',
-        value: 'john',
-      });
-    });
-
-    it('should parse blockedBy filter', () => {
-      const result = parseQuery('blockedBy:TASK-123');
-
-      expect(result.filters).toHaveLength(1);
-      expect(result.filters[0]).toEqual({
-        field: 'blockedBy',
-        operator: ':',
-        value: 'TASK-123',
-      });
+      expect(result.filters[0].value).toBe('todo');
+      expect(result.filters[1].value).toBe('review');
     });
 
     it('should parse OR clauses', () => {
@@ -112,12 +62,19 @@ describe('queryParser', () => {
     });
 
     it('should ignore explicit AND tokens', () => {
-      const result = parseQuery('status:in_progress AND tag:api');
+      const result = parseQuery('status:in_progress AND status:review');
 
       expect(result.clauses).toHaveLength(1);
       expect(result.clauses[0].filters).toHaveLength(2);
       expect(result.clauses[0].filters[0]?.field).toBe('status');
-      expect(result.clauses[0].filters[1]?.field).toBe('tag');
+      expect(result.clauses[0].filters[1]?.field).toBe('status');
+    });
+
+    it('should treat unknown filter-like tokens as plain text', () => {
+      const result = parseQuery('tag:api priority:high');
+
+      expect(result.filters).toHaveLength(0);
+      expect(result.textQuery).toBe('tag:api priority:high');
     });
   });
 });
