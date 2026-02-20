@@ -3,10 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const FILTER_HINTS = [
   { prefix: 'status:', description: 'Filter by status (todo, in_progress, review, completed)' },
-  { prefix: 'due<', description: 'Due before date (YYYY-MM-DD)' },
-  { prefix: 'due>', description: 'Due after date (YYYY-MM-DD)' },
-  { prefix: 'estimate:', description: 'Filter by estimate' },
-  { prefix: 'project:', description: 'Filter by project path' },
 ];
 
 interface ParsedChip {
@@ -21,7 +17,7 @@ function parseChips(query: string): { chips: ParsedChip[]; text: string } {
   const textParts: string[] = [];
   const tokens = query.split(/\s+/).filter(Boolean);
 
-  const filterPattern = /^(status|due|estimate|project|blockedBy)([:=<>]|<=|>=)(.+)$/;
+  const filterPattern = /^(status)([:=])(.+)$/;
 
   for (const token of tokens) {
     const match = token.match(filterPattern);
@@ -149,7 +145,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: SearchBarP
             setTimeout(() => setShowHints(false), 150);
           }}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder ?? 'Search plans... (e.g. status:in_progress due<2026-12-31)'}
+          placeholder={placeholder ?? 'Search plans... (e.g. status:in_progress)'}
           className="w-full rounded-md border bg-background px-9 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {value && (

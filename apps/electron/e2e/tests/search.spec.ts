@@ -5,7 +5,7 @@ test.describe('Search flows', () => {
     await page.getByRole('link', { name: 'Search' }).click();
     await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
 
-    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress due<2026-12-31)');
+    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
     await input.fill('status:todo');
     await input.press('Enter');
 
@@ -16,7 +16,7 @@ test.describe('Search flows', () => {
   test('clears query and search state after typo query', async ({ page }) => {
     await page.getByRole('link', { name: 'Search' }).click();
 
-    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress due<2026-12-31)');
+    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
     await input.fill('stats:todo');
     await input.press('Enter');
 
@@ -40,7 +40,7 @@ test.describe('Search flows', () => {
   test('supports OR search clauses', async ({ page }) => {
     await page.getByRole('link', { name: 'Search' }).click();
 
-    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress due<2026-12-31)');
+    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
     await input.fill('status:todo OR status:completed');
     await input.press('Enter');
 
@@ -52,14 +52,15 @@ test.describe('Search flows', () => {
   test('supports AND search clauses', async ({ page }) => {
     await page.getByRole('link', { name: 'Search' }).click();
 
-    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress due<2026-12-31)');
-    await input.fill('status:todo AND project:web-app');
+    const input = page.getByPlaceholder('Search plans... (e.g. status:in_progress)');
+    await input.fill('status:todo AND authentication');
     await input.press('Enter');
 
-    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo%20AND%20project%3Aweb-app/);
-    await expect(page.getByText('"status:todo AND project:web-app" - 2 results')).toBeVisible();
-    await expect(page.getByText('Web Application Authentication')).toBeVisible();
-    await expect(page.getByText('Database Migration Plan')).toBeVisible();
+    await expect(page).toHaveURL(/#\/search\?q=status%3Atodo%20AND%20authentication/);
+    await expect(page.getByText('"status:todo AND authentication" - 1 result')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Web Application Authentication/ })
+    ).toBeVisible();
   });
 
   test('supports multi-select status labels with OR behavior', async ({ page }) => {
@@ -79,7 +80,7 @@ test.describe('Search flows', () => {
 
   test('clears active filter chip and resets search results', async ({ page }) => {
     await page.getByRole('link', { name: 'Search' }).click();
-    await page.getByRole('button', { name: /^status:todo/i }).click();
+    await page.getByRole('button', { name: 'status:todo', exact: true }).click();
 
     await expect(page).toHaveURL(/#\/search\?q=status%3Atodo/);
     await expect(page.getByText('"status:todo" -')).toBeVisible();
@@ -87,8 +88,8 @@ test.describe('Search flows', () => {
     await page.getByRole('button', { name: 'Remove status:todo filter' }).click();
     await expect(page).toHaveURL(/#\/search$/);
     await expect(page.getByText('"status:todo" -')).not.toBeVisible();
-    await expect(
-      page.getByPlaceholder('Search plans... (e.g. status:in_progress due<2026-12-31)')
-    ).toHaveValue('');
+    await expect(page.getByPlaceholder('Search plans... (e.g. status:in_progress)')).toHaveValue(
+      ''
+    );
   });
 });

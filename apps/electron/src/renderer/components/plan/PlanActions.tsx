@@ -106,10 +106,9 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
     <div className="relative">
       <div className="flex items-center gap-2">
         <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-auto px-2 py-1.5 text-[12px] border-slate-700"
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 border border-slate-700 px-2 py-1.5 text-[12px] text-slate-200 hover:bg-slate-700/50 dark:hover:bg-slate-800"
             onClick={() => {
               setShowOpenMenu(!showOpenMenu);
               setShowMenu(false);
@@ -117,9 +116,9 @@ export function PlanActions({ filename, title, onDeleted }: PlanActionsProps) {
             title="Open in external app"
             aria-label="Open in external app"
           >
-            <ExternalLink className="h-3.5 w-3.5 mr-1" />
+            <ExternalLink className="h-3.5 w-3.5" />
             Open in...
-          </Button>
+          </button>
 
           {showOpenMenu && (
             <div className="absolute left-0 top-full mt-1 w-52 rounded-md border bg-card shadow-lg z-10">
