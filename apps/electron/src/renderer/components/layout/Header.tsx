@@ -5,7 +5,6 @@ import { cn } from '../../lib/utils';
 const routeTabs = [
   { path: '/', label: 'Home' },
   { path: '/kanban', label: 'Kanban' },
-  { path: '/search', label: 'Search' },
 ] as const;
 
 interface HeaderProps {

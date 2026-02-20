@@ -70,6 +70,14 @@ export type AppShortcuts = Record<ShortcutAction, string>;
 
 export type ThemeMode = 'light' | 'dark' | 'monokai' | 'system';
 
+/**
+ * A saved search query for quick re-use
+ */
+export interface SavedSearch {
+  name: string;
+  query: string;
+}
+
 export interface StylesheetLoadResult {
   ok: boolean;
   path: string;
@@ -97,6 +105,8 @@ export interface AppSettings {
   themeMode?: ThemeMode;
   /** Optional user stylesheet absolute path */
   customStylesheetPath?: string | null;
+  /** Saved search queries for quick re-use */
+  savedSearches?: SavedSearch[];
 }
 
 /**

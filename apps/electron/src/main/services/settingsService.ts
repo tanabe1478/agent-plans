@@ -73,6 +73,19 @@ export class SettingsService {
     return unique.length > 0 ? unique : [DEFAULT_CODEX_SESSIONS_DIR];
   }
 
+  private normalizeSavedSearches(value: unknown): Array<{ name: string; query: string }> {
+    if (!Array.isArray(value)) return [];
+    return value.filter(
+      (item): item is { name: string; query: string } =>
+        item != null &&
+        typeof item === 'object' &&
+        typeof (item as Record<string, unknown>).name === 'string' &&
+        typeof (item as Record<string, unknown>).query === 'string' &&
+        (item as Record<string, unknown>).name !== '' &&
+        (item as Record<string, unknown>).query !== ''
+    );
+  }
+
   private sanitizeSettings(parsed: Partial<AppSettings>): AppSettings {
     return {
       ...ELECTRON_DEFAULT_SETTINGS,
@@ -84,6 +97,7 @@ export class SettingsService {
       shortcuts: mergeShortcuts(parsed.shortcuts),
       themeMode: this.normalizeThemeMode(parsed.themeMode),
       customStylesheetPath: this.normalizeStylesheetPath(parsed.customStylesheetPath),
+      savedSearches: this.normalizeSavedSearches(parsed.savedSearches),
     };
   }
 

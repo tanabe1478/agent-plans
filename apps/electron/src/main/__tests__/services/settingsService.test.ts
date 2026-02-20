@@ -86,5 +86,31 @@ describe('settingsService', () => {
       expect(settings.themeMode).toBe('monokai');
       expect(settings.customStylesheetPath).toContain('/styles/custom.css');
     });
+
+    it('should default savedSearches to empty array', async () => {
+      const service = createService();
+      const settings = await service.getSettings();
+      expect(settings.savedSearches).toEqual([]);
+    });
+
+    it('should normalize savedSearches stripping invalid entries', async () => {
+      const service = createService();
+      await service.updateSettings({
+        savedSearches: [
+          { name: 'Valid', query: 'status:todo' },
+          { name: '', query: 'bad' },
+          { name: 'No query', query: '' },
+          null as any,
+          42 as any,
+          { name: 'Also Valid', query: 'keyword' },
+        ],
+      });
+
+      const settings = await service.getSettings();
+      expect(settings.savedSearches).toEqual([
+        { name: 'Valid', query: 'status:todo' },
+        { name: 'Also Valid', query: 'keyword' },
+      ]);
+    });
   });
 });

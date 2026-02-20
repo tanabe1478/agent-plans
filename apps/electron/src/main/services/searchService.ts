@@ -151,6 +151,20 @@ export class SearchService {
     return Array.from(targets, ([filename, filePath]) => ({ filename, filePath }));
   }
 
+  /**
+   * Resolve the effective frontmatter for a file by merging YAML frontmatter
+   * with metadata DB. Metadata DB takes priority (it reflects UI status changes).
+   */
+  private resolveFrontmatter(content: string, filename: string): PlanFrontmatter | undefined {
+    const yamlFm = extractFrontmatter(content);
+    const dbFm = this.getDbMetadata(filename);
+    if (!yamlFm && !dbFm) return undefined;
+    if (!yamlFm) return dbFm;
+    if (!dbFm) return yamlFm;
+    // Merge: DB fields take priority over YAML
+    return { ...yamlFm, ...dbFm };
+  }
+
   private clauseMatches(
     content: string,
     clause: { textQuery: string; filters: QueryFilter[] },
@@ -206,7 +220,7 @@ export class SearchService {
 
         for (const clause of parsed.clauses) {
           if (clause.filters.length > 0 && !frontmatter) {
-            frontmatter = extractFrontmatter(content) ?? this.getDbMetadata(filename);
+            frontmatter = this.resolveFrontmatter(content, filename);
           }
           const clauseMatchesResult = this.clauseMatches(content, clause, frontmatter);
           if (clauseMatchesResult === null) continue;

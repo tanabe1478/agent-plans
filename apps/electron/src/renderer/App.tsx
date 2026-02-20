@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { useFileChangeListener } from '@/lib/hooks/useFileChangeListener';
@@ -8,7 +8,6 @@ import { DependencyPage } from '@/pages/DependencyPage';
 import { HomePage } from '@/pages/HomePage';
 import { KanbanPage } from '@/pages/KanbanPage';
 import { ReviewPage } from '@/pages/ReviewPage';
-import { SearchPage } from '@/pages/SearchPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ViewPage } from '@/pages/ViewPage';
 import { useUiStore } from '@/stores/uiStore';
@@ -59,7 +58,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="plan/:filename" element={<ViewPage />} />
           <Route path="plan/:filename/review" element={<ReviewPage />} />
-          <Route path="search" element={<SearchPage />} />
+          <Route path="search" element={<Navigate to="/" replace />} />
           <Route path="kanban" element={<KanbanPage />} />
           <Route path="dependencies" element={<DependencyPage />} />
           <Route path="settings" element={<SettingsPage />} />
