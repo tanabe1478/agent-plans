@@ -313,11 +313,6 @@ export class PlanService {
       }
     }
 
-    // Garbage collect stale DB entries
-    if (this.metadataService) {
-      this.metadataService.garbageCollect(new Set(merged.keys()));
-    }
-
     return Array.from(merged.values()).sort(
       (a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime()
     );

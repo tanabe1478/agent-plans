@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ArchiveService } from '../../services/archiveService.js';
 import { CodexSessionService } from '../../services/codexSessionService.js';
+import { MetadataService } from '../../services/metadataService.js';
 import {
   PlanService,
   type PlanServiceConfig,
@@ -20,6 +21,7 @@ describe('PlanService', () => {
   let planService: PlanService;
   let archiveService: ArchiveService;
   let settingsService: SettingsService;
+  let metadataService: MetadataService;
 
   beforeEach(async () => {
     tempDir = join(tmpdir(), `agent-plans-test-${Date.now()}`);
@@ -46,10 +48,12 @@ describe('PlanService', () => {
     });
 
     settingsService = new SettingsService({ plansDir });
+    metadataService = new MetadataService(join(tempDir, 'metadata.db'));
 
     const deps: PlanServiceDependencies = {
       archiveService,
       settingsService,
+      metadataService,
       codexSessionService: new CodexSessionService({ maxSessionFiles: 50 }),
     };
 
@@ -57,6 +61,7 @@ describe('PlanService', () => {
   });
 
   afterEach(async () => {
+    metadataService.close();
     await rm(tempDir, { recursive: true, force: true });
   });
 
@@ -95,6 +100,36 @@ describe('PlanService', () => {
 
       const plans = await planService.listPlans();
       expect(plans.map((plan) => plan.filename).sort()).toEqual(['primary.md', 'secondary.md']);
+    });
+
+    it('should preserve plan status when directory is removed and re-added', async () => {
+      await settingsService.updateSettings({
+        planDirectories: [plansDir, secondaryPlansDir],
+      });
+
+      await writeFile(join(plansDir, 'keep-status-a.md'), '# Keep Status A', 'utf-8');
+      await writeFile(join(plansDir, 'keep-status-b.md'), '# Keep Status B', 'utf-8');
+      await writeFile(join(secondaryPlansDir, 'secondary-only.md'), '# Secondary', 'utf-8');
+
+      await planService.updateStatus('keep-status-a.md', 'in_progress');
+      await planService.updateStatus('keep-status-b.md', 'review');
+
+      await settingsService.updateSettings({
+        planDirectories: [secondaryPlansDir],
+      });
+      await planService.listPlans();
+
+      await settingsService.updateSettings({
+        planDirectories: [plansDir],
+      });
+      const plans = await planService.listPlans();
+
+      expect(plans.find((plan) => plan.filename === 'keep-status-a.md')?.metadata.status).toBe(
+        'in_progress'
+      );
+      expect(plans.find((plan) => plan.filename === 'keep-status-b.md')?.metadata.status).toBe(
+        'review'
+      );
     });
   });
 
