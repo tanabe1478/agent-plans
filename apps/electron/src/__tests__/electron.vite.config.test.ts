@@ -1,7 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import type { ElectronViteConfig } from 'electron-vite';
 import { describe, expect, it } from 'vitest';
+
+// Normalize path separators for cross-platform tests
+function normalizePath(p: string): string {
+  return p.replace(/[\\/]/g, '/');
+}
 
 describe('electron.vite.config', () => {
   it('should export valid configuration object', async () => {
@@ -93,7 +98,7 @@ describe('electron.vite.config', () => {
     };
 
     const mainInput = config.main?.build?.rollupOptions?.input as { index: string };
-    expect(mainInput.index).toContain('src/main/index.ts');
+    expect(normalizePath(mainInput.index)).toContain('src/main/index.ts');
   });
 
   it('should have correct preload entry point', async () => {
@@ -102,7 +107,7 @@ describe('electron.vite.config', () => {
     };
 
     const preloadInput = config.preload?.build?.rollupOptions?.input as { index: string };
-    expect(preloadInput.index).toContain('src/preload/index.ts');
+    expect(normalizePath(preloadInput.index)).toContain('src/preload/index.ts');
   });
 
   it('should have correct renderer entry point', async () => {
@@ -111,7 +116,7 @@ describe('electron.vite.config', () => {
     };
 
     const rendererInput = config.renderer?.build?.rollupOptions?.input as { index: string };
-    expect(rendererInput.index).toContain('src/renderer/index.html');
+    expect(normalizePath(rendererInput.index)).toContain('src/renderer/index.html');
   });
 });
 

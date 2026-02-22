@@ -138,10 +138,11 @@ describe('Main Process', () => {
     const { BrowserWindow } = await import('electron');
     await import('../index');
 
+    // The path contains both forward and back slashes depending on platform
     expect(BrowserWindow).toHaveBeenCalledWith(
       expect.objectContaining({
         webPreferences: expect.objectContaining({
-          preload: expect.stringContaining('/mock/out/preload/index.mjs'),
+          preload: expect.stringMatching(/[/\\]mock[/\\]out[/\\]preload[/\\]index\.mjs/),
         }),
       })
     );

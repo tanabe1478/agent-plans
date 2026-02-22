@@ -1,9 +1,11 @@
+import { tmpdir } from 'node:os';
+import { join, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SettingsService } from '../../services/settingsService';
 
 function createService(): SettingsService {
   const nonce = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  return new SettingsService({ plansDir: `/tmp/test-plans-${nonce}` });
+  return new SettingsService({ plansDir: join(tmpdir(), `test-plans-${nonce}`) });
 }
 
 describe('settingsService', () => {
@@ -27,32 +29,38 @@ describe('settingsService', () => {
 
     it('should return configured plan directories via getPlanDirectories', async () => {
       const service = createService();
+      const basePlans = join(tmpdir(), 'base-plans');
+      const secondaryPlans = join(basePlans, 'secondary-plans');
       await service.updateSettings({
-        planDirectories: ['/tmp/base-plans', '/tmp/base-plans/secondary-plans'],
+        planDirectories: [basePlans, secondaryPlans],
       });
 
       const directories = await service.getPlanDirectories();
-      expect(directories).toEqual(['/tmp/base-plans', '/tmp/base-plans/secondary-plans']);
+      expect(directories).toEqual([basePlans, secondaryPlans]);
     });
 
     it('should keep plan directories outside base path', async () => {
-      const service = new SettingsService({ plansDir: '/tmp/base-plans' });
+      const basePlans = join(tmpdir(), 'base-plans');
+      const anotherPlans = join(tmpdir(), 'another-plans');
+      const service = new SettingsService({ plansDir: basePlans });
       await service.updateSettings({
-        planDirectories: ['/tmp/base-plans', '/tmp/another-plans'],
+        planDirectories: [basePlans, anotherPlans],
       });
 
       const directories = await service.getPlanDirectories();
-      expect(directories).toEqual(['/tmp/base-plans', '/tmp/another-plans']);
+      expect(directories).toEqual([basePlans, anotherPlans]);
     });
 
     it('should deduplicate plan directories while preserving first-seen order', async () => {
       const service = createService();
+      const plansA = join(tmpdir(), 'plans-a');
+      const plansB = join(tmpdir(), 'plans-b');
       await service.updateSettings({
-        planDirectories: ['/tmp/plans-a', '/tmp/plans-b', '/tmp/plans-a'],
+        planDirectories: [plansA, plansB, plansA],
       });
 
       const directories = await service.getPlanDirectories();
-      expect(directories).toEqual(['/tmp/plans-a', '/tmp/plans-b']);
+      expect(directories).toEqual([plansA, plansB]);
     });
 
     it('should expose codex integration defaults', async () => {
@@ -60,19 +68,23 @@ describe('settingsService', () => {
       const settings = await service.getSettings();
 
       expect(settings.codexIntegrationEnabled).toBe(false);
-      expect(settings.codexSessionLogDirectories?.[0]).toContain('/.codex/sessions');
+      // The path should contain .codex and sessions, regardless of separator
+      const codexDir = settings.codexSessionLogDirectories?.[0] ?? '';
+      expect(codexDir).toContain('.codex');
+      expect(codexDir).toContain('sessions');
       expect(settings.themeMode).toBe('system');
       expect(settings.customStylesheetPath).toBeNull();
     });
 
     it('should normalize codex session directories', async () => {
       const service = createService();
+      const codexLogs = join(tmpdir(), 'codex-logs');
       await service.updateSettings({
-        codexSessionLogDirectories: ['/tmp/codex-logs', '/tmp/codex-logs', ''],
+        codexSessionLogDirectories: [codexLogs, codexLogs, ''],
       });
 
       const settings = await service.getSettings();
-      expect(settings.codexSessionLogDirectories).toEqual(['/tmp/codex-logs']);
+      expect(settings.codexSessionLogDirectories).toEqual([codexLogs]);
     });
 
     it('should normalize appearance settings', async () => {
@@ -84,7 +96,10 @@ describe('settingsService', () => {
 
       const settings = await service.getSettings();
       expect(settings.themeMode).toBe('monokai');
-      expect(settings.customStylesheetPath).toContain('/styles/custom.css');
+      // The path should contain styles and custom.css, regardless of separator
+      const stylePath = settings.customStylesheetPath ?? '';
+      expect(stylePath).toContain('styles');
+      expect(stylePath).toContain('custom.css');
     });
 
     it('should default savedSearches to empty array', async () => {

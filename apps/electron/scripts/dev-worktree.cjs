@@ -124,6 +124,7 @@ async function main() {
   const child = spawn('electron-vite', electronViteArgs, {
     stdio: 'inherit',
     env,
+    shell: process.platform === 'win32',
   });
 
   child.on('error', (error) => {
