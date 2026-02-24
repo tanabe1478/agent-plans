@@ -56,7 +56,7 @@ hooks/            # Hook scripts
 
 - `index.ts`: BrowserWindow lifecycle
 - `ipc/`: renderer-facing IPC handlers
-- `services/planService.ts`: plan CRUD + frontmatter parsing
+- `services/planService.ts`: plan CRUD + metadata management
 - `services/searchService.ts`: full-text + structured search
 - `services/historyService.ts`: versions/diff/rollback
 - `services/dependencyService.ts`: dependency graph

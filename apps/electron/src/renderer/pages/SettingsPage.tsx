@@ -143,6 +143,7 @@ export function SettingsPage() {
   const [editingShortcut, setEditingShortcut] = useState<ShortcutAction | null>(null);
   const [localShortcuts, setLocalShortcuts] = useState<AppShortcuts>(DEFAULT_SHORTCUTS);
   const [statusColumns, setStatusColumns] = useState<StatusColumnDef[]>(DEFAULT_STATUS_COLUMNS);
+  const [defaultPlanStatusDraft, setDefaultPlanStatusDraft] = useState('todo');
   const [newStatusLabel, setNewStatusLabel] = useState('');
   const [newStatusColor, setNewStatusColor] = useState('amber');
   const [themeModeDraft, setThemeModeDraft] = useState<ThemeMode>('system');
@@ -248,6 +249,10 @@ export function SettingsPage() {
       setStatusColumns(DEFAULT_STATUS_COLUMNS);
     }
   }, [settings?.statusColumns]);
+
+  useEffect(() => {
+    setDefaultPlanStatusDraft(settings?.defaultPlanStatus ?? 'todo');
+  }, [settings?.defaultPlanStatus]);
 
   useEffect(() => {
     const nextThemeMode = settings?.themeMode ?? 'system';
@@ -826,13 +831,42 @@ export function SettingsPage() {
           </div>
         </div>
 
+        <div className="mt-4 border-t pt-4">
+          <h3 className="text-sm font-medium mb-2">Default Plan Status</h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            Status assigned to newly created or externally overwritten plans.
+          </p>
+          <select
+            id="default-plan-status"
+            value={
+              statusColumns.some((c) => c.id === defaultPlanStatusDraft)
+                ? defaultPlanStatusDraft
+                : (statusColumns[0]?.id ?? 'todo')
+            }
+            onChange={(e) => setDefaultPlanStatusDraft(e.target.value)}
+            className="h-8 w-full rounded border border-border bg-background px-2 text-sm outline-none transition focus:border-primary"
+          >
+            {statusColumns.map((col) => (
+              <option key={col.id} value={col.id}>
+                {col.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="mt-4 flex items-center justify-between border-t pt-4">
           <p className="text-xs text-muted-foreground">At least one status column is required.</p>
           <button
             type="button"
             onClick={async () => {
               try {
-                await updateSettings.mutateAsync({ statusColumns });
+                const effectiveDefault = statusColumns.some((c) => c.id === defaultPlanStatusDraft)
+                  ? defaultPlanStatusDraft
+                  : (statusColumns[0]?.id ?? 'todo');
+                await updateSettings.mutateAsync({
+                  statusColumns,
+                  defaultPlanStatus: effectiveDefault,
+                });
                 addToast('Status columns updated', 'success');
               } catch {
                 addToast('Failed to update status columns', 'error');

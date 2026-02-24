@@ -151,17 +151,16 @@ describe('PlanService', () => {
       await expect(planService.getPlan('../invalid.md')).rejects.toThrow('Invalid filename');
     });
 
-    it('should not parse frontmatter from file (metadata comes from DB)', async () => {
+    it('should return metadata from DB, not from file content', async () => {
       await writeFile(
         join(plansDir, 'legacy-status.md'),
-        '---\nstatus: draft\n---\n\n# Legacy Plan\n\nLegacy content.',
+        '# Legacy Plan\n\nLegacy content.',
         'utf-8'
       );
 
       const plan = await planService.getPlan('legacy-status.md');
-      // Frontmatter is stripped; metadata comes from DB (empty when no MetadataService)
+      // Metadata comes from DB (empty when no MetadataService)
       expect(plan.metadata).toEqual({});
-      expect(plan.frontmatter).toEqual({});
     });
 
     it('should load codex plan detail when integration is enabled', async () => {
@@ -212,6 +211,119 @@ describe('PlanService', () => {
 
       expect(plan.filename).toBe('new-plan.md');
       expect(plan.title).toBe('New Plan');
+    });
+  });
+
+  describe('createPlan with defaultPlanStatus', () => {
+    it('should use configured defaultPlanStatus from settings', async () => {
+      await settingsService.updateSettings({ defaultPlanStatus: 'in_progress' });
+
+      const content = '# Plan With Custom Default\n\nContent here.';
+      const plan = await planService.createPlan(content, 'custom-default.md');
+
+      expect(plan.metadata.status).toBe('in_progress');
+    });
+
+    it('should default to todo when no defaultPlanStatus configured', async () => {
+      const content = '# Plan With Fallback\n\nContent here.';
+      const plan = await planService.createPlan(content, 'fallback-default.md');
+
+      expect(plan.metadata.status).toBe('todo');
+    });
+  });
+
+  describe('syncMetadataOnChange', () => {
+    it('should reset status when title changes (different plan)', async () => {
+      const content = '# Original Plan\n\nContent.';
+      await planService.createPlan(content, 'sync-test-plan.md');
+      await planService.updateStatus('sync-test-plan.md', 'completed');
+
+      let plan = await planService.getPlanMeta('sync-test-plan.md');
+      expect(plan.metadata.status).toBe('completed');
+
+      // Overwrite with a different title
+      await writeFile(
+        join(plansDir, 'sync-test-plan.md'),
+        '# Completely Different Plan\n\nNew content.',
+        'utf-8'
+      );
+
+      await planService.syncMetadataOnChange('sync-test-plan.md');
+
+      plan = await planService.getPlanMeta('sync-test-plan.md');
+      expect(plan.metadata.status).toBe('todo');
+    });
+
+    it('should use defaultPlanStatus when title changes', async () => {
+      await settingsService.updateSettings({ defaultPlanStatus: 'review' });
+
+      const content = '# Plan A\n\nContent.';
+      await planService.createPlan(content, 'title-change-default.md');
+      await planService.updateStatus('title-change-default.md', 'completed');
+
+      // Overwrite with a different title
+      await writeFile(
+        join(plansDir, 'title-change-default.md'),
+        '# Plan B\n\nDifferent content.',
+        'utf-8'
+      );
+
+      await planService.syncMetadataOnChange('title-change-default.md');
+
+      const plan = await planService.getPlanMeta('title-change-default.md');
+      expect(plan.metadata.status).toBe('review');
+    });
+
+    it('should preserve status when title stays the same (content-only edit)', async () => {
+      const content = '# Keep Status Plan\n\nContent.';
+      await planService.createPlan(content, 'no-reset.md');
+      await planService.updateStatus('no-reset.md', 'completed');
+
+      // Edit content but keep the same title
+      await writeFile(
+        join(plansDir, 'no-reset.md'),
+        '# Keep Status Plan\n\nEdited content by user.',
+        'utf-8'
+      );
+
+      await planService.syncMetadataOnChange('no-reset.md');
+
+      const plan = await planService.getPlanMeta('no-reset.md');
+      expect(plan.metadata.status).toBe('completed');
+    });
+
+    it('should do nothing for non-existent files', async () => {
+      await planService.syncMetadataOnChange('nonexistent.md');
+    });
+  });
+
+  describe('createPlan stores title in DB', () => {
+    it('should save the extracted title to metadata', async () => {
+      const content = '# My New Plan\n\nSome content.';
+      await planService.createPlan(content, 'title-test.md');
+
+      const meta = metadataService.getMetadata('title-test.md');
+      expect(meta?.title).toBe('My New Plan');
+    });
+  });
+
+  describe('updatePlan updates title in DB', () => {
+    it('should update the title in metadata after content change', async () => {
+      await writeFile(join(plansDir, 'update-title.md'), '# Before\n\nContent.', 'utf-8');
+      // Ensure DB metadata exists
+      const now = new Date().toISOString();
+      metadataService.upsertMetadata('update-title.md', {
+        source: 'markdown',
+        status: 'todo',
+        title: 'Before',
+        createdAt: now,
+        modifiedAt: now,
+      });
+
+      await planService.updatePlan('update-title.md', '# After\n\nUpdated content.');
+
+      const meta = metadataService.getMetadata('update-title.md');
+      expect(meta?.title).toBe('After');
     });
   });
 

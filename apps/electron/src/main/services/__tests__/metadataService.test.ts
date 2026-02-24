@@ -28,9 +28,34 @@ describe('MetadataService', () => {
       expect(meta).toBeNull();
     });
 
-    it('should store schema version in migrations table', () => {
+    it('should store schema version 2 in migrations table', () => {
       const version = service.getSchemaVersion();
-      expect(version).toBe(1);
+      expect(version).toBe(2);
+    });
+
+    it('should include title column after V2 migration', () => {
+      service.upsertMetadata('title-test.md', {
+        source: 'markdown',
+        status: 'todo',
+        title: 'My Plan Title',
+        createdAt: '2026-01-01T00:00:00Z',
+        modifiedAt: '2026-01-01T00:00:00Z',
+      });
+
+      const meta = service.getMetadata('title-test.md');
+      expect(meta?.title).toBe('My Plan Title');
+    });
+
+    it('should default title to null when not provided', () => {
+      service.upsertMetadata('no-title.md', {
+        source: 'markdown',
+        status: 'todo',
+        createdAt: '2026-01-01T00:00:00Z',
+        modifiedAt: '2026-01-01T00:00:00Z',
+      });
+
+      const meta = service.getMetadata('no-title.md');
+      expect(meta?.title).toBeNull();
     });
   });
 
@@ -185,6 +210,20 @@ describe('MetadataService', () => {
       service.updateField('plan.md', 'tags', ['new-tag']);
       const meta = service.getMetadata('plan.md');
       expect(meta?.tags).toEqual(['new-tag']);
+    });
+
+    it('should update title field', () => {
+      service.upsertMetadata('plan.md', {
+        source: 'markdown',
+        status: 'todo',
+        title: 'Old Title',
+        createdAt: '2026-01-01T00:00:00Z',
+        modifiedAt: '2026-01-01T00:00:00Z',
+      });
+
+      service.updateField('plan.md', 'title', 'New Title');
+      const meta = service.getMetadata('plan.md');
+      expect(meta?.title).toBe('New Title');
     });
 
     it('should throw for nonexistent plan', () => {

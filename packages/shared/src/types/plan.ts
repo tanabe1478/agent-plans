@@ -4,7 +4,7 @@
 export type PlanStatus = 'todo' | 'in_progress' | 'review' | 'completed';
 
 /**
- * Priority values used by legacy/frontmatter-compatible features
+ * Priority values
  */
 export type PlanPriority = 'low' | 'medium' | 'high' | 'critical';
 
@@ -68,8 +68,7 @@ export interface Subtask {
 }
 
 /**
- * Plan metadata stored in SQLite DB.
- * Previously extracted from YAML frontmatter; now DB is the single source of truth.
+ * Plan metadata stored in SQLite DB (single source of truth).
  */
 export interface PlanMetadata {
   /** Project path where plan was created */
@@ -95,9 +94,6 @@ export interface PlanMetadata {
   /** Subtasks */
   subtasks?: Subtask[];
 }
-
-/** @deprecated Use PlanMetadata instead */
-export type PlanFrontmatter = PlanMetadata;
 
 /**
  * Saved view filters for preset/custom views
@@ -163,8 +159,6 @@ export interface PlanMeta {
   relatedProject?: string;
   /** Plan metadata from DB */
   metadata?: PlanMetadata;
-  /** @deprecated Use metadata instead */
-  frontmatter?: PlanMetadata;
 }
 
 /**

@@ -9,14 +9,8 @@ vi.mock('node:url', () => ({
   fileURLToPath: vi.fn(() => '/mock/out/main/index.js'),
 }));
 
-// Mock frontmatter migration (no-op in unit tests)
-vi.mock('../services/frontmatterMigration.js', () => ({
-  migrateFrontmatterToDb: vi.fn(() => Promise.resolve({ migrated: 0, skipped: 0, errors: [] })),
-}));
-
 // Mock planService exports used by index.ts
 vi.mock('../services/planService.js', () => ({
-  getDefaultMetadataService: vi.fn(() => ({})),
   planService: {},
 }));
 

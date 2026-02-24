@@ -267,7 +267,7 @@ export function DependencyPage() {
   if (!graph || graph.nodes.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No dependency relationships found. Add <code>blockedBy</code> to plan frontmatter to create
+        No dependency relationships found. Add <code>blockedBy</code> to plan metadata to create
         dependencies.
       </div>
     );
@@ -279,7 +279,7 @@ export function DependencyPage() {
   if (relevantNodes.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No dependency relationships found. Add <code>blockedBy</code> to plan frontmatter to create
+        No dependency relationships found. Add <code>blockedBy</code> to plan metadata to create
         dependencies.
       </div>
     );

@@ -1,100 +1,12 @@
-import { readdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { createGzip } from 'node:zlib';
-import { normalizePlanStatus, type PlanFrontmatter, type PlanStatus } from '@agent-plans/shared';
-import { config } from '../config.js';
-
-/** Extended frontmatter for export, including legacy timestamp fields found in files */
-interface ExportFrontmatter extends PlanFrontmatter {
-  created?: string;
-  modified?: string;
-}
-
-interface ExportPlan {
-  filename: string;
-  frontmatter: ExportFrontmatter | undefined;
-  content: string;
-}
+import type { PlanMeta, PlanStatus } from '@agent-plans/shared';
+import { planService } from './planService.js';
 
 interface ExportFilterOptions {
   includeArchived?: boolean;
   filterStatus?: PlanStatus;
   filterTags?: string[];
-}
-
-/**
- * Parse frontmatter from markdown content (simplified version for export)
- */
-function parseFrontmatter(content: string): {
-  frontmatter: PlanFrontmatter | undefined;
-  body: string;
-} {
-  const pattern = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
-  const match = content.match(pattern);
-
-  if (!match) {
-    return { frontmatter: undefined, body: content };
-  }
-
-  const frontmatterStr = match[1];
-  const body = match[2];
-  const frontmatter: ExportFrontmatter = {};
-  const lines = frontmatterStr.split('\n');
-
-  for (const line of lines) {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1 || line.match(/^\s/)) continue;
-
-    const key = line.slice(0, colonIndex).trim();
-    let value = line.slice(colonIndex + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-
-    switch (key) {
-      case 'created':
-        frontmatter.created = value;
-        break;
-      case 'modified':
-        frontmatter.modified = value;
-        break;
-      case 'project_path':
-        frontmatter.projectPath = value;
-        break;
-      case 'session_id':
-        frontmatter.sessionId = value;
-        break;
-      case 'status':
-        frontmatter.status = normalizePlanStatus(value);
-        break;
-      case 'priority':
-        if (['low', 'medium', 'high', 'critical'].includes(value)) {
-          frontmatter.priority = value as PlanFrontmatter['priority'];
-        }
-        break;
-      case 'dueDate':
-        frontmatter.dueDate = value;
-        break;
-      case 'assignee':
-        frontmatter.assignee = value;
-        break;
-      case 'tags':
-        if (value.startsWith('[') && value.endsWith(']')) {
-          frontmatter.tags = value
-            .slice(1, -1)
-            .split(',')
-            .map((s) => s.trim().replace(/^["']|["']$/g, ''))
-            .filter(Boolean);
-        }
-        break;
-    }
-  }
-
-  return { frontmatter: Object.keys(frontmatter).length > 0 ? frontmatter : undefined, body };
 }
 
 /**
@@ -106,36 +18,43 @@ function extractTitle(body: string): string {
 }
 
 /**
- * Get all plan files, optionally filtered
+ * Get all plan files, optionally filtered using DB metadata
  */
-async function getPlans(options?: ExportFilterOptions): Promise<ExportPlan[]> {
-  const files = await readdir(config.plansDir);
-  const mdFiles = files.filter((f) => f.endsWith('.md'));
+async function getPlans(
+  options?: ExportFilterOptions
+): Promise<Array<{ plan: PlanMeta; content: string }>> {
+  const allPlans = await planService.listPlans();
 
-  const plans: ExportPlan[] = [];
+  const filtered = allPlans.filter((plan) => {
+    const meta = plan.metadata;
 
-  for (const filename of mdFiles) {
+    if (options?.filterStatus && meta?.status !== options.filterStatus) {
+      return false;
+    }
+
+    if (options?.filterTags && options.filterTags.length > 0) {
+      const planTags = meta?.tags || [];
+      const hasMatchingTag = options.filterTags.some((t) => planTags.includes(t));
+      if (!hasMatchingTag) return false;
+    }
+
+    return true;
+  });
+
+  const results: Array<{ plan: PlanMeta; content: string }> = [];
+
+  for (const plan of filtered) {
     try {
-      const content = await readFile(join(config.plansDir, filename), 'utf-8');
-      const { frontmatter } = parseFrontmatter(content);
-
-      if (options?.filterStatus && frontmatter?.status !== options.filterStatus) {
-        continue;
+      const detail = await planService.getPlan(plan.filename);
+      if (detail) {
+        results.push({ plan, content: detail.content });
       }
-
-      if (options?.filterTags && options.filterTags.length > 0) {
-        const planTags = frontmatter?.tags || [];
-        const hasMatchingTag = options.filterTags.some((t) => planTags.includes(t));
-        if (!hasMatchingTag) continue;
-      }
-
-      plans.push({ filename, frontmatter, content });
     } catch {
       // Skip unreadable files
     }
   }
 
-  return plans;
+  return results;
 }
 
 /**
@@ -149,8 +68,8 @@ export async function exportAsJson(options?: ExportFilterOptions): Promise<strin
     version: 1,
     planCount: plans.length,
     plans: plans.map((p) => ({
-      filename: p.filename,
-      frontmatter: p.frontmatter || {},
+      filename: p.plan.filename,
+      metadata: p.plan.metadata || {},
       content: p.content,
     })),
   };
@@ -166,9 +85,9 @@ export async function exportAsCsv(options?: ExportFilterOptions): Promise<string
 
   const header = 'filename,title,status,priority,dueDate,assignee,tags,created,modified';
   const rows = plans.map((p) => {
-    const { frontmatter, content } = { frontmatter: p.frontmatter, content: p.content };
-    const { body } = parseFrontmatter(content);
-    const title = extractTitle(body);
+    const { plan, content } = p;
+    const title = extractTitle(content);
+    const meta = plan.metadata;
 
     const escapeCsv = (val: string | undefined) => {
       if (!val) return '';
@@ -179,15 +98,15 @@ export async function exportAsCsv(options?: ExportFilterOptions): Promise<string
     };
 
     return [
-      escapeCsv(p.filename),
+      escapeCsv(plan.filename),
       escapeCsv(title),
-      escapeCsv(frontmatter?.status),
-      escapeCsv(frontmatter?.priority),
-      escapeCsv(frontmatter?.dueDate),
-      escapeCsv(frontmatter?.assignee),
-      escapeCsv(frontmatter?.tags?.join('; ')),
-      escapeCsv(frontmatter?.created),
-      escapeCsv(frontmatter?.modified),
+      escapeCsv(meta?.status as string | undefined),
+      escapeCsv(meta?.priority),
+      escapeCsv(meta?.dueDate),
+      escapeCsv(meta?.assignee),
+      escapeCsv(meta?.tags?.join('; ')),
+      escapeCsv(plan.createdAt),
+      escapeCsv(plan.modifiedAt),
     ].join(',');
   });
 
@@ -203,14 +122,14 @@ export async function exportAsTarGz(options?: ExportFilterOptions): Promise<Buff
   // Build a simple tar archive
   const chunks: Buffer[] = [];
 
-  for (const plan of plans) {
-    const content = Buffer.from(plan.content, 'utf-8');
-    const header = createTarHeader(plan.filename, content.length);
+  for (const { plan, content } of plans) {
+    const buf = Buffer.from(content, 'utf-8');
+    const header = createTarHeader(plan.filename, buf.length);
     chunks.push(header);
-    chunks.push(content);
+    chunks.push(buf);
 
     // Pad to 512-byte boundary
-    const remainder = content.length % 512;
+    const remainder = buf.length % 512;
     if (remainder > 0) {
       chunks.push(Buffer.alloc(512 - remainder));
     }

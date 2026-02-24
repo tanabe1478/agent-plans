@@ -13,6 +13,7 @@ const ELECTRON_DEFAULT_SETTINGS: AppSettings = {
   codexSessionLogDirectories: [DEFAULT_CODEX_SESSIONS_DIR],
   shortcuts: DEFAULT_SHORTCUTS,
   fileWatcherEnabled: false,
+  defaultPlanStatus: 'todo',
   themeMode: 'system',
   customStylesheetPath: null,
 };
@@ -73,6 +74,13 @@ export class SettingsService {
     return unique.length > 0 ? unique : [DEFAULT_CODEX_SESSIONS_DIR];
   }
 
+  private normalizeDefaultPlanStatus(value: unknown): string {
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value.trim();
+    }
+    return 'todo';
+  }
+
   private normalizeSavedSearches(value: unknown): Array<{ name: string; query: string }> {
     if (!Array.isArray(value)) return [];
     return value.filter(
@@ -95,6 +103,7 @@ export class SettingsService {
         parsed.codexSessionLogDirectories
       ),
       shortcuts: mergeShortcuts(parsed.shortcuts),
+      defaultPlanStatus: this.normalizeDefaultPlanStatus(parsed.defaultPlanStatus),
       themeMode: this.normalizeThemeMode(parsed.themeMode),
       customStylesheetPath: this.normalizeStylesheetPath(parsed.customStylesheetPath),
       savedSearches: this.normalizeSavedSearches(parsed.savedSearches),

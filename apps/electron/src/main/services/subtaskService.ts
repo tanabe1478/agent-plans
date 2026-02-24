@@ -23,7 +23,7 @@ export interface SubtaskServiceConfig {
 /**
  * SubtaskService manages subtasks via the SQLite metadata database.
  *
- * After the frontmatter-to-DB migration, subtask state lives exclusively in
+ * Subtask state lives exclusively in
  * the `subtasks` table.  Plan markdown files are never modified by this service.
  */
 export class SubtaskService {

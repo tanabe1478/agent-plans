@@ -7,12 +7,17 @@ export class FileWatcherService {
   private window: BrowserWindow | null = null;
   private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private directoryResolver: () => Promise<string[]>;
+  private onFileChange?: (event: FileChangeEvent) => Promise<void>;
   private running = false;
 
   private static readonly DEBOUNCE_MS = 300;
 
-  constructor(directoryResolver: () => Promise<string[]>) {
+  constructor(
+    directoryResolver: () => Promise<string[]>,
+    onFileChange?: (event: FileChangeEvent) => Promise<void>
+  ) {
     this.directoryResolver = directoryResolver;
+    this.onFileChange = onFileChange;
   }
 
   setWindow(window: BrowserWindow): void {
@@ -81,7 +86,17 @@ export class FileWatcherService {
   }
 
   private sendChangeEvent(event: FileChangeEvent): void {
-    if (!this.window || this.window.isDestroyed()) return;
-    this.window.webContents.send('plans:fileChanged', event);
+    const notify = () => {
+      if (!this.window || this.window.isDestroyed()) return;
+      this.window.webContents.send('plans:fileChanged', event);
+    };
+
+    if (this.onFileChange) {
+      this.onFileChange(event)
+        .catch(() => {})
+        .finally(notify);
+    } else {
+      notify();
+    }
   }
 }

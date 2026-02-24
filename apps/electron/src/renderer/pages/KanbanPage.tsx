@@ -11,9 +11,9 @@ import { cn, formatRelativeDeadline, getDeadlineColor } from '@/lib/utils';
 
 const COLUMN_DRAG_TYPE = 'application/x-kanban-column';
 
-function getPlanStatus(plan: PlanMeta): string {
-  const meta = plan.metadata ?? plan.frontmatter;
-  return getRawPlanStatus(meta?.status);
+function getPlanStatus(plan: PlanMeta, fallback?: string): string {
+  const meta = plan.metadata;
+  return getRawPlanStatus(meta?.status, fallback);
 }
 
 interface KanbanCardProps {
@@ -22,7 +22,7 @@ interface KanbanCardProps {
 }
 
 function KanbanCard({ plan, onDragStart }: KanbanCardProps) {
-  const meta = plan.metadata ?? plan.frontmatter;
+  const meta = plan.metadata;
   const dueDate = meta?.dueDate;
   const deadlineColor = getDeadlineColor(dueDate);
 
@@ -160,7 +160,7 @@ export function KanbanPage() {
   const { data, isLoading, error } = usePlans();
   const updateStatus = useUpdateStatus();
   const updateSettings = useUpdateSettings();
-  const { columns } = useStatusColumns();
+  const { columns, defaultPlanStatus } = useStatusColumns();
   const [draggedPlan, setDraggedPlan] = useState<PlanMeta | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
@@ -187,7 +187,7 @@ export function KanbanPage() {
 
   const plansByStatus: Record<string, PlanMeta[]> = {};
   for (const col of columns) {
-    plansByStatus[col.id] = plans.filter((p) => getPlanStatus(p) === col.id);
+    plansByStatus[col.id] = plans.filter((p) => getPlanStatus(p, defaultPlanStatus) === col.id);
   }
 
   // Card DnD handlers

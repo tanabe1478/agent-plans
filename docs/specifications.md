@@ -13,7 +13,7 @@ This spec defines the current Electron-only product baseline.
 ## Source of Truth
 
 - Plan files in `PLANS_DIR` (default: `~/.agent-plans/plans`, legacy fallback: `~/.claude/plans`)
-- YAML frontmatter is enabled by default in Electron settings
+- Plan metadata is stored in SQLite DB
 
 ## Behavioral Requirements
 
@@ -26,7 +26,7 @@ This spec defines the current Electron-only product baseline.
 - Card click must not navigate to detail while selection mode is active
 
 3. Status visibility
-- Status controls must be visible on cards/details when frontmatter is enabled
+- Status controls must be visible on cards/details
 - Missing status defaults to `todo`
 
 4. Review

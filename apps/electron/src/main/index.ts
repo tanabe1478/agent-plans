@@ -1,16 +1,21 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { config } from './config.js';
 import { registerAllHandlers } from './ipc/index.js';
 import { FileWatcherService } from './services/fileWatcherService.js';
-import { migrateFrontmatterToDb } from './services/frontmatterMigration.js';
-import { getDefaultMetadataService } from './services/planService.js';
+import { planService } from './services/planService.js';
 import { settingsService } from './services/settingsService.js';
 
 let mainWindow: BrowserWindow | null = null;
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const fileWatcher = new FileWatcherService(() => settingsService.getPlanDirectories());
+const fileWatcher = new FileWatcherService(
+  () => settingsService.getPlanDirectories(),
+  async (event) => {
+    if (event.eventType === 'change' && event.filename.endsWith('.md')) {
+      await planService.syncMetadataOnChange(event.filename);
+    }
+  }
+);
 const DEV_LOAD_MAX_RETRIES = 30;
 const DEV_LOAD_RETRY_MS = 300;
 
@@ -118,14 +123,6 @@ async function createWindow() {
 app.whenReady().then(async () => {
   // Register all IPC handlers
   registerAllHandlers(ipcMain, fileWatcher);
-
-  // Migrate frontmatter metadata to SQLite DB on first launch.
-  // Subsequent launches are no-ops (frontmatter already stripped).
-  try {
-    await migrateFrontmatterToDb(config.plansDir, getDefaultMetadataService());
-  } catch {
-    // Non-fatal: migration failure should not block app startup
-  }
 
   void createWindow();
 

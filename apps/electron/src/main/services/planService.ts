@@ -48,15 +48,6 @@ class PlanConflictError extends Error {
 }
 
 /**
- * Strip any remaining YAML frontmatter from file content.
- * After DB migration, files should be pure content, but this handles edge cases.
- */
-function stripFrontmatter(content: string): string {
-  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/);
-  return match ? match[1] : content;
-}
-
-/**
  * Extract title from markdown content (first H1)
  */
 function extractTitle(body: string): string {
@@ -170,6 +161,11 @@ export class PlanService {
     this.conflictChecker = deps.conflictChecker;
   }
 
+  private async getDefaultPlanStatus(): Promise<string> {
+    const settings = await this.settingsService.getSettings();
+    return settings.defaultPlanStatus ?? 'todo';
+  }
+
   private async getCodexSessionDirectories(): Promise<string[]> {
     const settings = await this.settingsService.getSettings();
     if (!settings.codexIntegrationEnabled) {
@@ -243,7 +239,6 @@ export class PlanService {
 
   private async getPlanMetaFromPath(filename: string, filePath: string): Promise<PlanMeta> {
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
-    const body = stripFrontmatter(content);
     const metadata = this.getMetadataForPlan(filename);
 
     return {
@@ -251,15 +246,14 @@ export class PlanService {
       source: 'markdown',
       readOnly: false,
       sourcePath: filePath,
-      title: extractTitle(body),
+      title: extractTitle(content),
       createdAt: stats.birthtime.toISOString(),
       modifiedAt: stats.mtime.toISOString(),
       size: stats.size,
-      preview: extractPreview(body, this.previewLength),
-      sections: extractSections(body),
-      relatedProject: metadata.projectPath ?? extractRelatedProject(body),
+      preview: extractPreview(content, this.previewLength),
+      sections: extractSections(content),
+      relatedProject: metadata.projectPath ?? extractRelatedProject(content),
       metadata,
-      frontmatter: metadata,
     };
   }
 
@@ -307,7 +301,6 @@ export class PlanService {
         const enriched = {
           ...plan,
           metadata: { ...metadata, ...plan.metadata },
-          frontmatter: { ...metadata, ...plan.frontmatter },
         };
         merged.set(plan.filename, enriched);
       }
@@ -337,7 +330,6 @@ export class PlanService {
       return {
         ...codexPlan,
         metadata: { ...metadata, ...codexPlan.metadata },
-        frontmatter: { ...metadata, ...codexPlan.frontmatter },
       };
     }
 
@@ -347,7 +339,6 @@ export class PlanService {
     // Record file state for conflict detection
     this.conflictChecker?.recordFileState(filename, stats.mtimeMs, stats.size);
 
-    const body = stripFrontmatter(content);
     const metadata = this.getMetadataForPlan(filename);
 
     return {
@@ -355,16 +346,15 @@ export class PlanService {
       source: 'markdown',
       readOnly: false,
       sourcePath: filePath,
-      title: extractTitle(body),
+      title: extractTitle(content),
       createdAt: stats.birthtime.toISOString(),
       modifiedAt: stats.mtime.toISOString(),
       size: stats.size,
-      preview: extractPreview(body, this.previewLength),
-      sections: extractSections(body),
-      relatedProject: metadata.projectPath ?? extractRelatedProject(body),
+      preview: extractPreview(content, this.previewLength),
+      sections: extractSections(content),
+      relatedProject: metadata.projectPath ?? extractRelatedProject(content),
       metadata,
-      frontmatter: metadata,
-      content: body,
+      content,
     };
   }
 
@@ -382,10 +372,12 @@ export class PlanService {
 
     // Create default metadata in DB
     if (this.metadataService) {
+      const defaultStatus = await this.getDefaultPlanStatus();
       const now = new Date().toISOString();
       this.metadataService.upsertMetadata(finalFilename, {
         source: 'markdown',
-        status: 'todo',
+        status: defaultStatus,
+        title: extractTitle(content),
         createdAt: now,
         modifiedAt: now,
       });
@@ -416,6 +408,14 @@ export class PlanService {
     }
 
     await writeFile(filePath, content, 'utf-8');
+
+    // Update title in DB
+    if (this.metadataService) {
+      const existing = this.metadataService.getMetadata(filename);
+      if (existing) {
+        this.metadataService.updateField(filename, 'title', extractTitle(content));
+      }
+    }
 
     // Audit log (non-blocking)
     this.auditLogger
@@ -577,7 +577,6 @@ export class PlanService {
         return {
           ...codexPlan,
           metadata,
-          frontmatter: metadata,
         };
       }
     }
@@ -602,10 +601,11 @@ export class PlanService {
     // Ensure DB entry exists
     const existing = this.metadataService.getMetadata(filename);
     if (!existing) {
+      const defaultStatus = await this.getDefaultPlanStatus();
       const now = new Date().toISOString();
       this.metadataService.upsertMetadata(filename, {
         source: isCodex ? 'codex' : 'markdown',
-        status: 'todo',
+        status: defaultStatus,
         createdAt: now,
         modifiedAt: now,
       });
@@ -617,11 +617,65 @@ export class PlanService {
       const codexPlan = await this.getCodexPlanDetail(filename);
       if (codexPlan) {
         const metadata = this.getMetadataForPlan(filename);
-        return { ...codexPlan, metadata, frontmatter: metadata };
+        return { ...codexPlan, metadata };
       }
     }
 
     return this.getPlanMeta(filename);
+  }
+
+  /**
+   * Sync DB metadata when a file is externally changed.
+   *
+   * Compares the file title with the title stored in the DB. If the title has
+   * changed, the file is treated as a different plan and the status is reset
+   * to the configured default. If the title is the same (content-only edit),
+   * the status is preserved and only the DB title is kept in sync.
+   */
+  async syncMetadataOnChange(filename: string): Promise<void> {
+    if (!this.metadataService) return;
+
+    let filePath: string;
+    try {
+      filePath = await this.resolvePlanPath(filename);
+    } catch {
+      return;
+    }
+
+    const content = await readFile(filePath, 'utf-8');
+    const fileTitle = extractTitle(content);
+    const fileStats = await stat(filePath);
+
+    const existing = this.metadataService.getMetadata(filename);
+    const dbTitle = existing?.title ?? null;
+
+    if (existing) {
+      if (dbTitle !== null && dbTitle !== fileTitle) {
+        // Title changed → different plan → reset status to default
+        const defaultStatus = await this.getDefaultPlanStatus();
+        this.metadataService.upsertMetadata(filename, {
+          source: existing.source,
+          status: defaultStatus,
+          title: fileTitle,
+          createdAt: existing.createdAt,
+          modifiedAt: fileStats.mtime.toISOString(),
+        });
+      } else {
+        // Title same or not yet tracked → just update title
+        this.metadataService.updateField(filename, 'title', fileTitle);
+      }
+    } else {
+      // No DB record yet → create with default status
+      const defaultStatus = await this.getDefaultPlanStatus();
+      const now = fileStats.mtime.toISOString();
+      this.metadataService.upsertMetadata(filename, {
+        source: 'markdown',
+        status: defaultStatus,
+        title: fileTitle,
+        createdAt: now,
+        modifiedAt: now,
+      });
+    }
   }
 
   /**

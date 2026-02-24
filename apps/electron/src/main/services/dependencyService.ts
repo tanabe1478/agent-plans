@@ -12,14 +12,14 @@ import { planService } from './planService.js';
 export async function buildDependencyGraph(): Promise<DependencyGraph> {
   const plans = await planService.listPlans();
 
-  // Build node map with blockedBy from frontmatter
+  // Build node map with blockedBy from metadata
   const nodeMap = new Map<string, DependencyNode>();
   for (const plan of plans) {
-    const blockedBy = plan.frontmatter?.blockedBy ?? [];
+    const blockedBy = plan.metadata?.blockedBy ?? [];
     nodeMap.set(plan.filename, {
       filename: plan.filename,
       title: plan.title,
-      status: plan.frontmatter?.status ?? 'todo',
+      status: plan.metadata?.status ?? 'todo',
       blockedBy,
       blocks: [],
     });

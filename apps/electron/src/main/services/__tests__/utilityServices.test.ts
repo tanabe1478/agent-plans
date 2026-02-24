@@ -15,29 +15,30 @@ describe('Utility Services Import Tests', () => {
   });
 
   describe('validationService', () => {
-    it('should export validateFrontmatter function', async () => {
-      const { validateFrontmatter } = await import('../validationService.js');
-      expect(typeof validateFrontmatter).toBe('function');
+    it('should export validateMetadata function', async () => {
+      const { validateMetadata } = await import('../validationService.js');
+      expect(typeof validateMetadata).toBe('function');
     });
 
-    it('should export autoCorrectFrontmatter function', async () => {
-      const { autoCorrectFrontmatter } = await import('../validationService.js');
-      expect(typeof autoCorrectFrontmatter).toBe('function');
+    it('should export autoCorrectMetadata function', async () => {
+      const { autoCorrectMetadata } = await import('../validationService.js');
+      expect(typeof autoCorrectMetadata).toBe('function');
     });
 
-    it('should validate correct frontmatter', async () => {
-      const { validateFrontmatter } = await import('../validationService.js');
-      const result = validateFrontmatter({ status: 'todo' });
+    it('should validate correct metadata', async () => {
+      const { validateMetadata } = await import('../validationService.js');
+      const result = validateMetadata({ status: 'todo' });
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should return corrected frontmatter for invalid data', async () => {
-      const { validateFrontmatter } = await import('../validationService.js');
-      const result = validateFrontmatter({ status: 'invalid_status' });
+    it('should return corrected metadata for invalid data', async () => {
+      const { validateMetadata } = await import('../validationService.js');
+      // priority has an enum constraint, so an invalid value should fail
+      const result = validateMetadata({ priority: 'invalid_priority' });
       expect(result.valid).toBe(false);
       expect(result.corrected).toBeDefined();
-      expect(result.corrected?.status).toBe('todo');
+      expect(result.corrected?.priority).toBe('medium');
     });
   });
 
@@ -67,33 +68,6 @@ describe('Utility Services Import Tests', () => {
     it('should export clearFileStateCache function', async () => {
       const { clearFileStateCache } = await import('../conflictService.js');
       expect(typeof clearFileStateCache).toBe('function');
-    });
-  });
-
-  describe('migrationService', () => {
-    it('should export getCurrentSchemaVersion function', async () => {
-      const { getCurrentSchemaVersion } = await import('../migrationService.js');
-      expect(typeof getCurrentSchemaVersion).toBe('function');
-    });
-
-    it('should export needsMigration function', async () => {
-      const { needsMigration } = await import('../migrationService.js');
-      expect(typeof needsMigration).toBe('function');
-    });
-
-    it('should export migrate function', async () => {
-      const { migrate } = await import('../migrationService.js');
-      expect(typeof migrate).toBe('function');
-    });
-
-    it('should export migrateAllPlans function', async () => {
-      const { migrateAllPlans } = await import('../migrationService.js');
-      expect(typeof migrateAllPlans).toBe('function');
-    });
-
-    it('should return current schema version', async () => {
-      const { getCurrentSchemaVersion } = await import('../migrationService.js');
-      expect(getCurrentSchemaVersion()).toBe(1);
     });
   });
 

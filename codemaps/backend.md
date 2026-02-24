@@ -16,7 +16,7 @@
 
 ## Core Services
 
-- `services/planService.ts`: list/get/create/update/delete/rename + frontmatter
+- `services/planService.ts`: list/get/create/update/delete/rename + DB metadata
 - `services/searchService.ts`: keyword + structured filter search
 - `services/statusTransitionService.ts`: transition validation
 - `services/historyService.ts`: snapshots, diff, rollback

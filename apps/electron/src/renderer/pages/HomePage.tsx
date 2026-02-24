@@ -45,7 +45,7 @@ export function HomePage() {
   const updateStatus = useUpdateStatus();
   const { addToast, itemsPerPage, setItemsPerPage } = useUiStore();
   const settingsLoading = useSettingsLoading();
-  const { columns } = useStatusColumns();
+  const { columns, defaultPlanStatus } = useStatusColumns();
 
   // Search state: input is live text, submittedQuery drives the backend search
   const [searchInput, setSearchInput] = useState('');
@@ -337,9 +337,9 @@ export function HomePage() {
                   paginatedPlans.map((plan) => {
                     const isActive = plan.filename === activePlan?.filename;
                     const isChecked = selectedPlans.has(plan.filename);
-                    const fm = plan.metadata ?? plan.frontmatter;
+                    const fm = plan.metadata;
                     const dueDate = fm?.dueDate;
-                    const status = getRawPlanStatus(fm?.status);
+                    const status = getRawPlanStatus(fm?.status, defaultPlanStatus);
                     const readOnly = Boolean(plan.readOnly);
                     return (
                       // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
@@ -522,13 +522,8 @@ export function HomePage() {
                       {activePlan.filename}
                     </p>
                   </div>
-                  {(activePlan.metadata?.projectPath ?? activePlan.frontmatter?.projectPath) ? (
-                    <ProjectBadge
-                      projectPath={
-                        (activePlan.metadata?.projectPath ??
-                          activePlan.frontmatter?.projectPath) as string
-                      }
-                    />
+                  {activePlan.metadata?.projectPath ? (
+                    <ProjectBadge projectPath={activePlan.metadata.projectPath} />
                   ) : null}
                   <p className="line-clamp-8 break-all text-[12px] leading-5 text-slate-300">
                     {activePlan.preview}

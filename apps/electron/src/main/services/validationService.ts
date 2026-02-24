@@ -1,4 +1,4 @@
-import type { PlanFrontmatter } from '@agent-plans/shared';
+import type { PlanMetadata } from '@agent-plans/shared';
 import { z } from 'zod';
 
 export interface ValidationError {
@@ -10,11 +10,11 @@ export interface ValidationError {
 export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
-  corrected?: PlanFrontmatter;
+  corrected?: PlanMetadata;
 }
 
-const frontmatterSchema = z.object({
-  status: z.enum(['todo', 'in_progress', 'review', 'completed']).optional(),
+const metadataSchema = z.object({
+  status: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   dueDate: z.string().datetime().optional(),
   tags: z.array(z.string()).optional(),
@@ -24,12 +24,9 @@ const frontmatterSchema = z.object({
     .optional(),
   blockedBy: z.array(z.string()).optional(),
   assignee: z.string().optional(),
-  created: z.string().datetime().optional(),
-  modified: z.string().datetime().optional(),
   projectPath: z.string().optional(),
   sessionId: z.string().optional(),
   archivedAt: z.string().datetime().optional(),
-  schemaVersion: z.number().optional(),
   subtasks: z
     .array(
       z.object({
@@ -44,10 +41,10 @@ const frontmatterSchema = z.object({
 });
 
 /**
- * Validate frontmatter data against the schema
+ * Validate plan metadata against the schema
  */
-export function validateFrontmatter(data: unknown): ValidationResult {
-  const result = frontmatterSchema.safeParse(data);
+export function validateMetadata(data: unknown): ValidationResult {
+  const result = metadataSchema.safeParse(data);
 
   if (result.success) {
     return { valid: true, errors: [] };
@@ -64,21 +61,21 @@ export function validateFrontmatter(data: unknown): ValidationResult {
     }, data),
   }));
 
-  const corrected = autoCorrectFrontmatter(data as Record<string, unknown>);
+  const corrected = autoCorrectMetadata(data as Record<string, unknown>);
 
   return { valid: false, errors, corrected };
 }
 
 /**
- * Auto-correct invalid frontmatter values
+ * Auto-correct invalid metadata values
  */
-export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFrontmatter {
-  const corrected: PlanFrontmatter = {};
+export function autoCorrectMetadata(data: Record<string, unknown>): PlanMetadata {
+  const corrected: PlanMetadata = {};
 
   // Status
   if (data.status !== undefined) {
-    if (['todo', 'in_progress', 'review', 'completed'].includes(data.status as string)) {
-      corrected.status = data.status as PlanFrontmatter['status'];
+    if (typeof data.status === 'string') {
+      corrected.status = data.status;
     } else {
       corrected.status = 'todo';
     }
@@ -87,7 +84,7 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
   // Priority
   if (data.priority !== undefined) {
     if (['low', 'medium', 'high', 'critical'].includes(data.priority as string)) {
-      corrected.priority = data.priority as PlanFrontmatter['priority'];
+      corrected.priority = data.priority as PlanMetadata['priority'];
     } else {
       corrected.priority = 'medium';
     }

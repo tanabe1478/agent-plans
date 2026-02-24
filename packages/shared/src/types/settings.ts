@@ -101,6 +101,8 @@ export interface AppSettings {
   fileWatcherEnabled?: boolean;
   /** Custom status columns for Kanban board */
   statusColumns?: StatusColumnDef[];
+  /** Default status assigned to newly created or externally overwritten plans */
+  defaultPlanStatus?: string;
   /** App appearance theme mode */
   themeMode?: ThemeMode;
   /** Optional user stylesheet absolute path */

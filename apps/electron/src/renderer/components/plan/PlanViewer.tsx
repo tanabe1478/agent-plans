@@ -59,7 +59,7 @@ for (const tag of blockTags) {
 }
 
 export function PlanViewer({ plan, showLineNumbers = false }: PlanViewerProps) {
-  const meta = plan.metadata ?? plan.frontmatter;
+  const meta = plan.metadata;
 
   return (
     <div>
