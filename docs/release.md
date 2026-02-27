@@ -50,18 +50,34 @@ You can run the workflow manually and choose release mode:
 
 ## Workflow behavior
 
-`Release` workflow runs on `macos-14` and performs:
+The `Release` workflow runs as 4 jobs:
 
-1. `pnpm install --frozen-lockfile`
-2. `pnpm check`
-3. `pnpm lint`
-4. `pnpm test`
-5. Build DMG:
-   - unsigned: `pnpm --filter @agent-plans/electron dist:mac:unsigned`
-   - signed: `pnpm --filter @agent-plans/electron dist:mac`
-6. Signed mode only: verify with `codesign`, `spctl`, `stapler validate`
-7. Generate release notes with distribution mode + SHA256 checksums
-8. Upload `apps/electron/release/*.dmg` to GitHub Release
+### 1. quality (ubuntu-latest)
+
+- `pnpm install --frozen-lockfile`
+- `pnpm check`
+- `pnpm lint`
+- `pnpm test`
+
+### 2. build-mac (macos-14) — runs after quality
+
+- Build DMG:
+  - unsigned: `pnpm --filter @agent-plans/electron dist:mac:unsigned`
+  - signed: `pnpm --filter @agent-plans/electron dist:mac`
+- Signed mode only: verify with `codesign`, `spctl`, `stapler validate`
+- Upload `.dmg` as workflow artifact
+
+### 3. build-win (windows-latest) — runs after quality, parallel with build-mac
+
+- Build NSIS installer: `pnpm --filter @agent-plans/electron dist:win`
+- Windows builds are always unsigned (no code signing configured)
+- Upload `.exe` as workflow artifact
+
+### 4. publish (ubuntu-latest) — runs after both builds
+
+- Download macOS and Windows artifacts
+- Generate release notes with per-platform distribution info + SHA256 checksums
+- Create GitHub Release with all artifacts (`.dmg` + `.exe`)
 
 ## Local Homebrew Cask sync
 
@@ -83,7 +99,9 @@ Recommended local flow:
    brew install --cask tanabe1478/agent-plans/agent-plans
    ```
 
-## Local DMG build
+## Local builds
+
+### macOS DMG
 
 Unsigned:
 
@@ -102,6 +120,19 @@ pnpm --filter @agent-plans/electron dist:mac
 Generated file:
 
 - `apps/electron/release/agent-plans-<version>-mac-arm64.dmg`
+
+### Windows NSIS installer
+
+```bash
+pnpm install
+pnpm --filter @agent-plans/electron dist:win
+```
+
+Generated file:
+
+- `apps/electron/release/agent-plans-<version>-win-x64.exe`
+
+Windows builds are unsigned. SmartScreen may warn on first launch.
 
 ## End-user first launch (unsigned)
 

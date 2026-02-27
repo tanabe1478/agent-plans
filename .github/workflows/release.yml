@@ -16,13 +16,8 @@ on:
           - signed
 
 jobs:
-  release:
-    runs-on: macos-14
-    permissions:
-      contents: write
-    env:
-      TZ: UTC
-
+  quality:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +40,24 @@ jobs:
       - name: Test
         run: pnpm test
 
+  build-mac:
+    needs: quality
+    runs-on: macos-14
+    env:
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Resolve release mode
         id: release_mode
         run: |
@@ -54,7 +67,6 @@ jobs:
           fi
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
-          echo "RELEASE_MODE=$mode" >> "$GITHUB_ENV"
           echo "Release mode: $mode"
 
       - name: Verify signing and notarization secrets
@@ -116,11 +128,88 @@ jobs:
           fi
           echo "Found $count DMG artifact(s)"
 
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-artifacts
+          path: apps/electron/release/*.dmg
+          if-no-files-found: error
+
+  build-win:
+    needs: quality
+    runs-on: windows-latest
+    env:
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Windows installer
+        run: pnpm --filter @agent-plans/electron dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Verify installer artifacts exist
+        shell: bash
+        run: |
+          count="$(find apps/electron/release -name '*.exe' -type f | wc -l | tr -d ' ')"
+          if [ "$count" = "0" ]; then
+            echo "::error::No EXE artifact was produced"
+            exit 1
+          fi
+          echo "Found $count EXE artifact(s)"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-artifacts
+          path: apps/electron/release/*.exe
+          if-no-files-found: error
+
+  publish:
+    needs: [build-mac, build-win]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-artifacts
+          path: artifacts
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: win-artifacts
+          path: artifacts
+
+      - name: Resolve release mode
+        id: release_mode
+        run: |
+          mode="unsigned"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.mode }}" ]; then
+            mode="${{ github.event.inputs.mode }}"
+          fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
       - name: Prepare release notes
         run: |
+          mode="${{ steps.release_mode.outputs.mode }}"
           {
             echo "## Distribution"
-            if [ "$RELEASE_MODE" = "unsigned" ]; then
+            echo ""
+            echo "### macOS"
+            if [ "$mode" = "unsigned" ]; then
               echo ""
               echo "⚠️ Unsigned build (Gatekeeper override required on first launch)."
               echo ""
@@ -130,12 +219,18 @@ jobs:
               echo "✅ Signed and notarized build."
             fi
             echo ""
+            echo "### Windows"
+            echo ""
+            echo "⚠️ Unsigned build (SmartScreen warning may appear on first launch)."
+            echo ""
+            echo "Click \"More info\" -> \"Run anyway\" to proceed."
+            echo ""
             echo "## Artifacts (SHA256)"
-            for file in apps/electron/release/*.dmg; do
+            for file in artifacts/*; do
               if [ ! -f "$file" ]; then
                 continue
               fi
-              sum="$(shasum -a 256 "$file" | awk '{print $1}')"
+              sum="$(sha256sum "$file" | awk '{print $1}')"
               name="$(basename "$file")"
               echo "- \`$name\`: \`$sum\`"
             done
@@ -146,4 +241,4 @@ jobs:
         with:
           body_path: release-body.md
           files: |
-            apps/electron/release/*.dmg
+            artifacts/*
