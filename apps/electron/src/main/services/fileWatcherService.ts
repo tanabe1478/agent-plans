@@ -92,7 +92,8 @@ export class FileWatcherService {
     };
 
     if (this.onFileChange) {
-      this.onFileChange(event)
+      Promise.resolve()
+        .then(() => this.onFileChange?.(event))
         .catch(() => {})
         .finally(notify);
     } else {

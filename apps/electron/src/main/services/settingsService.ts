@@ -83,15 +83,17 @@ export class SettingsService {
 
   private normalizeSavedSearches(value: unknown): Array<{ name: string; query: string }> {
     if (!Array.isArray(value)) return [];
-    return value.filter(
-      (item): item is { name: string; query: string } =>
-        item != null &&
-        typeof item === 'object' &&
-        typeof (item as Record<string, unknown>).name === 'string' &&
-        typeof (item as Record<string, unknown>).query === 'string' &&
-        (item as Record<string, unknown>).name !== '' &&
-        (item as Record<string, unknown>).query !== ''
-    );
+    return value
+      .filter(
+        (item): item is { name: string; query: string } =>
+          item != null &&
+          typeof item === 'object' &&
+          typeof (item as Record<string, unknown>).name === 'string' &&
+          typeof (item as Record<string, unknown>).query === 'string' &&
+          ((item as Record<string, unknown>).name as string).trim() !== '' &&
+          ((item as Record<string, unknown>).query as string).trim() !== ''
+      )
+      .map((item) => ({ name: item.name.trim(), query: item.query.trim() }));
   }
 
   private sanitizeSettings(parsed: Partial<AppSettings>): AppSettings {

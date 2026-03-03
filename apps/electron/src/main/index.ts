@@ -11,7 +11,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const fileWatcher = new FileWatcherService(
   () => settingsService.getPlanDirectories(),
   async (event) => {
-    if (event.eventType === 'change' && event.filename.endsWith('.md')) {
+    if (event.filename.endsWith('.md')) {
       await planService.syncMetadataOnChange(event.filename);
     }
   }
