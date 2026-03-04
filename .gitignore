@@ -55,3 +55,6 @@ __pycache__/
 # Local-only Homebrew cask operation files
 .local/homebrew-cask-sync/
 .local/homebrew-cask-sync.env
+
+# Entire CLI session data (private)
+.entire/

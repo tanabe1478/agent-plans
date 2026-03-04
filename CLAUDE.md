@@ -106,6 +106,13 @@ hooks/            # Hook scripts
 - Operational workflows (PR loop, unsigned launch guidance): `docs/operations.md`
 - Session PR loop tool details: `tools/session-pr-loop/README.md`
 
+## Entire CLI (Session Logging)
+
+- Session data is stored locally on `entire/checkpoints/v1` branch
+- **NEVER push** the `entire/checkpoints/v1` branch to remote
+- `.entire/` directory is gitignored — do not commit session settings
+- Push sessions is disabled via `push_sessions: false`
+
 ## Conventions
 
 - Write code comments, commit messages, and PR descriptions in English.
