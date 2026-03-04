@@ -655,9 +655,12 @@ export class PlanService {
       return;
     }
 
-    const content = await readFile(filePath, 'utf-8');
+    const [content, fileStats] = await Promise.all([
+      readFile(filePath, 'utf-8').catch(() => null),
+      stat(filePath).catch(() => null),
+    ]);
+    if (content === null || fileStats === null) return;
     const fileTitle = extractTitle(content);
-    const fileStats = await stat(filePath);
 
     const existing = this.metadataService.getMetadata(filename);
     const dbTitle = existing?.title ?? null;
