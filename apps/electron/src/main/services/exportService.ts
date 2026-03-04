@@ -28,6 +28,10 @@ async function getPlans(
   const filtered = allPlans.filter((plan) => {
     const meta = plan.metadata;
 
+    if (!options?.includeArchived && meta?.archivedAt) {
+      return false;
+    }
+
     if (options?.filterStatus && meta?.status !== options.filterStatus) {
       return false;
     }

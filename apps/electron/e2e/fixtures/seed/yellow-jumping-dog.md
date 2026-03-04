@@ -1,13 +1,3 @@
----
-created: "2026-02-01T11:00:00Z"
-modified: "2026-02-01T11:00:00Z"
-project_path: "/home/user/projects/web-app"
-session_id: "fixture-session-004"
-status: todo
-dueDate: "2026-02-03T00:00:00Z"
-estimate: "2d"
-schemaVersion: 1
----
 # Database Migration Plan
 
 ## Overview

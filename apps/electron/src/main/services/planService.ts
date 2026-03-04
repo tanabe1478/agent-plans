@@ -239,6 +239,19 @@ export class PlanService {
 
   private async getPlanMetaFromPath(filename: string, filePath: string): Promise<PlanMeta> {
     const [content, stats] = await Promise.all([readFile(filePath, 'utf-8'), stat(filePath)]);
+
+    // Ensure DB record exists on first read
+    if (this.metadataService && !this.metadataService.getMetadata(filename)) {
+      const defaultStatus = await this.getDefaultPlanStatus();
+      this.metadataService.upsertMetadata(filename, {
+        source: 'markdown',
+        status: defaultStatus,
+        title: extractTitle(content),
+        createdAt: stats.birthtime.toISOString(),
+        modifiedAt: stats.mtime.toISOString(),
+      });
+    }
+
     const metadata = this.getMetadataForPlan(filename);
 
     return {
@@ -650,7 +663,10 @@ export class PlanService {
     const dbTitle = existing?.title ?? null;
 
     if (existing) {
-      if (dbTitle !== null && dbTitle !== fileTitle) {
+      if (dbTitle === null) {
+        // Backfill null title without resetting status
+        this.metadataService.updateField(filename, 'title', fileTitle);
+      } else if (dbTitle !== fileTitle) {
         // Title changed → different plan → reset status to default
         const defaultStatus = await this.getDefaultPlanStatus();
         this.metadataService.upsertMetadata(filename, {
@@ -669,7 +685,7 @@ export class PlanService {
           modifiedAt: fileStats.mtime.toISOString(),
         });
       } else {
-        // Title same or not yet tracked → just update title
+        // Title same → content-only edit, preserve status
         this.metadataService.updateField(filename, 'title', fileTitle);
       }
     } else {

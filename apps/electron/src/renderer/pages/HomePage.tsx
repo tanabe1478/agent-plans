@@ -406,7 +406,7 @@ export function HomePage() {
                           </span>
                         ) : null}
                       </div>
-                      <div className="pr-2">
+                      <div className="pr-2" data-row-action="true">
                         <StatusDropdown
                           currentStatus={status}
                           disabled={updateStatus.isPending}
