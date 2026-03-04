@@ -20,10 +20,7 @@ const META_FILE = '.meta.json';
  * Extract title from markdown content (first H1)
  */
 function extractTitle(content: string): string {
-  // Strip frontmatter first
-  const bodyMatch = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
-  const body = bodyMatch ? bodyMatch[1] : content;
-  const match = body.match(/^#\s+(.+)$/m);
+  const match = content.match(/^#\s+(.+)$/m);
   return match ? match[1].trim() : 'Untitled';
 }
 
@@ -31,9 +28,7 @@ function extractTitle(content: string): string {
  * Extract preview text from markdown content
  */
 function extractPreview(content: string, length = 200): string {
-  const bodyMatch = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
-  const body = bodyMatch ? bodyMatch[1] : content;
-  const lines = body.split('\n');
+  const lines = content.split('\n');
   const startIndex = lines.findIndex((line) => line.match(/^#\s+/)) + 1;
   const textContent = lines
     .slice(startIndex)

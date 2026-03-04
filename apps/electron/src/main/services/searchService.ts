@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanFrontmatter, SearchMatch, SearchResult } from '@agent-plans/shared';
+import type { PlanMetadata, SearchMatch, SearchResult } from '@agent-plans/shared';
 import type { MetadataService } from './metadataService.js';
 import { parseQuery, type QueryFilter } from './queryParser.js';
 import type { SettingsService } from './settingsService.js';
@@ -15,84 +15,18 @@ function extractTitle(content: string): string {
 }
 
 /**
- * Parse YAML frontmatter from content (lightweight version for search)
- */
-function extractFrontmatter(content: string): PlanFrontmatter | undefined {
-  const pattern = /^---\n([\s\S]*?)\n---\n/;
-  const match = content.match(pattern);
-  if (!match) return undefined;
-
-  const fm: Record<string, string | string[]> = {};
-  const lines = match[1].split('\n');
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1 || /^\s/.test(line)) {
-      i++;
-      continue;
-    }
-
-    const key = line.slice(0, colonIndex).trim();
-    let value = line.slice(colonIndex + 1).trim();
-
-    // Strip quotes
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-
-    // Handle inline arrays [a, b]
-    if (value.startsWith('[') && value.endsWith(']')) {
-      fm[key] = value
-        .slice(1, -1)
-        .split(',')
-        .map((s) => s.trim().replace(/^["']|["']$/g, ''))
-        .filter(Boolean);
-    } else if (value === '') {
-      // Possibly multi-line array
-      const items: string[] = [];
-      let j = i + 1;
-      while (j < lines.length) {
-        const listMatch = lines[j].match(/^\s+-\s+(.+)$/);
-        if (listMatch) {
-          items.push(listMatch[1].trim().replace(/^["']|["']$/g, ''));
-          j++;
-        } else {
-          break;
-        }
-      }
-      if (items.length > 0) {
-        fm[key] = items;
-        i = j;
-        continue;
-      }
-    } else {
-      fm[key] = value;
-    }
-
-    i++;
-  }
-
-  return fm as unknown as PlanFrontmatter;
-}
-
-/**
- * Check if a single filter matches the frontmatter.
+ * Check if a single filter matches the metadata.
  * Only `status` is supported; other fields were removed in #63.
  */
-function matchesFilter(filter: QueryFilter, fm: PlanFrontmatter | undefined): boolean {
-  if (!fm) return false;
+function matchesFilter(filter: QueryFilter, meta: PlanMetadata | undefined): boolean {
+  if (!meta) return false;
 
   const { field, operator, value } = filter;
   const lowerValue = value.toLowerCase();
 
   switch (field) {
     case 'status': {
-      const status = (fm.status ?? '').toLowerCase();
+      const status = (meta.status ?? '').toLowerCase();
       return operator === ':' || operator === '=' ? status === lowerValue : false;
     }
     default:
@@ -117,7 +51,7 @@ export class SearchService {
     this.metadataService = config.metadataService;
   }
 
-  private getDbMetadata(filename: string): PlanFrontmatter | undefined {
+  private getDbMetadata(filename: string): PlanMetadata | undefined {
     if (!this.metadataService) return undefined;
     const row = this.metadataService.getMetadata(filename);
     if (!row) return undefined;
@@ -151,27 +85,13 @@ export class SearchService {
     return Array.from(targets, ([filename, filePath]) => ({ filename, filePath }));
   }
 
-  /**
-   * Resolve the effective frontmatter for a file by merging YAML frontmatter
-   * with metadata DB. Metadata DB takes priority (it reflects UI status changes).
-   */
-  private resolveFrontmatter(content: string, filename: string): PlanFrontmatter | undefined {
-    const yamlFm = extractFrontmatter(content);
-    const dbFm = this.getDbMetadata(filename);
-    if (!yamlFm && !dbFm) return undefined;
-    if (!yamlFm) return dbFm;
-    if (!dbFm) return yamlFm;
-    // Merge: DB fields take priority over YAML
-    return { ...yamlFm, ...dbFm };
-  }
-
   private clauseMatches(
     content: string,
     clause: { textQuery: string; filters: QueryFilter[] },
-    frontmatter: PlanFrontmatter | undefined
+    metadata: PlanMetadata | undefined
   ): SearchMatch[] | null {
     if (clause.filters.length > 0) {
-      const allFiltersMatch = clause.filters.every((f) => matchesFilter(f, frontmatter));
+      const allFiltersMatch = clause.filters.every((f) => matchesFilter(f, metadata));
       if (!allFiltersMatch) return null;
     }
 
@@ -214,15 +134,15 @@ export class SearchService {
     for (const { filename, filePath } of targets) {
       try {
         const content = await readFile(filePath, 'utf-8');
-        let frontmatter: PlanFrontmatter | undefined;
+        let metadata: PlanMetadata | undefined;
         let matched = false;
         const collectedMatches: SearchMatch[] = [];
 
         for (const clause of parsed.clauses) {
-          if (clause.filters.length > 0 && !frontmatter) {
-            frontmatter = this.resolveFrontmatter(content, filename);
+          if (clause.filters.length > 0 && !metadata) {
+            metadata = this.getDbMetadata(filename);
           }
-          const clauseMatchesResult = this.clauseMatches(content, clause, frontmatter);
+          const clauseMatchesResult = this.clauseMatches(content, clause, metadata);
           if (clauseMatchesResult === null) continue;
           matched = true;
           collectedMatches.push(...clauseMatchesResult);

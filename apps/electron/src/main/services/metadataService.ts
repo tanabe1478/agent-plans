@@ -5,6 +5,7 @@ export interface PlanMetadataRow {
   filename: string;
   source: 'markdown' | 'codex';
   status: PlanStatus | string;
+  title: string | null;
   priority: PlanPriority | null;
   dueDate: string | null;
   estimate: string | null;
@@ -20,6 +21,7 @@ export interface PlanMetadataRow {
 export interface UpsertMetadataInput {
   source: 'markdown' | 'codex';
   status: PlanStatus | string;
+  title?: string | null;
   priority?: PlanPriority | null;
   dueDate?: string | null;
   estimate?: string | null;
@@ -59,6 +61,7 @@ export interface DependencyInfo {
 const ALLOWED_FIELDS = new Set([
   'source',
   'status',
+  'title',
   'priority',
   'dueDate',
   'estimate',
@@ -72,6 +75,7 @@ const ALLOWED_FIELDS = new Set([
 const DB_COLUMN_MAP: Record<string, string> = {
   source: 'source',
   status: 'status',
+  title: 'title',
   priority: 'priority',
   dueDate: 'due_date',
   estimate: 'estimate',
@@ -96,6 +100,9 @@ export class MetadataService {
     const currentVersion = this.getSchemaVersionInternal();
     if (currentVersion < 1) {
       this.migrateToV1();
+    }
+    if (currentVersion < 2) {
+      this.migrateToV2();
     }
   }
 
@@ -157,6 +164,19 @@ export class MetadataService {
     `);
   }
 
+  private migrateToV2(): void {
+    // Check if title column already exists (idempotent migration)
+    const columns = this.db.pragma('table_info(plan_metadata)') as { name: string }[];
+    const hasTitle = columns.some((col) => col.name === 'title');
+    if (!hasTitle) {
+      this.db.exec('ALTER TABLE plan_metadata ADD COLUMN title TEXT');
+    }
+    this.db.exec(`
+      INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+      VALUES (2, datetime('now'));
+    `);
+  }
+
   getSchemaVersion(): number {
     return this.getSchemaVersionInternal();
   }
@@ -166,12 +186,13 @@ export class MetadataService {
     this.db
       .prepare(
         `INSERT INTO plan_metadata
-          (filename, source, status, priority, due_date, estimate, assignee, tags, project_path, session_id, archived_at, created_at, modified_at)
+          (filename, source, status, title, priority, due_date, estimate, assignee, tags, project_path, session_id, archived_at, created_at, modified_at)
          VALUES
-          (@filename, @source, @status, @priority, @dueDate, @estimate, @assignee, @tags, @projectPath, @sessionId, @archivedAt, @createdAt, @modifiedAt)
+          (@filename, @source, @status, @title, @priority, @dueDate, @estimate, @assignee, @tags, @projectPath, @sessionId, @archivedAt, @createdAt, @modifiedAt)
          ON CONFLICT(filename) DO UPDATE SET
           source = @source,
           status = @status,
+          title = @title,
           priority = @priority,
           due_date = @dueDate,
           estimate = @estimate,
@@ -186,6 +207,7 @@ export class MetadataService {
         filename,
         source: input.source,
         status: input.status,
+        title: input.title ?? null,
         priority: input.priority ?? null,
         dueDate: input.dueDate ?? null,
         estimate: input.estimate ?? null,
@@ -363,6 +385,7 @@ export class MetadataService {
       filename: row.filename as string,
       source: (row.source as 'markdown' | 'codex') ?? 'markdown',
       status: (row.status as PlanStatus) ?? 'todo',
+      title: (row.title as string) ?? null,
       priority: (row.priority as PlanPriority) ?? null,
       dueDate: (row.due_date as string) ?? null,
       estimate: (row.estimate as string) ?? null,

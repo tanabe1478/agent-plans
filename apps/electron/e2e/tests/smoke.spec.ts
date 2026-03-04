@@ -10,8 +10,8 @@ test.describe('Electron smoke', () => {
     const row = page.locator('[data-plan-row="purple-swimming-fish.md"]').first();
 
     const statusCell = row.locator('div.relative').first();
-    await expect(statusCell.getByRole('button', { name: 'In Progress' })).toBeVisible();
-    await statusCell.getByRole('button', { name: 'In Progress' }).click();
+    await expect(statusCell.getByRole('button', { name: 'Todo' })).toBeVisible();
+    await statusCell.getByRole('button', { name: 'Todo' }).click();
     await statusCell.getByRole('button', { name: 'Review' }).click();
     await expect(statusCell.getByRole('button', { name: 'Review' })).toBeVisible();
   });

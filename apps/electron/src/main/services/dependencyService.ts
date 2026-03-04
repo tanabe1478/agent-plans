@@ -5,21 +5,23 @@ import type {
   PlanDependencies,
 } from '@agent-plans/shared';
 import { planService } from './planService.js';
+import { settingsService } from './settingsService.js';
 
 /**
  * Build the full dependency graph from all plans
  */
 export async function buildDependencyGraph(): Promise<DependencyGraph> {
   const plans = await planService.listPlans();
+  const { defaultPlanStatus } = await settingsService.getSettings();
 
-  // Build node map with blockedBy from frontmatter
+  // Build node map with blockedBy from metadata
   const nodeMap = new Map<string, DependencyNode>();
   for (const plan of plans) {
-    const blockedBy = plan.frontmatter?.blockedBy ?? [];
+    const blockedBy = plan.metadata?.blockedBy ?? [];
     nodeMap.set(plan.filename, {
       filename: plan.filename,
       title: plan.title,
-      status: plan.frontmatter?.status ?? 'todo',
+      status: plan.metadata?.status ?? defaultPlanStatus,
       blockedBy,
       blocks: [],
     });

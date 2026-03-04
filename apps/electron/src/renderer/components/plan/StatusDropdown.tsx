@@ -12,9 +12,9 @@ interface StatusDropdownProps {
 export function StatusDropdown({ currentStatus, onStatusChange, disabled }: StatusDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { columns } = useStatusColumns();
+  const { columns, defaultPlanStatus } = useStatusColumns();
 
-  const effectiveStatus = getRawPlanStatus(currentStatus);
+  const effectiveStatus = getRawPlanStatus(currentStatus, defaultPlanStatus);
 
   // Close on click outside
   useEffect(() => {

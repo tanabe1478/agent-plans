@@ -194,8 +194,8 @@ describe('subtaskService', () => {
       await rm(tempDir, { recursive: true, force: true });
     });
 
-    it('should NOT re-create frontmatter when adding subtask to a migrated file', async () => {
-      // Post-migration state: file has no frontmatter (stripped during migration)
+    it('should NOT modify file content when adding subtask', async () => {
+      // Subtask state lives exclusively in the DB, not in file content.
       const content = '# My Plan\n\nPlan content here.\n';
       await writeFile(join(tempDir, 'migrated-plan.md'), content, 'utf-8');
 
@@ -203,9 +203,7 @@ describe('subtaskService', () => {
 
       const updated = await readFile(join(tempDir, 'migrated-plan.md'), 'utf-8');
 
-      // After DB migration, subtask operations should NOT touch the file content.
-      // The file should remain frontmatter-free.
-      expect(updated.startsWith('---\n')).toBe(false);
+      // Subtask operations should NOT touch the file content.
       expect(updated).toBe(content);
     });
 

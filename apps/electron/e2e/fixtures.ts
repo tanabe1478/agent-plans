@@ -24,7 +24,7 @@ function resetFixtures(targetDir: string): void {
     mkdirSync(resolve(targetDir, dir), { recursive: true });
   }
 
-  // Remove stale metadata DB so frontmatter migration runs fresh
+  // Remove stale metadata DB so tests start with a clean state
   rmSync(resolve(targetDir, '.metadata.db'), { force: true });
   rmSync(resolve(targetDir, '.metadata.db-wal'), { force: true });
   rmSync(resolve(targetDir, '.metadata.db-shm'), { force: true });

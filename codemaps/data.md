@@ -7,8 +7,8 @@
 Source: `packages/shared/src/types/`
 
 - `PlanStatus`: `todo | in_progress | review | completed`
-- `PlanFrontmatter`: status/project/due/blockedBy/subtasks/etc.
-- `PlanMeta`: list item model (title, filename, preview, sections, frontmatter)
+- `PlanMetadata`: status/project/due/blockedBy/subtasks/etc.
+- `PlanMeta`: list item model (title, filename, preview, sections, metadata)
 - `PlanDetail`: `PlanMeta + content`
 - API request/response types used by IPC payloads
 

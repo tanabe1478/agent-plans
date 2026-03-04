@@ -45,14 +45,19 @@ export function HomePage() {
   const updateStatus = useUpdateStatus();
   const { addToast, itemsPerPage, setItemsPerPage } = useUiStore();
   const settingsLoading = useSettingsLoading();
-  const { columns } = useStatusColumns();
+  const { columns, defaultPlanStatus } = useStatusColumns();
 
   // Search state: input is live text, submittedQuery drives the backend search
   const [searchInput, setSearchInput] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const isSearchMode = submittedQuery.length > 0;
 
-  const { data: searchData, isLoading: searchLoading } = useSearch(submittedQuery);
+  const {
+    data: searchData,
+    isLoading: searchLoading,
+    isError: isSearchError,
+    error: searchError,
+  } = useSearch(submittedQuery);
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
@@ -302,261 +307,256 @@ export function HomePage() {
 
       {isSearchMode ? (
         <section>
-          {searchLoading && (
+          {searchLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
             </div>
-          )}
-          {searchData && searchData.results.length === 0 && (
+          ) : isSearchError ? (
+            <div className="flex flex-col items-center justify-center py-12 text-rose-400">
+              <AlertCircle className="h-6 w-6 mb-2" />
+              <p className="text-[12px]">Search failed</p>
+              <p className="text-[11px] text-slate-500">{String(searchError)}</p>
+            </div>
+          ) : searchData && searchData.results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-500">
               <Search className="h-6 w-6 mb-2" />
               <p className="text-[12px]">No plans found</p>
             </div>
-          )}
-          {searchData && searchData.results.length > 0 && (
+          ) : searchData ? (
             <SearchResultsList results={searchData.results} query={submittedQuery} />
-          )}
+          ) : null}
         </section>
       ) : (
-        <>
-          <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="border border-slate-800 bg-slate-900/50">
-              <div className="grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] border-b border-slate-800 px-2 py-1.5 text-[10px] uppercase tracking-[0.08em] text-slate-500">
-                <span />
-                <span>Plan</span>
-                <span>Status</span>
-                <span>Modified</span>
-                <span />
-              </div>
-              <div className="max-h-[68vh] overflow-auto">
-                {filteredPlans.length === 0 ? (
-                  <div className="px-3 py-10 text-center text-[12px] text-slate-500">
-                    No plans found.
-                  </div>
-                ) : (
-                  paginatedPlans.map((plan) => {
-                    const isActive = plan.filename === activePlan?.filename;
-                    const isChecked = selectedPlans.has(plan.filename);
-                    const fm = plan.metadata ?? plan.frontmatter;
-                    const dueDate = fm?.dueDate;
-                    const status = getRawPlanStatus(fm?.status);
-                    const readOnly = Boolean(plan.readOnly);
-                    return (
-                      // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
-                      // biome-ignore lint/a11y/useKeyWithClickEvents: row interaction is pointer-based in desktop list view
-                      <div
-                        key={plan.filename}
-                        data-plan-row={plan.filename}
-                        onContextMenu={(event) => {
-                          event.preventDefault();
-                          setContextPlan(plan);
-                          setContextPos({ x: event.clientX, y: event.clientY });
-                        }}
-                        onClick={(event) => {
-                          const target = event.target as HTMLElement | null;
-                          if (target?.closest('[data-row-action="true"]')) return;
-                          handleRowClick(plan);
-                        }}
-                        onDoubleClick={(event) => {
-                          const target = event.target as HTMLElement | null;
-                          if (target?.closest('[data-row-action="true"]')) return;
-                          handleRowDoubleClick(plan);
-                        }}
-                        className={cn(
-                          'grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] items-center border-b border-slate-800 px-2 py-1.5 text-[12px] text-slate-300 cursor-pointer',
-                          isActive
-                            ? 'bg-slate-800/70'
-                            : 'hover:bg-slate-700/30 dark:hover:bg-slate-800/40'
-                        )}
-                      >
-                        <div className="flex items-center justify-center">
-                          {selectionMode ? (
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              disabled={readOnly}
-                              data-row-action="true"
-                              onClick={(event) => event.stopPropagation()}
-                              onChange={() => {
-                                if (readOnly) return;
-                                toggleSelection(plan.filename);
-                              }}
-                              className="h-3.5 w-3.5 rounded-none border-slate-600 bg-slate-950"
-                            />
-                          ) : (
-                            <FileText className="h-3.5 w-3.5 text-slate-600" />
-                          )}
-                        </div>
-                        <div className="min-w-0 text-left">
-                          <p className="truncate text-[12px] font-medium">{plan.title}</p>
-                          <p className="truncate font-mono text-[10px] text-slate-500">
-                            {plan.filename}
-                          </p>
-                          {plan.source === 'codex' ? (
-                            <span className="mt-1 inline-flex rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
-                              Codex
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="pr-2">
-                          <StatusDropdown
-                            currentStatus={status}
-                            disabled={updateStatus.isPending}
-                            onStatusChange={(next) =>
-                              updateStatus.mutate({ filename: plan.filename, status: next })
-                            }
-                          />
-                        </div>
-                        <div
-                          className="text-[11px] text-slate-500"
-                          data-plan-modified={plan.filename}
-                        >
-                          {formatDate(plan.modifiedAt)}
-                          {dueDate ? (
-                            <p
-                              className={cn(
-                                'mt-0.5 inline-flex items-center gap-1 text-[10px]',
-                                getDeadlineColor(dueDate).includes('red')
-                                  ? 'text-rose-400'
-                                  : getDeadlineColor(dueDate).includes('orange')
-                                    ? 'text-orange-400'
-                                    : 'text-amber-300'
-                              )}
-                            >
-                              <Clock3 className="h-3 w-3" />
-                              {formatRelativeDeadline(dueDate)}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            data-row-action="true"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              navigate(`/plan/${encodeURIComponent(plan.filename)}`);
-                            }}
-                            className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
-                            title="Open detail"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            data-row-action="true"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              navigate(`/plan/${encodeURIComponent(plan.filename)}/review`);
-                            }}
-                            className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
-                            title="Open review"
-                          >
-                            <MessageSquareText className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-              {filteredPlans.length > 0 ? (
-                <div className="flex items-center justify-between border-t border-slate-800 px-3 py-2 text-[11px] text-slate-400">
-                  <span>
-                    Showing {(safeCurrentPage - 1) * itemsPerPage + 1}–
-                    {Math.min(safeCurrentPage * itemsPerPage, filteredPlans.length)} of{' '}
-                    {filteredPlans.length}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={safeCurrentPage <= 1}
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      className="border border-slate-700 p-1 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
-                      aria-label="Previous page"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                    </button>
-                    <span>
-                      {safeCurrentPage} / {totalPages}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={safeCurrentPage >= totalPages}
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      className="border border-slate-700 p-1 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
-                      aria-label="Next page"
-                    >
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span>Per page</span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-[11px] text-slate-300 outline-none"
-                    >
-                      {ITEMS_PER_PAGE_OPTIONS.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : null}
+        <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="border border-slate-800 bg-slate-900/50">
+            <div className="grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] border-b border-slate-800 px-2 py-1.5 text-[10px] uppercase tracking-[0.08em] text-slate-500">
+              <span />
+              <span>Plan</span>
+              <span>Status</span>
+              <span>Modified</span>
+              <span />
             </div>
-
-            <aside className="border border-slate-800 bg-slate-900/60 p-3">
-              {activePlan ? (
-                <div className="space-y-3">
-                  <div className="space-y-1 border-b border-slate-800 pb-3">
-                    <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
-                      Preview
-                    </p>
-                    <h2 className="text-[14px] font-semibold text-slate-100">{activePlan.title}</h2>
-                    <p className="truncate font-mono text-[11px] text-slate-500">
-                      {activePlan.filename}
-                    </p>
-                  </div>
-                  {(activePlan.metadata?.projectPath ?? activePlan.frontmatter?.projectPath) ? (
-                    <ProjectBadge
-                      projectPath={
-                        (activePlan.metadata?.projectPath ??
-                          activePlan.frontmatter?.projectPath) as string
-                      }
-                    />
-                  ) : null}
-                  <p className="line-clamp-8 break-all text-[12px] leading-5 text-slate-300">
-                    {activePlan.preview}
-                  </p>
-                  {activePlan.sections.length > 0 ? (
-                    <div className="space-y-1 border-t border-slate-800 pt-3">
-                      <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
-                        Sections
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {activePlan.sections.slice(0, 8).map((section) => (
-                          <span
-                            key={section}
-                            className="max-w-full break-all border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-[10px] text-slate-400"
-                          >
-                            {section}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+            <div className="max-h-[68vh] overflow-auto">
+              {filteredPlans.length === 0 ? (
+                <div className="px-3 py-10 text-center text-[12px] text-slate-500">
+                  No plans found.
                 </div>
               ) : (
-                <p className="text-[12px] text-slate-500">No plan selected.</p>
+                paginatedPlans.map((plan) => {
+                  const isActive = plan.filename === activePlan?.filename;
+                  const isChecked = selectedPlans.has(plan.filename);
+                  const fm = plan.metadata;
+                  const dueDate = fm?.dueDate;
+                  const status = getRawPlanStatus(fm?.status, defaultPlanStatus);
+                  const readOnly = Boolean(plan.readOnly);
+                  return (
+                    // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: row interaction is pointer-based in desktop list view
+                    <div
+                      key={plan.filename}
+                      data-plan-row={plan.filename}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setContextPlan(plan);
+                        setContextPos({ x: event.clientX, y: event.clientY });
+                      }}
+                      onClick={(event) => {
+                        const target = event.target as HTMLElement | null;
+                        if (target?.closest('[data-row-action="true"]')) return;
+                        handleRowClick(plan);
+                      }}
+                      onDoubleClick={(event) => {
+                        const target = event.target as HTMLElement | null;
+                        if (target?.closest('[data-row-action="true"]')) return;
+                        handleRowDoubleClick(plan);
+                      }}
+                      className={cn(
+                        'grid grid-cols-[28px_minmax(0,1fr)_120px_170px_68px] items-center border-b border-slate-800 px-2 py-1.5 text-[12px] text-slate-300 cursor-pointer',
+                        isActive
+                          ? 'bg-slate-800/70'
+                          : 'hover:bg-slate-700/30 dark:hover:bg-slate-800/40'
+                      )}
+                    >
+                      <div className="flex items-center justify-center">
+                        {selectionMode ? (
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={readOnly}
+                            data-row-action="true"
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() => {
+                              if (readOnly) return;
+                              toggleSelection(plan.filename);
+                            }}
+                            className="h-3.5 w-3.5 rounded-none border-slate-600 bg-slate-950"
+                          />
+                        ) : (
+                          <FileText className="h-3.5 w-3.5 text-slate-600" />
+                        )}
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <p className="truncate text-[12px] font-medium">{plan.title}</p>
+                        <p className="truncate font-mono text-[10px] text-slate-500">
+                          {plan.filename}
+                        </p>
+                        {plan.source === 'codex' ? (
+                          <span className="mt-1 inline-flex rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
+                            Codex
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="pr-2" data-row-action="true">
+                        <StatusDropdown
+                          currentStatus={status}
+                          disabled={updateStatus.isPending}
+                          onStatusChange={(next) =>
+                            updateStatus.mutate({ filename: plan.filename, status: next })
+                          }
+                        />
+                      </div>
+                      <div
+                        className="text-[11px] text-slate-500"
+                        data-plan-modified={plan.filename}
+                      >
+                        {formatDate(plan.modifiedAt)}
+                        {dueDate ? (
+                          <p
+                            className={cn(
+                              'mt-0.5 inline-flex items-center gap-1 text-[10px]',
+                              getDeadlineColor(dueDate).includes('red')
+                                ? 'text-rose-400'
+                                : getDeadlineColor(dueDate).includes('orange')
+                                  ? 'text-orange-400'
+                                  : 'text-amber-300'
+                            )}
+                          >
+                            <Clock3 className="h-3 w-3" />
+                            {formatRelativeDeadline(dueDate)}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          data-row-action="true"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(`/plan/${encodeURIComponent(plan.filename)}`);
+                          }}
+                          className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
+                          title="Open detail"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          data-row-action="true"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(`/plan/${encodeURIComponent(plan.filename)}/review`);
+                          }}
+                          className="border border-slate-700 p-1 text-slate-500 hover:bg-slate-700/50 hover:text-slate-200 dark:hover:bg-slate-800"
+                          title="Open review"
+                        >
+                          <MessageSquareText className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
-            </aside>
-          </section>
-        </>
+            </div>
+            {filteredPlans.length > 0 ? (
+              <div className="flex items-center justify-between border-t border-slate-800 px-3 py-2 text-[11px] text-slate-400">
+                <span>
+                  Showing {(safeCurrentPage - 1) * itemsPerPage + 1}–
+                  {Math.min(safeCurrentPage * itemsPerPage, filteredPlans.length)} of{' '}
+                  {filteredPlans.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={safeCurrentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="border border-slate-700 p-1 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <span>
+                    {safeCurrentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={safeCurrentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="border border-slate-700 p-1 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span>Per page</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-[11px] text-slate-300 outline-none"
+                  >
+                    {ITEMS_PER_PAGE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <aside className="border border-slate-800 bg-slate-900/60 p-3">
+            {activePlan ? (
+              <div className="space-y-3">
+                <div className="space-y-1 border-b border-slate-800 pb-3">
+                  <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">Preview</p>
+                  <h2 className="text-[14px] font-semibold text-slate-100">{activePlan.title}</h2>
+                  <p className="truncate font-mono text-[11px] text-slate-500">
+                    {activePlan.filename}
+                  </p>
+                </div>
+                {activePlan.metadata?.projectPath ? (
+                  <ProjectBadge projectPath={activePlan.metadata.projectPath} />
+                ) : null}
+                <p className="line-clamp-8 break-all text-[12px] leading-5 text-slate-300">
+                  {activePlan.preview}
+                </p>
+                {activePlan.sections.length > 0 ? (
+                  <div className="space-y-1 border-t border-slate-800 pt-3">
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
+                      Sections
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {activePlan.sections.slice(0, 8).map((section) => (
+                        <span
+                          key={section}
+                          className="max-w-full break-all border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-[10px] text-slate-400"
+                        >
+                          {section}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-[12px] text-slate-500">No plan selected.</p>
+            )}
+          </aside>
+        </section>
       )}
 
       <Dialog

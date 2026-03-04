@@ -1,4 +1,4 @@
-import type { PlanFrontmatter } from '@agent-plans/shared';
+import type { PlanMetadata } from '@agent-plans/shared';
 import { z } from 'zod';
 
 export interface ValidationError {
@@ -10,11 +10,11 @@ export interface ValidationError {
 export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
-  corrected?: PlanFrontmatter;
+  corrected?: PlanMetadata;
 }
 
-const frontmatterSchema = z.object({
-  status: z.enum(['todo', 'in_progress', 'review', 'completed']).optional(),
+const metadataSchema = z.object({
+  status: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   dueDate: z.string().datetime().optional(),
   tags: z.array(z.string()).optional(),
@@ -24,12 +24,9 @@ const frontmatterSchema = z.object({
     .optional(),
   blockedBy: z.array(z.string()).optional(),
   assignee: z.string().optional(),
-  created: z.string().datetime().optional(),
-  modified: z.string().datetime().optional(),
   projectPath: z.string().optional(),
   sessionId: z.string().optional(),
   archivedAt: z.string().datetime().optional(),
-  schemaVersion: z.number().optional(),
   subtasks: z
     .array(
       z.object({
@@ -44,10 +41,10 @@ const frontmatterSchema = z.object({
 });
 
 /**
- * Validate frontmatter data against the schema
+ * Validate plan metadata against the schema
  */
-export function validateFrontmatter(data: unknown): ValidationResult {
-  const result = frontmatterSchema.safeParse(data);
+export function validateMetadata(data: unknown): ValidationResult {
+  const result = metadataSchema.safeParse(data);
 
   if (result.success) {
     return { valid: true, errors: [] };
@@ -64,47 +61,51 @@ export function validateFrontmatter(data: unknown): ValidationResult {
     }, data),
   }));
 
-  const corrected = autoCorrectFrontmatter(data as Record<string, unknown>);
+  const corrected = autoCorrectMetadata(data);
 
   return { valid: false, errors, corrected };
 }
 
 /**
- * Auto-correct invalid frontmatter values
+ * Auto-correct invalid metadata values
  */
-export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFrontmatter {
-  const corrected: PlanFrontmatter = {};
+export function autoCorrectMetadata(data: unknown): PlanMetadata {
+  if (data == null || typeof data !== 'object') return {};
+  const source = data as Record<string, unknown>;
+  const corrected: PlanMetadata = {};
 
   // Status
-  if (data.status !== undefined) {
-    if (['todo', 'in_progress', 'review', 'completed'].includes(data.status as string)) {
-      corrected.status = data.status as PlanFrontmatter['status'];
+  if (source.status !== undefined) {
+    if (typeof source.status === 'string') {
+      corrected.status = source.status;
     } else {
       corrected.status = 'todo';
     }
   }
 
   // Priority
-  if (data.priority !== undefined) {
-    if (['low', 'medium', 'high', 'critical'].includes(data.priority as string)) {
-      corrected.priority = data.priority as PlanFrontmatter['priority'];
+  if (source.priority !== undefined) {
+    if (['low', 'medium', 'high', 'critical'].includes(source.priority as string)) {
+      corrected.priority = source.priority as PlanMetadata['priority'];
     } else {
       corrected.priority = 'medium';
     }
   }
 
   // Due date
-  if (data.dueDate !== undefined) {
-    const parsed = Date.parse(data.dueDate as string);
-    corrected.dueDate = Number.isNaN(parsed) ? new Date().toISOString() : (data.dueDate as string);
+  if (source.dueDate !== undefined) {
+    const parsed = Date.parse(source.dueDate as string);
+    corrected.dueDate = Number.isNaN(parsed)
+      ? new Date().toISOString()
+      : (source.dueDate as string);
   }
 
   // Tags: ensure array
-  if (data.tags !== undefined) {
-    if (typeof data.tags === 'string') {
-      corrected.tags = [data.tags];
-    } else if (Array.isArray(data.tags)) {
-      corrected.tags = data.tags.map(String);
+  if (source.tags !== undefined) {
+    if (typeof source.tags === 'string') {
+      corrected.tags = [source.tags];
+    } else if (Array.isArray(source.tags)) {
+      corrected.tags = source.tags.map(String);
     } else {
       corrected.tags = [];
     }
@@ -112,35 +113,35 @@ export function autoCorrectFrontmatter(data: Record<string, unknown>): PlanFront
 
   // Estimate
   if (
-    data.estimate !== undefined &&
-    typeof data.estimate === 'string' &&
-    /^\d+[hdwm]$/.test(data.estimate)
+    source.estimate !== undefined &&
+    typeof source.estimate === 'string' &&
+    /^\d+[hdwm]$/.test(source.estimate)
   ) {
-    corrected.estimate = data.estimate;
+    corrected.estimate = source.estimate;
   }
 
   // BlockedBy: ensure array
-  if (data.blockedBy !== undefined) {
-    if (typeof data.blockedBy === 'string') {
-      corrected.blockedBy = [data.blockedBy];
-    } else if (Array.isArray(data.blockedBy)) {
-      corrected.blockedBy = data.blockedBy.map(String);
+  if (source.blockedBy !== undefined) {
+    if (typeof source.blockedBy === 'string') {
+      corrected.blockedBy = [source.blockedBy];
+    } else if (Array.isArray(source.blockedBy)) {
+      corrected.blockedBy = source.blockedBy.map(String);
     } else {
       corrected.blockedBy = [];
     }
   }
 
   // Simple string fields
-  if (typeof data.assignee === 'string') corrected.assignee = data.assignee;
-  if (typeof data.projectPath === 'string') corrected.projectPath = data.projectPath;
-  if (typeof data.sessionId === 'string') corrected.sessionId = data.sessionId;
+  if (typeof source.assignee === 'string') corrected.assignee = source.assignee;
+  if (typeof source.projectPath === 'string') corrected.projectPath = source.projectPath;
+  if (typeof source.sessionId === 'string') corrected.sessionId = source.sessionId;
 
   // ArchivedAt
-  if (data.archivedAt !== undefined) {
-    const parsed = Date.parse(data.archivedAt as string);
+  if (source.archivedAt !== undefined) {
+    const parsed = Date.parse(source.archivedAt as string);
     corrected.archivedAt = Number.isNaN(parsed)
       ? new Date().toISOString()
-      : (data.archivedAt as string);
+      : (source.archivedAt as string);
   }
 
   return corrected;

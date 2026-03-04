@@ -60,7 +60,6 @@ export type {
   NotificationType,
   PlanDependencies,
   PlanDetail,
-  PlanFrontmatter,
   PlanMeta,
   PlanMetadata,
   PlanPriority,

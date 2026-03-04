@@ -46,5 +46,7 @@ export function useStatusColumns() {
     return columnMap.get(id)?.color ?? FALLBACK_COLOR;
   };
 
-  return { columns, getStatusLabel, getStatusColor, getColorClassName };
+  const defaultPlanStatus = settings?.defaultPlanStatus ?? 'todo';
+
+  return { columns, defaultPlanStatus, getStatusLabel, getStatusColor, getColorClassName };
 }

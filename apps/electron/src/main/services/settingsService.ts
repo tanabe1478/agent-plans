@@ -13,6 +13,7 @@ const ELECTRON_DEFAULT_SETTINGS: AppSettings = {
   codexSessionLogDirectories: [DEFAULT_CODEX_SESSIONS_DIR],
   shortcuts: DEFAULT_SHORTCUTS,
   fileWatcherEnabled: false,
+  defaultPlanStatus: 'todo',
   themeMode: 'system',
   customStylesheetPath: null,
 };
@@ -73,17 +74,26 @@ export class SettingsService {
     return unique.length > 0 ? unique : [DEFAULT_CODEX_SESSIONS_DIR];
   }
 
+  private normalizeDefaultPlanStatus(value: unknown): string {
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value.trim();
+    }
+    return 'todo';
+  }
+
   private normalizeSavedSearches(value: unknown): Array<{ name: string; query: string }> {
     if (!Array.isArray(value)) return [];
-    return value.filter(
-      (item): item is { name: string; query: string } =>
-        item != null &&
-        typeof item === 'object' &&
-        typeof (item as Record<string, unknown>).name === 'string' &&
-        typeof (item as Record<string, unknown>).query === 'string' &&
-        (item as Record<string, unknown>).name !== '' &&
-        (item as Record<string, unknown>).query !== ''
-    );
+    return value
+      .filter(
+        (item): item is { name: string; query: string } =>
+          item != null &&
+          typeof item === 'object' &&
+          typeof (item as Record<string, unknown>).name === 'string' &&
+          typeof (item as Record<string, unknown>).query === 'string' &&
+          ((item as Record<string, unknown>).name as string).trim() !== '' &&
+          ((item as Record<string, unknown>).query as string).trim() !== ''
+      )
+      .map((item) => ({ name: item.name.trim(), query: item.query.trim() }));
   }
 
   private sanitizeSettings(parsed: Partial<AppSettings>): AppSettings {
@@ -95,6 +105,7 @@ export class SettingsService {
         parsed.codexSessionLogDirectories
       ),
       shortcuts: mergeShortcuts(parsed.shortcuts),
+      defaultPlanStatus: this.normalizeDefaultPlanStatus(parsed.defaultPlanStatus),
       themeMode: this.normalizeThemeMode(parsed.themeMode),
       customStylesheetPath: this.normalizeStylesheetPath(parsed.customStylesheetPath),
       savedSearches: this.normalizeSavedSearches(parsed.savedSearches),

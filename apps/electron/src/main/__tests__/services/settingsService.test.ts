@@ -108,6 +108,36 @@ describe('settingsService', () => {
       expect(settings.savedSearches).toEqual([]);
     });
 
+    it('should default defaultPlanStatus to todo', async () => {
+      const service = createService();
+      const settings = await service.getSettings();
+      expect(settings.defaultPlanStatus).toBe('todo');
+    });
+
+    it('should preserve valid defaultPlanStatus', async () => {
+      const service = createService();
+      await service.updateSettings({ defaultPlanStatus: 'in_progress' });
+
+      const settings = await service.getSettings();
+      expect(settings.defaultPlanStatus).toBe('in_progress');
+    });
+
+    it('should normalize empty defaultPlanStatus to todo', async () => {
+      const service = createService();
+      await service.updateSettings({ defaultPlanStatus: '' });
+
+      const settings = await service.getSettings();
+      expect(settings.defaultPlanStatus).toBe('todo');
+    });
+
+    it('should normalize whitespace-only defaultPlanStatus to todo', async () => {
+      const service = createService();
+      await service.updateSettings({ defaultPlanStatus: '   ' });
+
+      const settings = await service.getSettings();
+      expect(settings.defaultPlanStatus).toBe('todo');
+    });
+
     it('should normalize savedSearches stripping invalid entries', async () => {
       const service = createService();
       await service.updateSettings({

@@ -2,6 +2,7 @@ import { getRawPlanStatus, type PlanMeta } from '@agent-plans/shared';
 import { Calendar, Clock, FileText, HardDrive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUpdateStatus } from '../../lib/hooks';
+import { useStatusColumns } from '../../lib/hooks/useStatusColumns';
 import {
   cn,
   formatDate,
@@ -23,8 +24,9 @@ export function PlanCard({ plan, showCheckbox = false }: PlanCardProps) {
   const { isSelected, toggleSelect } = usePlanStore();
   const selected = isSelected(plan.filename);
   const updateStatus = useUpdateStatus();
-  const meta = plan.metadata ?? plan.frontmatter;
-  const status = getRawPlanStatus(meta?.status);
+  const { defaultPlanStatus } = useStatusColumns();
+  const meta = plan.metadata;
+  const status = getRawPlanStatus(meta?.status, defaultPlanStatus);
   const subtasks = meta?.subtasks ?? [];
   const dueDate = meta?.dueDate;
   const deadlineColor = getDeadlineColor(dueDate);

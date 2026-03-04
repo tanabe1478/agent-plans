@@ -1,9 +1,3 @@
----
-created: "2026-02-06T09:13:19.435Z"
-modified: "2026-02-06T09:13:19.435Z"
-status: todo
-schemaVersion: 1
----
 # Implementation: Test Implementation Plan
 
 ## Requirements

@@ -100,7 +100,7 @@ export function categorizeByDeadline(plans: PlanMeta[]): DeadlineCategory {
   };
 
   for (const plan of plans) {
-    const dueDate = plan.frontmatter?.dueDate;
+    const dueDate = plan.metadata?.dueDate;
     if (!dueDate) {
       result.noDueDate.push(plan);
     } else if (isOverdue(dueDate)) {

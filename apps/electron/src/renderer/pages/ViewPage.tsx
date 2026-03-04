@@ -18,6 +18,7 @@ import { SectionNav } from '@/components/plan/SectionNav';
 import { StatusDropdown } from '@/components/plan/StatusDropdown';
 import { Dialog } from '@/components/ui/Dialog';
 import { usePlan, useUpdatePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
+import { useStatusColumns } from '@/lib/hooks/useStatusColumns';
 import { formatDate, formatFileSize } from '@/lib/utils';
 
 export function ViewPage() {
@@ -26,8 +27,9 @@ export function ViewPage() {
   const { data: plan, isLoading, error } = usePlan(filename || '');
   const updateStatus = useUpdateStatus();
   const updatePlan = useUpdatePlan();
-  const meta = plan?.metadata ?? plan?.frontmatter;
-  const status = getRawPlanStatus(meta?.status);
+  const { defaultPlanStatus } = useStatusColumns();
+  const meta = plan?.metadata;
+  const status = getRawPlanStatus(meta?.status, defaultPlanStatus);
 
   const [draftContent, setDraftContent] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');

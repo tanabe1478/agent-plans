@@ -74,7 +74,7 @@ export class NotificationService {
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     for (const plan of plans) {
-      const planMeta = plan.metadata ?? plan.frontmatter;
+      const planMeta = plan.metadata;
       const status = planMeta?.status ?? 'todo';
       if (status === 'completed') continue;
 
@@ -125,7 +125,7 @@ export class NotificationService {
       }
 
       // Blocked and stale check
-      const meta = plan.metadata ?? plan.frontmatter;
+      const meta = plan.metadata;
       const blockedBy = meta?.blockedBy;
       if (blockedBy && blockedBy.length > 0 && status === 'in_progress') {
         const modified = plan.modifiedAt;

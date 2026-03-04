@@ -1,5 +1,6 @@
 import { getRawPlanStatus, type PlanMeta } from '@agent-plans/shared';
 import { useMemo } from 'react';
+import { useStatusColumns } from '../../lib/hooks/useStatusColumns';
 import { usePlanStore } from '../../stores/planStore';
 import { PlanCard } from './PlanCard';
 
@@ -10,6 +11,7 @@ interface PlanListProps {
 
 export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
   const { sortBy, sortOrder, searchQuery, statusFilter, projectFilter } = usePlanStore();
+  const { defaultPlanStatus } = useStatusColumns();
 
   const filteredAndSortedPlans = useMemo(() => {
     let result = [...plans];
@@ -28,15 +30,13 @@ export function PlanList({ plans, showCheckbox = false }: PlanListProps) {
     // Filter by status
     if (statusFilter !== 'all') {
       result = result.filter(
-        (plan) => getRawPlanStatus((plan.metadata ?? plan.frontmatter)?.status) === statusFilter
+        (plan) => getRawPlanStatus(plan.metadata?.status, defaultPlanStatus) === statusFilter
       );
     }
 
     // Filter by project
     if (projectFilter !== 'all') {
-      result = result.filter(
-        (plan) => (plan.metadata ?? plan.frontmatter)?.projectPath === projectFilter
-      );
+      result = result.filter((plan) => plan.metadata?.projectPath === projectFilter);
     }
 
     // Sort
