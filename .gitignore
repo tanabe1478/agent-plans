@@ -44,6 +44,8 @@ playwright/.cache/
 # Claude Code local settings
 .claude/*
 !.claude/skills/
+!.claude/hooks/
+!.claude/settings.json
 .mcp.json
 .codex/state/
 .codex/logs/

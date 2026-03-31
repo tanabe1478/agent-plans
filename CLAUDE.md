@@ -100,6 +100,29 @@ hooks/            # Hook scripts
 - Keep docs and CI Electron-oriented
 - `pnpm lint` + `pnpm test` alone are NOT sufficient validation; `pnpm build` is required to catch bundling/runtime issues
 
+## Tier 2 Specs (trigger-based)
+
+Load the relevant spec when editing trigger files.
+
+| Trigger Files | Spec | Description |
+|---------------|------|-------------|
+| `planService.ts`, `metadataService.ts`, `fileWatcherService.ts`, `archiveService.ts` | `docs/specs/plan-data-flow.md` | Plan CRUD, metadata sync, conflict detection |
+| `searchService.ts`, `queryParser.ts` | `docs/specs/search-query.md` | Full-text search, query syntax, filter matching |
+| `src/preload/index.ts`, `src/main/ipc/*` | `docs/specs/ipc-bridge.md` | IPC channel reference, contextBridge API |
+| `settingsService.ts`, `src/renderer/pages/SettingsPage.tsx` | `docs/specs/settings-config.md` | Settings schema, normalization, file watcher integration |
+| All files (debug reference) | `docs/specs/bug-memory.md` | Past bug patterns and root causes |
+
+## Tier 3 ADRs (architectural decisions)
+
+| ADR | Decision |
+|-----|----------|
+| [ADR-001](docs/adr/001-electron-first-architecture.md) | Electron-native desktop app, no web deployment |
+| [ADR-002](docs/adr/002-file-based-data-model.md) | Markdown files as source of truth |
+| [ADR-003](docs/adr/003-sqlite-metadata-layer.md) | SQLite for metadata indexing alongside files |
+| [ADR-004](docs/adr/004-monorepo-pnpm-workspaces.md) | pnpm workspaces monorepo |
+| [ADR-005](docs/adr/005-permanent-deletion-policy.md) | Permanent deletion by default |
+| [ADR-006](docs/adr/006-three-tier-documentation.md) | Three-tier documentation structure |
+
 ## Runbooks
 
 - Release and distribution: `docs/release.md`
