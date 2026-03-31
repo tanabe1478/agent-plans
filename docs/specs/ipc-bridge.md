@@ -70,6 +70,7 @@ Additional handlers registered separately:
 | `plans:bulkStatus` | R→M | `BulkStatusRequest` | `BulkOperationResponse` |
 | `plans:open` | R→M | `filename, ExternalApp` | `void` |
 | `plans:availableTransitions` | R→M | `filename: string` | `PlanStatus[]` |
+| `plans:getResumeCommand` | R→M | `filename: string` | `string \| null` |
 
 ### Events (Main → Renderer)
 
