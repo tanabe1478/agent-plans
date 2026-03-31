@@ -67,7 +67,7 @@
   },
   "build": {
     "appId": "com.tanabe1478.agentplans",
-    "productName": "agent-plans",
+    "productName": "AgentPlans",
     "afterSign": "scripts/notarize.cjs",
     "npmRebuild": false,
     "directories": {
