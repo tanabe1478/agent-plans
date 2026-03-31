@@ -2,7 +2,7 @@ import type { Dirent } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
-import { isValidSessionId } from '@agent-plans/shared';
+import { isValidSessionId } from '../lib/resumeCommand.js';
 
 export interface SessionMatch {
   sessionId: string;
@@ -15,6 +15,13 @@ const MAX_LINES_TO_SCAN = 200;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function deepContainsString(obj: unknown, target: string): boolean {
+  if (typeof obj === 'string') return obj.includes(target);
+  if (Array.isArray(obj)) return obj.some((item) => deepContainsString(item, target));
+  if (isRecord(obj)) return Object.values(obj).some((val) => deepContainsString(val, target));
+  return false;
 }
 
 export class SessionResumeService {
@@ -112,7 +119,7 @@ export class SessionResumeService {
         sessionId = row.sessionId;
       }
 
-      if (line.includes(slug)) {
+      if (deepContainsString(row, slug)) {
         slugFound = true;
       }
     }
@@ -123,7 +130,7 @@ export class SessionResumeService {
 
     // Prefer the JSONL filename (without ext) as sessionId if it looks like a UUID
     const fileBaseName = basename(filePath, '.jsonl');
-    if (/^[0-9a-f-]{20,}$/.test(fileBaseName)) {
+    if (isValidSessionId(fileBaseName)) {
       sessionId = fileBaseName;
     }
 

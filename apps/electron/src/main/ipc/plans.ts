@@ -13,8 +13,8 @@ import type {
   UpdatePlanRequest,
   UpdateStatusRequest,
 } from '@agent-plans/shared';
-import { buildResumeCommand } from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
+import { buildResumeCommand } from '../lib/resumeCommand.js';
 import { openerService } from '../services/openerService.js';
 import { planService } from '../services/planService.js';
 import { SessionResumeService } from '../services/sessionResumeService.js';
