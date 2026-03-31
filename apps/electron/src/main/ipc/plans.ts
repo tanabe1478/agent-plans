@@ -13,9 +13,11 @@ import type {
   UpdatePlanRequest,
   UpdateStatusRequest,
 } from '@agent-plans/shared';
+import { buildResumeCommand } from '@agent-plans/shared';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { openerService } from '../services/openerService.js';
 import { planService } from '../services/planService.js';
+import { SessionResumeService } from '../services/sessionResumeService.js';
 import { subtaskService } from '../services/subtaskService.js';
 
 interface UpdatePlanRequestWithFilename extends UpdatePlanRequest {
@@ -229,6 +231,30 @@ export function registerPlansHandlers(ipcMain: IpcMain): void {
     async (_event: IpcMainInvokeEvent, _filename: string): Promise<PlanStatus[]> => {
       // All transitions are now allowed
       return ['todo', 'in_progress', 'review', 'completed'];
+    }
+  );
+
+  const sessionResumeService = new SessionResumeService();
+
+  ipcMain.handle(
+    'plans:getResumeCommand',
+    async (_event: IpcMainInvokeEvent, filename: string): Promise<string | null> => {
+      // Phase 1: Check metadata first
+      const plan = await planService.getPlan(filename);
+      const sessionId = plan.metadata?.sessionId;
+      const cwd = plan.metadata?.projectPath;
+      if (sessionId && cwd) {
+        const cmd = buildResumeCommand(sessionId, cwd);
+        if (cmd) return cmd;
+      }
+
+      // Phase 2: Fall back to JSONL scan
+      const sessions = await sessionResumeService.findSessionsForPlan(filename);
+      if (sessions.length > 0) {
+        return buildResumeCommand(sessions[0].sessionId, sessions[0].cwd);
+      }
+
+      return null;
     }
   );
 }

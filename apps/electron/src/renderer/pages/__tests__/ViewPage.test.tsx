@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockNavigate = vi.fn();
 const mockMutateAsync = vi.fn().mockResolvedValue({});
+const mockAddToast = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -30,6 +31,9 @@ vi.mock('@/lib/hooks/usePlans', () => ({
     isLoading: false,
     error: null,
   })),
+  useResumeCommand: vi.fn(() => ({
+    data: null,
+  })),
   useUpdateStatus: () => ({
     mutate: vi.fn(),
     isPending: false,
@@ -37,6 +41,18 @@ vi.mock('@/lib/hooks/usePlans', () => ({
   useUpdatePlan: () => ({
     mutateAsync: mockMutateAsync,
     isPending: false,
+  }),
+}));
+
+const mockWriteClipboard = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('@/lib/clipboard', () => ({
+  writeClipboard: (...args: unknown[]) => mockWriteClipboard(...args),
+}));
+
+vi.mock('@/stores/uiStore', () => ({
+  useUiStore: () => ({
+    addToast: mockAddToast,
   }),
 }));
 
@@ -98,7 +114,7 @@ vi.mock('@/components/ui/Dialog', () => ({
     ) : null,
 }));
 
-import { usePlan } from '@/lib/hooks/usePlans';
+import { usePlan, useResumeCommand } from '@/lib/hooks/usePlans';
 import { ViewPage } from '../ViewPage';
 
 const createWrapper = () => {
@@ -170,5 +186,64 @@ describe('ViewPage', () => {
   it('should not have Edit toggle button', () => {
     render(<ViewPage />, { wrapper: createWrapper() });
     expect(screen.queryByTestId('edit-toggle-button')).toBeNull();
+  });
+
+  it('should show Session panel when resume command is available', () => {
+    vi.mocked(useResumeCommand).mockReturnValue({
+      data: "cd '/home/user/project' && claude --resume 01234567-89ab-cdef-0123-456789abcdef",
+    } as ReturnType<typeof useResumeCommand>);
+
+    render(<ViewPage />, { wrapper: createWrapper() });
+    expect(screen.getByText('Session')).toBeTruthy();
+    expect(
+      screen.getByText(
+        "cd '/home/user/project' && claude --resume 01234567-89ab-cdef-0123-456789abcdef"
+      )
+    ).toBeTruthy();
+  });
+
+  it('should not show Session panel when resume command is null', () => {
+    vi.mocked(useResumeCommand).mockReturnValue({
+      data: null,
+    } as ReturnType<typeof useResumeCommand>);
+
+    render(<ViewPage />, { wrapper: createWrapper() });
+    expect(screen.queryByText('Session')).toBeNull();
+  });
+
+  it('should copy resume command to clipboard on Copy button click', async () => {
+    const command =
+      "cd '/home/user/project' && claude --resume 01234567-89ab-cdef-0123-456789abcdef";
+    vi.mocked(useResumeCommand).mockReturnValue({
+      data: command,
+    } as ReturnType<typeof useResumeCommand>);
+
+    render(<ViewPage />, { wrapper: createWrapper() });
+
+    const copyButton = screen.getByTitle('Copy resume command');
+    fireEvent.click(copyButton);
+    await vi.waitFor(() => {
+      expect(mockWriteClipboard).toHaveBeenCalledWith(command);
+    });
+    expect(mockAddToast).toHaveBeenCalledWith('Copied resume command', 'success');
+  });
+
+  it('should show error toast when clipboard write fails', async () => {
+    const command =
+      "cd '/home/user/project' && claude --resume 01234567-89ab-cdef-0123-456789abcdef";
+    vi.mocked(useResumeCommand).mockReturnValue({
+      data: command,
+    } as ReturnType<typeof useResumeCommand>);
+    mockWriteClipboard.mockRejectedValueOnce(new Error('clipboard error'));
+
+    render(<ViewPage />, { wrapper: createWrapper() });
+
+    const copyButton = screen.getByTitle('Copy resume command');
+    fireEvent.click(copyButton);
+    await vi.waitFor(() => {
+      expect(mockAddToast).toHaveBeenCalled();
+    });
+
+    expect(mockAddToast).toHaveBeenCalledWith('Failed to copy', 'error');
   });
 });

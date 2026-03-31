@@ -123,6 +123,10 @@ export const ipcClient = {
     // Status transitions
     availableTransitions: (filename: string): Promise<PlanStatus[]> =>
       invoke<PlanStatus[]>('plans:availableTransitions', filename),
+
+    // Session resume
+    getResumeCommand: (filename: string): Promise<string | null> =>
+      invoke<string | null>('plans:getResumeCommand', filename),
   },
 
   // Search
