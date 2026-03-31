@@ -1,4 +1,5 @@
 const { join } = require('node:path');
+const { execSync } = require('node:child_process');
 const { notarize } = require('@electron/notarize');
 
 const REQUIRED_ENV_KEYS = ['APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID'];
@@ -12,6 +13,12 @@ function releaseMode() {
   return (process.env.RELEASE_MODE || 'unsigned').toLowerCase();
 }
 
+function adhocSign(appPath) {
+  process.stderr.write(`[notarize] applying ad-hoc signature to ${appPath}\n`);
+  execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
+  process.stderr.write('[notarize] ad-hoc signature applied successfully\n');
+}
+
 exports.default = async function notarizeApp(context) {
   if (context.electronPlatformName !== 'darwin') {
     return;
@@ -19,6 +26,8 @@ exports.default = async function notarizeApp(context) {
 
   const mode = releaseMode();
   const strictSignedMode = mode === 'signed';
+  const appName = context.packager.appInfo.productFilename;
+  const appPath = join(context.appOutDir, `${appName}.app`);
 
   if (!hasNotarizeEnv()) {
     if (strictSignedMode) {
@@ -30,14 +39,12 @@ exports.default = async function notarizeApp(context) {
     process.stderr.write(
       `[notarize] skipped (missing APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID, mode=${mode})\n`
     );
+    adhocSign(appPath);
     process.stderr.write(
-      `[notarize] continuing as unsigned build. Gatekeeper override is required on first launch. See ${RELEASE_GUIDE_PATH}\n`
+      `[notarize] continuing as unsigned build. Right-click > Open on first launch. See ${RELEASE_GUIDE_PATH}\n`
     );
     return;
   }
-
-  const appName = context.packager.appInfo.productFilename;
-  const appPath = join(context.appOutDir, `${appName}.app`);
 
   try {
     await notarize({
