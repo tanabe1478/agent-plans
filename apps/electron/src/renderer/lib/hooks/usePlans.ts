@@ -108,6 +108,14 @@ export function useAvailableTransitions(filename: string) {
   });
 }
 
+export function useResumeCommand(filename: string) {
+  return useQuery({
+    queryKey: ['resume-command', filename],
+    queryFn: () => ipcClient.plans.getResumeCommand(filename),
+    enabled: !!filename,
+  });
+}
+
 // Subtask hooks
 export function useAddSubtask() {
   const queryClient = useQueryClient();

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { planService } from '../../services/planService.js';
 import { registerPlansHandlers } from '../plans.js';
 
 // Mock all services
@@ -34,6 +35,14 @@ vi.mock('../../services/openerService.js', () => ({
 
 vi.mock('../../services/exportService.js', () => ({
   exportService: {},
+}));
+
+const mockFindSessionsForPlan = vi.fn().mockResolvedValue([]);
+
+vi.mock('../../services/sessionResumeService.js', () => ({
+  SessionResumeService: vi.fn().mockImplementation(() => ({
+    findSessionsForPlan: mockFindSessionsForPlan,
+  })),
 }));
 
 describe('Plans IPC Handlers', () => {
@@ -108,7 +117,88 @@ describe('Plans IPC Handlers', () => {
     );
   });
 
+  it('should register plans:getResumeCommand handler', () => {
+    expect(mockIpcMain.handle).toHaveBeenCalledWith('plans:getResumeCommand', expect.any(Function));
+  });
+
   it('should register all handlers exactly once', () => {
-    expect(mockIpcMain.handle).toHaveBeenCalledTimes(17);
+    expect(mockIpcMain.handle).toHaveBeenCalledTimes(18);
+  });
+
+  describe('plans:getResumeCommand handler', () => {
+    function getHandler(channel: string) {
+      const call = mockIpcMain.handle.mock.calls.find(([ch]: [string]) => ch === channel);
+      return call?.[1];
+    }
+
+    const validSessionId = '01234567-89ab-cdef-0123-456789abcdef';
+
+    it('returns command from metadata when sessionId and projectPath are present', async () => {
+      const handler = getHandler('plans:getResumeCommand');
+      vi.mocked(planService.getPlan).mockResolvedValue({
+        metadata: {
+          sessionId: validSessionId,
+          projectPath: '/home/user/project',
+        },
+      } as Awaited<ReturnType<typeof planService.getPlan>>);
+
+      const result = await handler({}, 'test-plan.md');
+      expect(result).toContain('claude --resume');
+      expect(result).toContain(validSessionId);
+      expect(result).toContain('/home/user/project');
+    });
+
+    it('falls back to JSONL scan when metadata lacks session info', async () => {
+      const handler = getHandler('plans:getResumeCommand');
+      vi.mocked(planService.getPlan).mockResolvedValue({
+        metadata: { status: 'in_progress' },
+      } as Awaited<ReturnType<typeof planService.getPlan>>);
+      mockFindSessionsForPlan.mockResolvedValueOnce([
+        {
+          sessionId: validSessionId,
+          cwd: '/home/user/fallback',
+          filePath: '/tmp/test.jsonl',
+          mtimeMs: Date.now(),
+        },
+      ]);
+
+      const result = await handler({}, 'test-plan.md');
+      expect(result).toContain('claude --resume');
+      expect(result).toContain(validSessionId);
+      expect(result).toContain('/home/user/fallback');
+    });
+
+    it('returns null when neither metadata nor JSONL have session info', async () => {
+      const handler = getHandler('plans:getResumeCommand');
+      vi.mocked(planService.getPlan).mockResolvedValue({
+        metadata: { status: 'todo' },
+      } as Awaited<ReturnType<typeof planService.getPlan>>);
+      mockFindSessionsForPlan.mockResolvedValueOnce([]);
+
+      const result = await handler({}, 'test-plan.md');
+      expect(result).toBeNull();
+    });
+
+    it('falls through to JSONL when metadata sessionId is invalid', async () => {
+      const handler = getHandler('plans:getResumeCommand');
+      vi.mocked(planService.getPlan).mockResolvedValue({
+        metadata: {
+          sessionId: 'invalid; rm -rf /',
+          projectPath: '/home/user/project',
+        },
+      } as Awaited<ReturnType<typeof planService.getPlan>>);
+      mockFindSessionsForPlan.mockResolvedValueOnce([
+        {
+          sessionId: validSessionId,
+          cwd: '/home/user/project',
+          filePath: '/tmp/test.jsonl',
+          mtimeMs: Date.now(),
+        },
+      ]);
+
+      const result = await handler({}, 'test-plan.md');
+      expect(result).toContain('claude --resume');
+      expect(result).toContain(validSessionId);
+    });
   });
 });

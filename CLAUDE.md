@@ -109,6 +109,7 @@ Load the relevant spec when editing trigger files.
 | `planService.ts`, `metadataService.ts`, `fileWatcherService.ts`, `archiveService.ts` | `docs/specs/plan-data-flow.md` | Plan CRUD, metadata sync, conflict detection |
 | `searchService.ts`, `queryParser.ts` | `docs/specs/search-query.md` | Full-text search, query syntax, filter matching |
 | `src/preload/index.ts`, `src/main/ipc/*` | `docs/specs/ipc-bridge.md` | IPC channel reference, contextBridge API |
+| `sessionResumeService.ts`, `packages/shared/src/resumeCommand.ts` | `docs/specs/ipc-bridge.md` | Session resume lookup and command generation (`plans:getResumeCommand`) |
 | `settingsService.ts`, `src/renderer/pages/SettingsPage.tsx` | `docs/specs/settings-config.md` | Settings schema, normalization, file watcher integration |
 | All files (debug reference) | `docs/specs/bug-memory.md` | Past bug patterns and root causes |
 

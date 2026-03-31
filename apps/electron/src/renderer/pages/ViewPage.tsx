@@ -3,11 +3,13 @@ import {
   AlertCircle,
   ArrowLeft,
   Calendar,
+  Copy,
   FileText,
   GitBranch,
   HardDrive,
   Loader2,
   MessageSquareText,
+  Terminal,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -17,17 +19,21 @@ import { ProjectBadge } from '@/components/plan/ProjectBadge';
 import { SectionNav } from '@/components/plan/SectionNav';
 import { StatusDropdown } from '@/components/plan/StatusDropdown';
 import { Dialog } from '@/components/ui/Dialog';
-import { usePlan, useUpdatePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
+import { writeClipboard } from '@/lib/clipboard';
+import { usePlan, useResumeCommand, useUpdatePlan, useUpdateStatus } from '@/lib/hooks/usePlans';
 import { useStatusColumns } from '@/lib/hooks/useStatusColumns';
 import { formatDate, formatFileSize } from '@/lib/utils';
+import { useUiStore } from '@/stores/uiStore';
 
 export function ViewPage() {
   const { filename } = useParams<{ filename: string }>();
   const navigate = useNavigate();
   const { data: plan, isLoading, error } = usePlan(filename || '');
+  const { data: resumeCommand } = useResumeCommand(filename || '');
   const updateStatus = useUpdateStatus();
   const updatePlan = useUpdatePlan();
   const { defaultPlanStatus } = useStatusColumns();
+  const { addToast } = useUiStore();
   const meta = plan?.metadata;
   const status = getRawPlanStatus(meta?.status, defaultPlanStatus);
 
@@ -41,6 +47,7 @@ export function ViewPage() {
   const hasUnsavedChanges = isEditable && draftContent !== null && draftContent !== plan?.content;
 
   // Reset draft state when filename changes to prevent stale auto-saves.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on filename change only
   useEffect(() => {
     setDraftContent(null);
     setSaveStatus('idle');
@@ -49,6 +56,7 @@ export function ViewPage() {
 
   // Reset draft when plan content changes (external file edit or post-save refetch).
   // Also clear any pending debounce to prevent stale content from being saved.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on plan content change only
   useEffect(() => {
     setDraftContent(null);
     if (debounceTimerRef.current) {
@@ -298,6 +306,33 @@ export function ViewPage() {
               </p>
             </div>
           </div>
+
+          {resumeCommand ? (
+            <div className="border border-slate-800 bg-slate-900/60 p-3">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">Session</p>
+              <div className="mt-2 flex items-center gap-2">
+                <Terminal className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                <code className="min-w-0 flex-1 truncate text-[11px] text-slate-300">
+                  {resumeCommand}
+                </code>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await writeClipboard(resumeCommand);
+                      addToast('Copied resume command', 'success');
+                    } catch {
+                      addToast('Failed to copy', 'error');
+                    }
+                  }}
+                  className="shrink-0 rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                  title="Copy resume command"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {plan.sections.length > 0 ? (
             <div className="border border-slate-800 bg-slate-900/60 p-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-1.5rem)] lg:overflow-auto">
