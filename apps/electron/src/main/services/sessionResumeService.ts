@@ -1,7 +1,9 @@
 import type { Dirent } from 'node:fs';
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import { createInterface } from 'node:readline';
 import { isValidSessionId } from '../lib/resumeCommand.js';
 
 export interface SessionMatch {
@@ -87,41 +89,45 @@ export class SessionResumeService {
     mtimeMs: number,
     slug: string
   ): Promise<SessionMatch | null> {
-    let raw: string;
-    try {
-      raw = await readFile(filePath, 'utf-8');
-    } catch {
-      return null;
-    }
-
-    const lines = raw.split('\n');
     let cwd = '';
     let sessionId = '';
     let slugFound = false;
+    let lineCount = 0;
 
-    const limit = Math.min(lines.length, MAX_LINES_TO_SCAN);
-    for (let i = 0; i < limit; i++) {
-      const line = lines[i];
-      if (!line) continue;
+    const stream = createReadStream(filePath, { encoding: 'utf-8' });
+    const rl = createInterface({ input: stream, crlfDelay: Infinity });
 
-      let row: unknown;
-      try {
-        row = JSON.parse(line);
-      } catch {
-        continue;
-      }
-      if (!isRecord(row)) continue;
+    try {
+      for await (const line of rl) {
+        if (lineCount >= MAX_LINES_TO_SCAN) break;
+        lineCount++;
 
-      if (!cwd && typeof row.cwd === 'string') {
-        cwd = resolve(row.cwd);
-      }
-      if (!sessionId && typeof row.sessionId === 'string' && isValidSessionId(row.sessionId)) {
-        sessionId = row.sessionId;
-      }
+        if (!line) continue;
 
-      if (deepContainsString(row, slug)) {
-        slugFound = true;
+        let row: unknown;
+        try {
+          row = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        if (!isRecord(row)) continue;
+
+        if (!cwd && typeof row.cwd === 'string') {
+          cwd = resolve(row.cwd);
+        }
+        if (!sessionId && typeof row.sessionId === 'string' && isValidSessionId(row.sessionId)) {
+          sessionId = row.sessionId;
+        }
+
+        if (deepContainsString(row, slug)) {
+          slugFound = true;
+        }
       }
+    } catch {
+      return null;
+    } finally {
+      rl.close();
+      stream.destroy();
     }
 
     if (!slugFound || !sessionId || !cwd) {
