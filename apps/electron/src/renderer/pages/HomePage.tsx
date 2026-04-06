@@ -186,15 +186,15 @@ export function HomePage() {
   };
 
   const hasSelection = selectedPlans.size > 0;
-  const writablePlans = filteredPlans.filter((plan) => !plan.readOnly);
+  const allSelectablePlans = filteredPlans;
 
   const handleBulkStatusUpdate = async () => {
     if (!bulkStatusTarget || selectedPlans.size === 0) return;
     const filenames = plans
-      .filter((plan) => selectedPlans.has(plan.filename) && !plan.readOnly)
+      .filter((plan) => selectedPlans.has(plan.filename))
       .map((plan) => plan.filename);
     if (filenames.length === 0) {
-      addToast('No writable plans selected', 'error');
+      addToast('No plans selected', 'error');
       return;
     }
 
@@ -240,7 +240,7 @@ export function HomePage() {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setSelectedPlans(new Set(writablePlans.map((plan) => plan.filename)))
+                      setSelectedPlans(new Set(allSelectablePlans.map((plan) => plan.filename)))
                     }
                   >
                     All
