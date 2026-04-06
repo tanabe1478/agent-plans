@@ -133,7 +133,6 @@ export function HomePage() {
 
   const handleRowClick = (plan: PlanMeta) => {
     if (selectionMode) {
-      if (plan.readOnly) return;
       toggleSelection(plan.filename);
       return;
     }
@@ -165,8 +164,8 @@ export function HomePage() {
 
   const handleBulkDelete = async () => {
     try {
-      await bulkDelete.mutateAsync({ filenames: Array.from(selectedPlans) });
-      addToast(`Deleted ${selectedPlans.size} plan(s)`, 'success');
+      await bulkDelete.mutateAsync({ filenames: selectedDeletableFilenames });
+      addToast(`Deleted ${selectedDeletableFilenames.length} plan(s)`, 'success');
       setSelectedPlans(new Set());
       setShowBulkDeleteDialog(false);
       setSelectionMode(false);
@@ -186,15 +185,18 @@ export function HomePage() {
   };
 
   const hasSelection = selectedPlans.size > 0;
-  const writablePlans = filteredPlans.filter((plan) => !plan.readOnly);
+  const allSelectablePlans = filteredPlans;
+  const selectedDeletableFilenames = plans
+    .filter((plan) => selectedPlans.has(plan.filename) && !plan.readOnly)
+    .map((plan) => plan.filename);
 
   const handleBulkStatusUpdate = async () => {
     if (!bulkStatusTarget || selectedPlans.size === 0) return;
     const filenames = plans
-      .filter((plan) => selectedPlans.has(plan.filename) && !plan.readOnly)
+      .filter((plan) => selectedPlans.has(plan.filename))
       .map((plan) => plan.filename);
     if (filenames.length === 0) {
-      addToast('No writable plans selected', 'error');
+      addToast('No plans selected', 'error');
       return;
     }
 
@@ -240,7 +242,7 @@ export function HomePage() {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setSelectedPlans(new Set(writablePlans.map((plan) => plan.filename)))
+                      setSelectedPlans(new Set(allSelectablePlans.map((plan) => plan.filename)))
                     }
                   >
                     All
@@ -274,11 +276,11 @@ export function HomePage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    disabled={!hasSelection}
+                    disabled={selectedDeletableFilenames.length === 0}
                     onClick={() => setShowBulkDeleteDialog(true)}
                   >
                     <Trash2 className="mr-1 h-4 w-4" />
-                    Delete ({selectedPlans.size})
+                    Delete ({selectedDeletableFilenames.length})
                   </Button>
                 </>
               ) : null}
@@ -348,7 +350,6 @@ export function HomePage() {
                   const fm = plan.metadata;
                   const dueDate = fm?.dueDate;
                   const status = getRawPlanStatus(fm?.status, defaultPlanStatus);
-                  const readOnly = Boolean(plan.readOnly);
                   return (
                     // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
                     // biome-ignore lint/a11y/useKeyWithClickEvents: row interaction is pointer-based in desktop list view
@@ -382,11 +383,9 @@ export function HomePage() {
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            disabled={readOnly}
                             data-row-action="true"
                             onClick={(event) => event.stopPropagation()}
                             onChange={() => {
-                              if (readOnly) return;
                               toggleSelection(plan.filename);
                             }}
                             className="h-3.5 w-3.5 rounded-none border-slate-600 bg-slate-950"
