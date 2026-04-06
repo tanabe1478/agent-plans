@@ -133,7 +133,6 @@ export function HomePage() {
 
   const handleRowClick = (plan: PlanMeta) => {
     if (selectionMode) {
-      if (plan.readOnly) return;
       toggleSelection(plan.filename);
       return;
     }
@@ -348,7 +347,6 @@ export function HomePage() {
                   const fm = plan.metadata;
                   const dueDate = fm?.dueDate;
                   const status = getRawPlanStatus(fm?.status, defaultPlanStatus);
-                  const readOnly = Boolean(plan.readOnly);
                   return (
                     // biome-ignore lint/a11y/noStaticElementInteractions: row supports native context menu
                     // biome-ignore lint/a11y/useKeyWithClickEvents: row interaction is pointer-based in desktop list view
@@ -382,11 +380,9 @@ export function HomePage() {
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            disabled={readOnly}
                             data-row-action="true"
                             onClick={(event) => event.stopPropagation()}
                             onChange={() => {
-                              if (readOnly) return;
                               toggleSelection(plan.filename);
                             }}
                             className="h-3.5 w-3.5 rounded-none border-slate-600 bg-slate-950"

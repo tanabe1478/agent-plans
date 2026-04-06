@@ -148,9 +148,11 @@ test.describe('Bulk status update includes Codex plans', () => {
     // Wait for Codex plan to appear in the list
     await expect(page.getByText('Codex Bulk Test Plan')).toBeVisible({ timeout: 10_000 });
 
-    // Count total plans (seed markdown + 1 Codex)
+    // Count expected plans dynamically
+    const seedFileCount = readdirSync(seedDir).filter((f) => f.endsWith('.md')).length;
+    const expectedMinimum = seedFileCount + 1; // seed + Codex
     const totalPlanRows = await page.locator('[data-plan-row]').count();
-    expect(totalPlanRows).toBeGreaterThanOrEqual(8); // 7 seed + at least 1 codex
+    expect(totalPlanRows).toBeGreaterThanOrEqual(expectedMinimum);
 
     // Enter selection mode
     await page.getByRole('button', { name: 'Select' }).click();
