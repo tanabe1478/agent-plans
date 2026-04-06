@@ -164,8 +164,8 @@ export function HomePage() {
 
   const handleBulkDelete = async () => {
     try {
-      await bulkDelete.mutateAsync({ filenames: Array.from(selectedPlans) });
-      addToast(`Deleted ${selectedPlans.size} plan(s)`, 'success');
+      await bulkDelete.mutateAsync({ filenames: selectedDeletableFilenames });
+      addToast(`Deleted ${selectedDeletableFilenames.length} plan(s)`, 'success');
       setSelectedPlans(new Set());
       setShowBulkDeleteDialog(false);
       setSelectionMode(false);
@@ -186,6 +186,9 @@ export function HomePage() {
 
   const hasSelection = selectedPlans.size > 0;
   const allSelectablePlans = filteredPlans;
+  const selectedDeletableFilenames = plans
+    .filter((plan) => selectedPlans.has(plan.filename) && !plan.readOnly)
+    .map((plan) => plan.filename);
 
   const handleBulkStatusUpdate = async () => {
     if (!bulkStatusTarget || selectedPlans.size === 0) return;
@@ -273,11 +276,11 @@ export function HomePage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    disabled={!hasSelection}
+                    disabled={selectedDeletableFilenames.length === 0}
                     onClick={() => setShowBulkDeleteDialog(true)}
                   >
                     <Trash2 className="mr-1 h-4 w-4" />
-                    Delete ({selectedPlans.size})
+                    Delete ({selectedDeletableFilenames.length})
                   </Button>
                 </>
               ) : null}
