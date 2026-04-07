@@ -33,7 +33,7 @@ export function BulkActionBar() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background shadow-lg">
-      <div className="mx-auto max-w-7xl px-4 py-3">
+      <div className="px-6 py-3">
         <div className="flex flex-wrap items-center gap-3">
           {/* Selection info */}
           <div className="flex items-center gap-2 text-sm font-medium">
