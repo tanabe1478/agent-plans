@@ -57,9 +57,9 @@ export function Header({
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
       <div className="electron-drag-region h-7 border-b border-slate-900">
-        <div className={cn('mx-auto h-full max-w-[1400px] px-4', macLeftInsetClass)} />
+        <div className={cn('h-full px-6', macLeftInsetClass)} />
       </div>
-      <div className="mx-auto flex h-12 max-w-[1400px] items-center gap-3 px-4 electron-no-drag">
+      <div className="flex h-12 items-center gap-3 px-6 electron-no-drag">
         <Link
           to="/"
           className="text-[14px] font-bold tracking-tight text-slate-100 hover:text-white"

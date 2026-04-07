@@ -141,7 +141,7 @@ export function Layout() {
           setQuickOpen(true);
         }}
       />
-      <main className="mx-auto w-full max-w-[1400px] px-4 py-4">
+      <main className="w-full px-6 py-4">
         <Outlet />
       </main>
       <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} items={commands} />
